@@ -560,8 +560,12 @@ module.exports = grammar({
 
     operator_identifier: $ => /[^\s\w\(\)\[\]'"`.;,]+/,
 
-    number: $ => /\d+/,
-
+    number: $ => choice($.int, $.float),
+    
+    int: $ => /\d+/,
+    
+    float: $ => /[\d\.]+/,
+    
     string_transform_expression: $ => seq(
       $.identifier,
       $.string
