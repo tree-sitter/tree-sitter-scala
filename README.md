@@ -7,8 +7,7 @@ Scala grammar for [tree-sitter](https://github.com/tree-sitter/tree-sitter).
 
 References
 
-* [The Scala Language Specification](http://www.scala-lang.org/docu/files/ScalaReference.pdf)
-* [Scala Syntax Summary](https://www.scala-lang.org/files/archive/spec/2.11/13-syntax-summary.html)
+* [Scala Syntax Summary](https://scala-lang.org/files/archive/spec/2.13/13-syntax-summary.html)
 
 Development
 -----------
