@@ -368,6 +368,26 @@ class A {
         (block (identifier))))))
 
 =======================================
+Initialization expressions
+=======================================
+
+class A(val x: Int, val y: Int) {
+  assert(x != 0)
+}
+
+---
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (class_parameters
+      (class_parameter (identifier) (type_identifier))
+      (class_parameter (identifier) (type_identifier)))
+    (template_body
+      (call_expression (identifier)
+        (arguments (infix_expression (identifier) (operator_identifier) (number)))))))
+
+=======================================
 Optional parameters
 =======================================
 

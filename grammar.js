@@ -191,7 +191,7 @@ module.exports = grammar({
 
     template_body: $ => seq(
       '{',
-      repeat($._definition),
+      optional($._block),
       '}'
     ),
 
@@ -307,15 +307,17 @@ module.exports = grammar({
       field('type', $._type)
     ),
 
+    _block: $ => prec.left(seq(
+      sep1($._semicolon, choice(
+        $._expression,
+        $._definition
+      )),
+      optional($._semicolon),
+    )),
+
     block: $ => seq(
       '{',
-      optional(seq(
-        sep1($._semicolon, choice(
-          $._expression,
-          $._definition
-        )),
-        optional($._semicolon),
-      )),
+      optional($._block),
       '}'
     ),
 
@@ -489,7 +491,7 @@ module.exports = grammar({
       field('pattern', $._pattern),
       optional($.guard),
       '=>',
-      field('body', seq(optional($._semicolon), sep($._semicolon, $._expression), optional($._semicolon)))
+      field('body', $._block)
     ),
 
     guard: $ => seq(
