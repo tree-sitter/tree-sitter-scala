@@ -489,7 +489,7 @@ module.exports = grammar({
       field('pattern', $._pattern),
       optional($.guard),
       '=>',
-      field('body', sep(';', $._expression))
+      field('body', seq(optional($._semicolon), sep($._semicolon, $._expression), optional($._semicolon)))
     ),
 
     guard: $ => seq(
