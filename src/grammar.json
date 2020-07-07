@@ -3225,6 +3225,11 @@
     "_definition",
     "_type_identifier"
   ],
-  "supertypes": []
+  "supertypes": [
+    "_expression",
+    "_type",
+    "_definition",
+    "_pattern"
+  ]
 }
 

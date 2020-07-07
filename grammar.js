@@ -15,6 +15,13 @@ module.exports = grammar({
     $.comment
   ],
 
+  supertypes: $ => [
+    $._expression,
+    $._type,
+    $._definition,
+    $._pattern,
+  ],
+
   externals: $ => [
     $._automatic_semicolon,
     $._simple_string,
