@@ -94,6 +94,27 @@ def showNotification(notification: Notification): String = {
           (string_transform_expression (identifier) (string (interpolation (identifier)) (interpolation (identifier))))))))))
 
 ============================
+Infix patterns
+============================
+
+def first(x: Seq[Int]) = x match {
+  case e :+ _ => Some(e)
+  case _ => None
+}
+
+---
+
+(compilation_unit
+  (function_definition (identifier)
+    (parameters (parameter (identifier) (generic_type (type_identifier) (type_arguments (type_identifier)))))
+    (match_expression (identifier)
+      (case_block
+        (case_clause (infix_pattern (identifier) (operator_identifier) (wildcard))
+          (call_expression (identifier) (arguments (identifier))))
+        (case_clause (wildcard)
+          (identifier))))))
+
+============================
 Capture patterns
 ============================
 
@@ -111,4 +132,4 @@ val x = y match {
       (case_block
         (case_clause
           (capture_pattern (identifier) (case_class_pattern (type_identifier) (number)))
-          (identifier)))))) 
+          (identifier))))))

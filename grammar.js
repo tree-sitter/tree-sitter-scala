@@ -126,12 +126,13 @@ module.exports = grammar({
     ),
 
     class_definition: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       optional('case'),
       'class',
       field('name', $.identifier),
       field('type_parameters', optional($.type_parameters)),
-      field('class_parameters', optional($.class_parameters)),
+      field('class_parameters', repeat($.class_parameters)),
       field('extend', optional($.extends_clause)),
       field('body', optional($.template_body))
     ),
@@ -195,7 +196,14 @@ module.exports = grammar({
       '}'
     ),
 
+    annotation: $ => seq(
+      '@',
+      field('name', $._simple_type),
+      field('arguments', repeat($.arguments)),
+    ),
+
     val_definition: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       'val',
       field('pattern', $._pattern),
@@ -205,6 +213,7 @@ module.exports = grammar({
     ),
 
     val_declaration: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       'val',
       commaSep1(field('name', $.identifier)),
@@ -213,6 +222,7 @@ module.exports = grammar({
     ),
 
     var_declaration: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       'var',
       commaSep1(field('name', $.identifier)),
@@ -221,6 +231,7 @@ module.exports = grammar({
     ),
 
     var_definition: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       'var',
       field('pattern', $._pattern),
@@ -230,6 +241,7 @@ module.exports = grammar({
     ),
 
     type_definition: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       'type',
       field('name', $._type_identifier),
@@ -239,11 +251,12 @@ module.exports = grammar({
     ),
 
     function_definition: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       'def',
       field('name', $.identifier),
       field('type_parameters', optional($.type_parameters)),
-      field('parameters', optional($.parameters)),
+      field('parameters', repeat($.parameters)),
       optional(seq(':', field('return_type', $._type))),
       choice(
         seq('=', field('body', $._expression)),
@@ -252,11 +265,12 @@ module.exports = grammar({
     ),
 
     function_declaration: $ => seq(
+      repeat($.annotation),
       optional($.modifiers),
       'def',
       field('name', $.identifier),
       field('type_parameters', optional($.type_parameters)),
-      field('parameters', optional($.parameters)),
+      field('parameters', repeat($.parameters)),
       optional(seq(':', field('return_type', $._type)))
     ),
 
@@ -277,19 +291,24 @@ module.exports = grammar({
       optional($.arguments)
     ),
 
+    // TODO: Allow only the last parameter list to be implicit.
     class_parameters: $ => seq(
       '(',
+      optional('implicit'),
       commaSep($.class_parameter),
       ')'
     ),
 
+    // TODO: Allow only the last parameter list to be implicit.
     parameters: $ => seq(
       '(',
+      optional('implicit'),
       commaSep($.parameter),
       ')'
     ),
 
     class_parameter: $ => seq(
+      repeat($.annotation),
       optional(choice('val', 'var')),
       field('name', $.identifier),
       optional(seq(':', field('type', $._type))),
@@ -297,6 +316,7 @@ module.exports = grammar({
     ),
 
     parameter: $ => seq(
+      repeat($.annotation),
       field('name', $.identifier),
       optional(seq(':', field('type', choice($.lazy_parameter_type, $._type)))),
       optional(seq('=', field('default_value', $._expression)))
@@ -317,6 +337,7 @@ module.exports = grammar({
 
     block: $ => seq(
       '{',
+      // TODO: self type
       optional($._block),
       '}'
     ),
@@ -325,9 +346,14 @@ module.exports = grammar({
 
     _type: $ => choice(
       $.function_type,
-      $.generic_type,
       $.compound_type,
       $.infix_type,
+      $._simple_type,
+      // TODO: annotation
+    ),
+
+    _simple_type: $ => choice(
+      $.generic_type,
       $.stable_type_identifier,
       $._type_identifier
     ),
@@ -385,6 +411,7 @@ module.exports = grammar({
       $.capture_pattern,
       $.tuple_pattern,
       $.case_class_pattern,
+      $.infix_pattern,
       $.parenthesized_pattern,
       $.alternative_pattern,
       $.typed_pattern,
@@ -399,6 +426,12 @@ module.exports = grammar({
       field('pattern', commaSep($._pattern)),
       ')'
     ),
+
+    infix_pattern: $ => prec.left(seq(
+      field('left', $._pattern),
+      field('operator', choice($.operator_identifier)),
+      field('right', $._pattern),
+    )),
 
     capture_pattern: $ => prec(PREC.infix, seq(
       field('name', $.identifier),
@@ -444,6 +477,7 @@ module.exports = grammar({
       $.string_transform_expression,
       $.field_expression,
       $.instance_expression,
+      // TODO: postfix and ascription
       $.infix_expression,
       $.prefix_expression,
       $.tuple_expression,

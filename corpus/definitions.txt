@@ -151,7 +151,7 @@ class A(b: B) extends C(b || ok) {
 Class definitions with parameters
 =======================================
 
-class Point(val x: Int, val y: Int)
+class Point(val x: Int, val y: Int)(implicit coord: Coord)
 
 ---
 
@@ -160,6 +160,8 @@ class Point(val x: Int, val y: Int)
     (identifier)
     (class_parameters
       (class_parameter (identifier) (type_identifier))
+      (class_parameter (identifier) (type_identifier)))
+    (class_parameters
       (class_parameter (identifier) (type_identifier)))))
 
 =======================================
@@ -347,6 +349,7 @@ class A {
   def g[H](i) {
     j
   }
+  def h(x: T)(implicit ev: Reads[T])
 }
 
 ---
@@ -365,7 +368,11 @@ class A {
         (identifier)
         (type_parameters (identifier))
         (parameters (parameter (identifier)))
-        (block (identifier))))))
+        (block (identifier)))
+      (function_declaration
+        (identifier)
+        (parameters (parameter (identifier) (type_identifier)))
+        (parameters (parameter (identifier) (generic_type (type_identifier) (type_arguments (type_identifier)))))))))
 
 =======================================
 Initialization expressions
