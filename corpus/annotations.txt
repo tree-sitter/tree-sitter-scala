@@ -69,3 +69,19 @@ class A(@one x: String) {
                       (annotation (type_identifier))
                       (identifier) (type_identifier)))
         (block)))))
+
+================================
+Types
+================================
+
+trait Function0[@specialized(Unit, Int, Double) T] {
+  def apply: T
+}
+
+---
+
+(compilation_unit
+  (trait_definition (identifier)
+    (type_parameters
+      (annotation (type_identifier) (arguments (identifier) (identifier) (identifier))) (identifier))
+    (template_body (function_declaration (identifier) (type_identifier)))))

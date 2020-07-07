@@ -156,6 +156,7 @@ module.exports = grammar({
     ),
 
     _variant_type_parameter: $ => seq(
+      repeat($.annotation),
       choice(
         $.covariant_type_parameter,
         $.contravariant_type_parameter,
