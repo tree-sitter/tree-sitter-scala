@@ -67,13 +67,18 @@ Compound types
 def cloneAndReset(obj: Cloneable with Resetable): Cloneable = {
 }
 
+class F extends Cloneable with Resetable with Serializable
+
 ---
 
 (compilation_unit
   (function_definition
     (identifier)
     (parameters (parameter (identifier) (compound_type (type_identifier) (type_identifier))))
-    (type_identifier) (block)))
+    (type_identifier) (block))
+  (class_definition (identifier)
+    (extends_clause
+      (compound_type (type_identifier) (type_identifier) (type_identifier)))))
 
 ==================================
 Infix types
@@ -167,3 +172,17 @@ class A[B : C : D]
       (identifier)
       (context_bound (type_identifier))
       (context_bound (type_identifier)))))
+
+==================================
+Projections
+==================================
+
+type A = B[C]#D
+
+---
+
+(compilation_unit
+  (type_definition (type_identifier)
+    (projected_type
+      (generic_type (type_identifier) (type_arguments (type_identifier)))
+      (type_identifier))))

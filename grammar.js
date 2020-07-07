@@ -3,6 +3,7 @@ const PREC = {
   infix: 2,
   new: 3,
   prefix: 3,
+  compound: 3,
   call: 4,
   field: 4,
 }
@@ -17,7 +18,6 @@ module.exports = grammar({
 
   supertypes: $ => [
     $._expression,
-    $._type,
     $._definition,
     $._pattern,
   ],
@@ -197,11 +197,11 @@ module.exports = grammar({
       '}'
     ),
 
-    annotation: $ => seq(
+    annotation: $ => prec.right(seq(
       '@',
       field('name', $._simple_type),
       field('arguments', repeat($.arguments)),
-    ),
+    )),
 
     val_definition: $ => seq(
       repeat($.annotation),
@@ -349,26 +349,33 @@ module.exports = grammar({
       $.function_type,
       $.compound_type,
       $.infix_type,
-      $._simple_type,
+      $._annotated_type,
       // TODO: annotation
     ),
 
+    _annotated_type: $ => prec.right(seq(
+      $._simple_type,
+      repeat($.annotation),
+    )),
+
     _simple_type: $ => choice(
       $.generic_type,
+      $.projected_type,
+      // TODO: tuple type
       $.stable_type_identifier,
-      $._type_identifier
+      $._type_identifier,
     ),
 
-    compound_type: $ => prec.left(PREC.infix, seq(
-      field('base', $._type),
-      'with',
-      field('refinement', $._type)
+    compound_type: $ => prec.left(PREC.compound, seq(
+      field('base', $._annotated_type),
+      repeat1(seq('with', field('extra', $._annotated_type))),
+      // TODO: Refinement.
     )),
 
     infix_type: $ => prec.left(PREC.infix, seq(
-      field('left', $._type),
+      field('left', choice($.compound_type, $._annotated_type)),
       field('operator', choice($.identifier, $.operator_identifier)),
-      field('right', $._type)
+      field('right', choice($.compound_type, $._annotated_type))
     )),
 
     stable_type_identifier: $ => seq(
@@ -384,11 +391,14 @@ module.exports = grammar({
     ),
 
     generic_type: $ => seq(
-      field('type', choice(
-        $._type_identifier,
-        $.stable_type_identifier
-      )),
+      field('type', $._simple_type),
       field('type_arguments', $.type_arguments)
+    ),
+
+    projected_type: $ => seq(
+      field('type', $._simple_type),
+      '#',
+      field('selector', $._type_identifier),
     ),
 
     function_type: $ => seq(
@@ -399,6 +409,7 @@ module.exports = grammar({
 
     parameter_types: $ => seq(
       '(',
+      // TODO => Type, Type *, Type =>
       commaSep($._type),
       ')'
     ),
