@@ -441,7 +441,7 @@ module.exports = grammar({
 
     infix_pattern: $ => prec.left(seq(
       field('left', $._pattern),
-      field('operator', choice($.operator_identifier)),
+      field('operator', choice($.identifier, $.operator_identifier)),
       field('right', $._pattern),
     )),
 
@@ -609,11 +609,12 @@ module.exports = grammar({
       ')'
     ),
 
+    // TODO: Include operators.
     identifier: $ => /[a-zA-Z_]\w*/,
 
     wildcard: $ => '_',
 
-    operator_identifier: $ => /[^\s\w\(\)\[\]'"`.;,]+/,
+    operator_identifier: $ => /[^\s\w\(\)\[\]\{\}'"`\.;,]+/,
 
     number: $ => /[\d\.]+/,
 
