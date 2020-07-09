@@ -420,6 +420,7 @@ module.exports = grammar({
 
     function_type: $ => seq(
       $.parameter_types,
+      // Resolve the tuple_type vs parameter_types conflict.
       prec.dynamic(1, '=>'),
       field('return_type', $._type)
     ),
@@ -461,13 +462,13 @@ module.exports = grammar({
       ')'
     ),
 
-    infix_pattern: $ => prec.left(seq(
+    infix_pattern: $ => prec.left(PREC.infix, seq(
       field('left', $._pattern),
       field('operator', choice($.identifier, $.operator_identifier)),
       field('right', $._pattern),
     )),
 
-    capture_pattern: $ => prec(PREC.infix, seq(
+    capture_pattern: $ => prec(PREC.assign, seq(
       field('name', $.identifier),
       '@',
       field('pattern', $._pattern)
