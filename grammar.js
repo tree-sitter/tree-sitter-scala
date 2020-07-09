@@ -39,6 +39,11 @@ module.exports = grammar({
     $._semicolon,
     $._definition,
     $._type_identifier,
+    $._param_type,
+  ],
+
+  conflicts: $ => [
+    [$.tuple_type, $.parameter_types],
   ],
 
   word: $ => $.identifier,
@@ -319,13 +324,18 @@ module.exports = grammar({
     parameter: $ => seq(
       repeat($.annotation),
       field('name', $.identifier),
-      optional(seq(':', field('type', choice($.lazy_parameter_type, $._type)))),
+      optional(seq(':', field('type', $._param_type))),
       optional(seq('=', field('default_value', $._expression)))
     ),
 
     lazy_parameter_type: $ => seq(
       '=>',
       field('type', $._type)
+    ),
+
+    repeated_parameter_type: $ => seq(
+      field('type', $._type),
+      '*',
     ),
 
     _block: $ => prec.left(seq(
@@ -361,12 +371,13 @@ module.exports = grammar({
     _simple_type: $ => choice(
       $.generic_type,
       $.projected_type,
+      $.tuple_type,
       // TODO: tuple type
       $.stable_type_identifier,
       $._type_identifier,
     ),
 
-    compound_type: $ => prec.left(PREC.compound, seq(
+    compound_type: $ => prec(PREC.compound, seq(
       field('base', $._annotated_type),
       repeat1(seq('with', field('extra', $._annotated_type))),
       // TODO: Refinement.
@@ -377,6 +388,12 @@ module.exports = grammar({
       field('operator', choice($.identifier, $.operator_identifier)),
       field('right', choice($.compound_type, $._annotated_type))
     )),
+
+    tuple_type: $ => seq(
+      '(',
+      commaSep1($._type),
+      ')',
+    ),
 
     stable_type_identifier: $ => seq(
       choice($.identifier, $.stable_identifier),
@@ -403,15 +420,20 @@ module.exports = grammar({
 
     function_type: $ => seq(
       $.parameter_types,
-      '=>',
+      prec.dynamic(1, '=>'),
       field('return_type', $._type)
     ),
 
     parameter_types: $ => seq(
       '(',
-      // TODO => Type, Type *, Type =>
-      commaSep($._type),
+      commaSep($._param_type),
       ')'
+    ),
+
+    _param_type: $ => choice(
+      $._type,
+      $.lazy_parameter_type,
+      $.repeated_parameter_type,
     ),
 
     _type_identifier: $ => alias($.identifier, $.type_identifier),

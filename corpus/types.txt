@@ -48,6 +48,8 @@ Function types
 
 object Main {
   type A = (B, C) => D
+
+  type A = (B, C) => (D, E)
 }
 
 ---
@@ -58,7 +60,12 @@ object Main {
       (type_identifier)
       (function_type
         (parameter_types (type_identifier) (type_identifier))
-        (type_identifier))))))
+        (type_identifier)))
+    (type_definition
+      (type_identifier)
+      (function_type
+        (parameter_types (type_identifier) (type_identifier))
+        (tuple_type (type_identifier) (type_identifier)))))))
 
 ==================================
 Compound types
