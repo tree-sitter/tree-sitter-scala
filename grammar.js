@@ -147,7 +147,7 @@ module.exports = grammar({
       field('name', $.identifier),
       field('type_parameters', optional($.type_parameters)),
       field('extend', optional($.extends_clause)),
-      field('body', $.template_body)
+      field('body', optional($.template_body))
     ),
 
     // The EBNF makes a distinction between function type parameters and other

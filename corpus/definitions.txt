@@ -189,6 +189,10 @@ implicit final sealed class Point {
 Trait definitions
 =======================================
 
+trait A extends B
+
+trait A extends B with C
+
 trait T[U] {
 }
 
@@ -198,6 +202,12 @@ trait T[U] extends V.W[U] {
 ---
 
 (compilation_unit
+  (trait_definition
+    (identifier)
+    (extends_clause (type_identifier)))
+  (trait_definition
+    (identifier)
+    (extends_clause (compound_type (type_identifier) (type_identifier))))
   (trait_definition
     (identifier)
     (type_parameters (identifier))
