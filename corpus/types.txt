@@ -94,12 +94,20 @@ Infix types
 
 type A = B Foo C
 
+type A = B ! C or D
+
 ---
 
 (compilation_unit
   (type_definition
     (type_identifier)
-    (infix_type (type_identifier) (identifier) (type_identifier))))
+    (infix_type (type_identifier) (identifier) (type_identifier)))
+  (type_definition
+    (type_identifier)
+    (infix_type
+      (infix_type (type_identifier) (operator_identifier) (type_identifier))
+      (identifier)
+      (type_identifier))))
 
 
 ==================================

@@ -384,9 +384,9 @@ module.exports = grammar({
     )),
 
     infix_type: $ => prec.left(PREC.infix, seq(
-      field('left', choice($.compound_type, $._annotated_type)),
+      field('left', choice($.compound_type, $.infix_type, $._annotated_type)),
       field('operator', choice($.identifier, $.operator_identifier)),
-      field('right', choice($.compound_type, $._annotated_type))
+      field('right', choice($.compound_type, $.infix_type, $._annotated_type))
     )),
 
     tuple_type: $ => seq(
