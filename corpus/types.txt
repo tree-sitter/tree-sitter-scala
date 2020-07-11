@@ -43,6 +43,24 @@ object Main {
         (type_arguments (type_identifier)))))))
 
 ===================================
+Tuple types
+===================================
+
+object Main {
+  type A = (B, C)
+}
+
+---
+
+(compilation_unit
+  (object_definition (identifier) (template_body
+    (type_definition
+      (type_identifier)
+      (tuple_type
+        (type_identifier)
+        (type_identifier))))))
+
+===================================
 Function types
 ===================================
 
@@ -71,7 +89,7 @@ object Main {
     (type_definition
       (type_identifier)
       (function_type
-        (type_identifier)
+        (parameter_types (type_identifier))
         (tuple_type (type_identifier) (type_identifier)))))))
 
 ==================================
@@ -103,6 +121,8 @@ type A = B Foo C
 
 type A = B ! C or D
 
+type A = (B, C) ~ D
+
 ---
 
 (compilation_unit
@@ -114,6 +134,12 @@ type A = B ! C or D
     (infix_type
       (infix_type (type_identifier) (operator_identifier) (type_identifier))
       (identifier)
+      (type_identifier)))
+  (type_definition
+    (type_identifier)
+    (infix_type
+      (tuple_type (type_identifier) (type_identifier))
+      (operator_identifier)
       (type_identifier))))
 
 

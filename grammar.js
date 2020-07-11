@@ -328,16 +328,6 @@ module.exports = grammar({
       optional(seq('=', field('default_value', $._expression)))
     ),
 
-    lazy_parameter_type: $ => seq(
-      '=>',
-      field('type', $._type)
-    ),
-
-    repeated_parameter_type: $ => seq(
-      field('type', $._type),
-      '*',
-    ),
-
     _block: $ => prec.left(seq(
       sep1($._semicolon, choice(
         $._expression,
@@ -362,7 +352,7 @@ module.exports = grammar({
       $._annotated_type,
     ),
 
-    // TODO: Make this a visible type, so that _type can be a supertpe.
+    // TODO: Make this a visible type, so that _type can be a supertype.
     _annotated_type: $ => prec.right(seq(
       $._simple_type,
       repeat($.annotation),
@@ -417,30 +407,35 @@ module.exports = grammar({
       field('selector', $._type_identifier),
     ),
 
-    function_type: $ => prec.right(-2, seq(
-      choice(
-        // Prefer parameter_types over a single tuple_type.
-        prec.dynamic(-1, $._annotated_type),
-        $.parameter_types,
-        $.compound_type,
-        $.infix_type,
-      ),
-      // Prefer function_type.parameter_types over infix_type.tuple_type.
-      prec.dynamic(1, '=>'),
+    function_type: $ => prec.right(seq(
+      field('parameter_types', $.parameter_types),
+      '=>',
       field('return_type', $._type)
     )),
-    ),
 
-    parameter_types: $ => seq(
-      '(',
-      commaSep($._param_type),
-      ')'
-    ),
+    // Deprioritize against typed_pattern._type.
+    parameter_types: $ => prec(-1, choice(
+      $._annotated_type,
+      // Prioritize a parenthesized param list over a single tuple_type.
+      prec.dynamic(1, seq('(', commaSep($._param_type), ')' )),
+      $.compound_type,
+      $.infix_type,
+    )),
 
     _param_type: $ => choice(
       $._type,
       $.lazy_parameter_type,
       $.repeated_parameter_type,
+    ),
+
+    lazy_parameter_type: $ => seq(
+      '=>',
+      field('type', $._type)
+    ),
+
+    repeated_parameter_type: $ => seq(
+      field('type', $._type),
+      '*',
     ),
 
     _type_identifier: $ => alias($.identifier, $.type_identifier),
