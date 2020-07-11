@@ -50,6 +50,8 @@ object Main {
   type A = (B, C) => D
 
   type A = (B, C) => (D, E)
+
+  type A = B => (D, E)
 }
 
 ---
@@ -65,6 +67,11 @@ object Main {
       (type_identifier)
       (function_type
         (parameter_types (type_identifier) (type_identifier))
+        (tuple_type (type_identifier) (type_identifier))))
+    (type_definition
+      (type_identifier)
+      (function_type
+        (type_identifier)
         (tuple_type (type_identifier) (type_identifier)))))))
 
 ==================================
@@ -202,3 +209,18 @@ type A = B[C]#D
     (projected_type
       (generic_type (type_identifier) (type_arguments (type_identifier)))
       (type_identifier))))
+
+==================================
+Complex types
+==================================
+
+type A = B with B1 with B2 ! C with C1
+
+---
+
+(compilation_unit
+  (type_definition (type_identifier)
+    (infix_type
+      (compound_type (type_identifier) (type_identifier) (type_identifier))
+      (operator_identifier)
+      (compound_type (type_identifier) (type_identifier)))))

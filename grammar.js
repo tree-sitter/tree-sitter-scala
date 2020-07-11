@@ -360,9 +360,9 @@ module.exports = grammar({
       $.compound_type,
       $.infix_type,
       $._annotated_type,
-      // TODO: annotation
     ),
 
+    // TODO: Make this a visible type, so that _type can be a supertpe.
     _annotated_type: $ => prec.right(seq(
       $._simple_type,
       repeat($.annotation),
@@ -372,7 +372,6 @@ module.exports = grammar({
       $.generic_type,
       $.projected_type,
       $.tuple_type,
-      // TODO: tuple type
       $.stable_type_identifier,
       $._type_identifier,
     ),
@@ -418,11 +417,18 @@ module.exports = grammar({
       field('selector', $._type_identifier),
     ),
 
-    function_type: $ => seq(
-      $.parameter_types,
-      // Resolve the tuple_type vs parameter_types conflict.
+    function_type: $ => prec.right(-2, seq(
+      choice(
+        // Prefer parameter_types over a single tuple_type.
+        prec.dynamic(-1, $._annotated_type),
+        $.parameter_types,
+        $.compound_type,
+        $.infix_type,
+      ),
+      // Prefer function_type.parameter_types over infix_type.tuple_type.
       prec.dynamic(1, '=>'),
       field('return_type', $._type)
+    )),
     ),
 
     parameter_types: $ => seq(
