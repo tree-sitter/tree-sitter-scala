@@ -475,16 +475,17 @@ module.exports = grammar({
       field('pattern', $._pattern)
     )),
 
-    alternative_pattern: $ => prec.left(seq(
-      $._pattern,
-      '|',
-      $._pattern
-    )),
-
     typed_pattern: $ => prec(-1, seq(
       field('pattern', $._pattern),
       ':',
       field('type', $._type)
+    )),
+
+    // TODO: Flatten this.
+    alternative_pattern: $ => prec.left(-2, seq(
+      $._pattern,
+      '|',
+      $._pattern
     )),
 
     tuple_pattern: $ => seq(
