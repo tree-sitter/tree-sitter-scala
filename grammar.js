@@ -553,13 +553,13 @@ module.exports = grammar({
       seq('{', repeat1($.case_clause), '}')
     ),
 
-    case_clause: $ => seq(
+    case_clause: $ => prec.left(seq(
       'case',
       field('pattern', $._pattern),
       optional($.guard),
       '=>',
-      field('body', $._block)
-    ),
+      field('body', optional($._block)),
+    )),
 
     guard: $ => seq(
       'if',
