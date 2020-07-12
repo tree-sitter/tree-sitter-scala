@@ -198,6 +198,7 @@ module.exports = grammar({
 
     template_body: $ => seq(
       '{',
+      // TODO: self type
       optional($._block),
       '}'
     ),
@@ -338,11 +339,11 @@ module.exports = grammar({
 
     block: $ => seq(
       '{',
-      // TODO: self type
       optional($._block),
       '}'
     ),
 
+    // ---------------------------------------------------------------
     // Types
 
     _type: $ => choice(
@@ -440,6 +441,7 @@ module.exports = grammar({
 
     _type_identifier: $ => alias($.identifier, $.type_identifier),
 
+    // ---------------------------------------------------------------
     // Patterns
 
     _pattern: $ => choice(
@@ -448,7 +450,6 @@ module.exports = grammar({
       $.tuple_pattern,
       $.case_class_pattern,
       $.infix_pattern,
-      $.parenthesized_pattern,
       $.alternative_pattern,
       $.typed_pattern,
       $.number,
@@ -495,12 +496,7 @@ module.exports = grammar({
       ')'
     ),
 
-    parenthesized_pattern: $ => seq(
-      '(',
-      $._pattern,
-      ')'
-    ),
-
+    // ---------------------------------------------------------------
     // Expressions
 
     _expression: $ => choice(
