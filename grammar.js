@@ -44,7 +44,7 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
-    [$.tuple_type, $.parameter_types],
+    [$.tuple_type, $.parameter_types]
   ],
 
   word: $ => $.identifier,
@@ -453,11 +453,7 @@ module.exports = grammar({
       $.infix_pattern,
       $.alternative_pattern,
       $.typed_pattern,
-      $.number,
-      $.boolean_literal,
-      $.character_literal,
-      $.symbol_literal,
-      $.string,
+      $.literal,
       $.wildcard
     ),
 
@@ -521,11 +517,7 @@ module.exports = grammar({
       $.case_block,
       $.block,
       $.identifier,
-      $.number,
-      $.boolean_literal,
-      $.character_literal,
-      $.symbol_literal,
-      $.string
+      $.literal
     ),
 
     if_expression: $ => prec.right(seq(
@@ -644,11 +636,61 @@ module.exports = grammar({
 
     operator_identifier: $ => /[^\s\w\(\)\[\]\{\}'"`\.;,]+/,
 
-    number: $ => /[\d\.]+/,
+    literal: $ => choice(
+      $.integer_literal,
+      $.floating_point_literal,
+      $.boolean_literal,
+      $.character_literal,
+      $.symbol_literal,
+      $.string
+    ),
+
+    integer_literal: $ => token(
+      seq(
+        optional(/[-]/),
+        choice(
+          /[\d]+/,
+          /0[xX][\da-fA-F]+/
+        ),
+        optional(/[lL]/)
+      )
+    ),
+
+    floating_point_literal: $ => token(
+      seq(
+        optional(/[-]/),
+        choice(
+          // digit {digit} ‘.’ digit {digit} [exponentPart] [floatType]
+          seq(
+            /[\d]+\.[\d]+/,
+            optional(/[eE][+-]?[\d]+/),
+            optional(/[dfDF]/)
+          ),
+          // ‘.’ digit {digit} [exponentPart] [floatType]
+          seq(
+            /\.[\d]+/,
+            optional(/[eE][+-]?[\d]+/),
+            optional(/[dfDF]/)
+          ),
+          // digit {digit} exponentPart [floatType]
+          seq(
+            /[\d]+/,
+            /[eE][+-]?[\d]+/,
+            optional(/[dfDF]/)
+          ),
+          // digit {digit} [exponentPart] floatType
+          seq(
+            /[\d]+/,
+            optional(/[eE][+-]?[\d]+/),
+            /[dfDF]/
+          )
+        )
+      )
+    ),
 
     boolean_literal: $ => choice('true', 'false'),
 
-   character_literal: $ => token(seq(
+    character_literal: $ => token(seq(
       '\'',
       optional(choice(
         seq('\\', choice(

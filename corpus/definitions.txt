@@ -30,7 +30,7 @@ package object d extends A {
     (identifier)
     (extends_clause (type_identifier))
     (template_body
-      (val_definition (identifier) (type_identifier) (string)))))
+      (val_definition (identifier) (type_identifier) (literal (string))))))
 
 ================================
 Imports
@@ -183,7 +183,7 @@ implicit final sealed class Point {
         (modifiers)
         (identifier)
         (parameters)
-        (number)))))
+        (literal (integer_literal))))))
 
 =======================================
 Trait definitions
@@ -260,11 +260,11 @@ class A {
     (template_body
       (val_definition
         (identifier)
-        (number))
+        (literal (integer_literal)))
       (val_definition
         (identifier)
         (type_identifier)
-        (string)))))
+        (literal (string))))))
 
 =======================================
 Variable declarations
@@ -306,7 +306,7 @@ class A {
       (var_definition
         (identifier)
         (type_identifier)
-        (number)))))
+        (literal (integer_literal))))))
 
 =======================================
 Type definitions
@@ -373,7 +373,7 @@ class A {
         (parameters
           (parameter (identifier) (type_identifier))
           (parameter (identifier) (type_identifier)))
-        (number))
+        (literal (integer_literal)))
       (function_definition
         (identifier)
         (type_parameters (identifier))
@@ -402,13 +402,13 @@ class A(val x: Int, val y: Int) {
       (class_parameter (identifier) (type_identifier)))
     (template_body
       (call_expression (identifier)
-        (arguments (infix_expression (identifier) (operator_identifier) (number)))))))
+        (arguments (infix_expression (identifier) (operator_identifier) (literal (integer_literal))))))))
 
 =======================================
 Optional parameters
 =======================================
 
-def mkLines(header: String, indented: Boolean = false, embraced: Boolean = false): String = {}
+def mkLines(header: String, indented: Boolean = false, repeated: Long = 0L): String = {}
 
 ---
 
@@ -417,6 +417,6 @@ def mkLines(header: String, indented: Boolean = false, embraced: Boolean = false
     (identifier)
     (parameters
       (parameter (identifier) (type_identifier))
-      (parameter (identifier) (type_identifier) (boolean_literal))
-      (parameter (identifier) (type_identifier) (boolean_literal)))
+      (parameter (identifier) (type_identifier) (literal (boolean_literal)))
+      (parameter (identifier) (type_identifier) (literal (integer_literal))))
     (type_identifier) (block)))
