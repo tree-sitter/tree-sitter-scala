@@ -21,7 +21,7 @@ class C {
         (parameters)
         (block
           (call_expression (identifier) (arguments))
-          (call_expression (identifier) (arguments (literal (integer_literal))))
+          (call_expression (identifier) (arguments (integer_literal)))
           (call_expression (identifier) (arguments (identifier) (identifier))))))))
 
 ===============================
@@ -79,7 +79,7 @@ class C {
         (parameters)
         (block
           (assignment_expression (identifier) (identifier))
-          (assignment_expression (call_expression (identifier) (arguments (literal (integer_literal)))) (identifier))
+          (assignment_expression (call_expression (identifier) (arguments (integer_literal))) (identifier))
         )
       )
     )
@@ -169,7 +169,7 @@ def main() {
     (block
       (try_expression
         (call_expression (identifier) (arguments))
-        (finally_clause (infix_expression (identifier) (operator_identifier) (literal (integer_literal)))))
+        (finally_clause (infix_expression (identifier) (operator_identifier) (integer_literal))))
       (try_expression
         (block (call_expression (identifier) (arguments)))
         (catch_clause (case_block (case_clause
@@ -216,11 +216,11 @@ def matchTest(x: Int): String = x match {
     (parameters (parameter (identifier) (type_identifier)))
     (type_identifier)
     (match_expression (identifier) (case_block
-      (case_clause (literal (integer_literal)))
-      (case_clause (literal (integer_literal)) (literal (string)) (literal (string)))
-      (case_clause (literal (integer_literal)) (literal (string)))
-      (case_clause (literal (integer_literal)) (block (literal (string))))
-      (case_clause (wildcard) (val_definition (identifier) (literal (string))) (literal (string)))))))
+      (case_clause (integer_literal))
+      (case_clause (integer_literal) (string) (string))
+      (case_clause (integer_literal) (string))
+      (case_clause (integer_literal) (block (string)))
+      (case_clause (wildcard) (val_definition (identifier) (string)) (string))))))
 
 ===============================
 Field expressions

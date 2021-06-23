@@ -8,7 +8,7 @@ Classes
 
 (compilation_unit
   (class_definition
-    (annotation (type_identifier) (arguments (literal (string)) (literal (string))))
+    (annotation (type_identifier) (arguments (string) (string)))
     (identifier)
     (template_body)))
 
@@ -43,8 +43,8 @@ class A(x: String) {
         (annotation (type_identifier) (arguments (identifier)))
         (annotation (type_identifier)
           (arguments
-            (assignment_expression (identifier) (literal (string)))
-            (assignment_expression (identifier) (literal (string)))))
+            (assignment_expression (identifier) (string))
+            (assignment_expression (identifier) (string))))
         (identifier) (parameters) (block)))))
 
 ================================

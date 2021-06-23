@@ -41,10 +41,11 @@ module.exports = grammar({
     $._definition,
     $._type_identifier,
     $._param_type,
+    $.literal,
   ],
 
   conflicts: $ => [
-    [$.tuple_type, $.parameter_types]
+    [$.tuple_type, $.parameter_types],
   ],
 
   word: $ => $.identifier,

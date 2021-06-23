@@ -13,8 +13,8 @@ val multiLineString = """
 ---
 
 (compilation_unit
-  (val_definition (identifier) (literal (string)))
-  (val_definition (identifier) (literal (string))))
+  (val_definition (identifier) (string))
+  (val_definition (identifier) (string)))
 
 ==========================
 Interpolated strings
@@ -71,14 +71,14 @@ val l4 = 0XA03L
 ---
 
 (compilation_unit
-  (val_definition (identifier) (literal (integer_literal)))
-  (val_definition (identifier) (literal (integer_literal)))
-  (val_definition (identifier) (literal (integer_literal)))
-  (val_definition (identifier) (literal (integer_literal)))
-  (val_definition (identifier) (literal (integer_literal)))
-  (val_definition (identifier) (literal (integer_literal)))
-  (val_definition (identifier) (literal (integer_literal)))
-  (val_definition (identifier) (literal (integer_literal)))
+  (val_definition (identifier) (integer_literal))
+  (val_definition (identifier) (integer_literal))
+  (val_definition (identifier) (integer_literal))
+  (val_definition (identifier) (integer_literal))
+  (val_definition (identifier) (integer_literal))
+  (val_definition (identifier) (integer_literal))
+  (val_definition (identifier) (integer_literal))
+  (val_definition (identifier) (integer_literal))
 )
 
 ==========================
@@ -93,10 +93,10 @@ val d1 = .314D
 ---
 
 (compilation_unit
-  (val_definition (identifier) (literal (floating_point_literal)))
-  (val_definition (identifier) (literal (floating_point_literal)))
-  (val_definition (identifier) (literal (floating_point_literal)))
-  (val_definition (identifier) (literal (floating_point_literal)))
+  (val_definition (identifier) (floating_point_literal))
+  (val_definition (identifier) (floating_point_literal))
+  (val_definition (identifier) (floating_point_literal))
+  (val_definition (identifier) (floating_point_literal))
   )
 
 ==========================
@@ -110,17 +110,17 @@ def foo(a: Boolean = false) = a && true
 ---
 
 (compilation_unit
-  (val_definition (identifier) (literal (boolean_literal)))
+  (val_definition (identifier) (boolean_literal))
   (function_definition
     (identifier)
     (parameters (parameter
       (identifier)
       (type_identifier)
-      (literal (boolean_literal))))
+      (boolean_literal)))
     (infix_expression
       (identifier)
       (operator_identifier)
-      (literal (boolean_literal)))))
+      (boolean_literal))))
 
 ==========================
 Character literals
@@ -137,19 +137,19 @@ def foo(a: Char = 'c') = a + 'd'
 ---
 
 (compilation_unit
-  (val_definition (identifier) (literal (character_literal)))
-  (val_definition (identifier) (literal (character_literal)))
-  (val_definition (identifier) (literal (character_literal)))
+  (val_definition (identifier) (character_literal))
+  (val_definition (identifier) (character_literal))
+  (val_definition (identifier) (character_literal))
   (function_definition
     (identifier)
     (parameters (parameter
       (identifier)
       (type_identifier)
-      (literal (character_literal))))
+      (character_literal)))
     (infix_expression
       (identifier)
       (operator_identifier)
-      (literal (character_literal)))))
+      (character_literal))))
 
 ==========================
 Symbol literals
@@ -162,5 +162,5 @@ val myOtherSymbol = 'thing
 ---
 
 (compilation_unit
-  (val_definition (identifier) (literal (symbol_literal)))
-  (val_definition (identifier) (literal (symbol_literal))))
+  (val_definition (identifier) (symbol_literal))
+  (val_definition (identifier) (symbol_literal)))
