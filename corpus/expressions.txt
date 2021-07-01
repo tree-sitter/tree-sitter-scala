@@ -331,3 +331,32 @@ class C {
             (prefix_expression (identifier))
             (operator_identifier)
             (identifier)))))))
+
+===============================
+Postfix expressions
+===============================
+
+object O {
+  val v = "value" toUpperCase
+  val c = 1 + 2 toString
+}
+
+---
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (postfix_expression (string) (identifier)))
+      (val_definition
+        (identifier)
+        (postfix_expression
+          (infix_expression (integer_literal) (operator_identifier) (integer_literal))
+          (identifier)
+          )
+        )
+      )
+    )
+  )

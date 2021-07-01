@@ -1,11 +1,12 @@
 const PREC = {
   assign: 1,
-  infix: 2,
-  new: 3,
-  prefix: 3,
-  compound: 3,
-  call: 4,
-  field: 4,
+  postfix: 2,
+  infix: 3,
+  new: 4,
+  prefix: 4,
+  compound: 4,
+  call: 5,
+  field: 5,
 }
 
 module.exports = grammar({
@@ -512,6 +513,7 @@ module.exports = grammar({
       $.field_expression,
       $.instance_expression,
       // TODO: postfix and ascription
+      $.postfix_expression,
       $.infix_expression,
       $.prefix_expression,
       $.tuple_expression,
@@ -593,6 +595,13 @@ module.exports = grammar({
       'new',
       $._expression
     )),
+
+    postfix_expression: $ => prec.left(PREC.postfix,
+      seq(
+        $._expression,
+        $.identifier
+      )
+    ),
 
     infix_expression: $ => prec.left(PREC.infix, seq(
       field('left', $._expression),
