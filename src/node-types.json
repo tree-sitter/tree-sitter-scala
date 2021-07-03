@@ -126,6 +126,10 @@
         "named": true
       },
       {
+        "type": "null_literal",
+        "named": true
+      },
+      {
         "type": "parenthesized_expression",
         "named": true
       },
@@ -189,6 +193,10 @@
       },
       {
         "type": "integer_literal",
+        "named": true
+      },
+      {
+        "type": "null_literal",
         "named": true
       },
       {
@@ -3262,6 +3270,10 @@
   {
     "type": "new",
     "named": false
+  },
+  {
+    "type": "null_literal",
+    "named": true
   },
   {
     "type": "object",

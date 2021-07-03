@@ -3352,6 +3352,10 @@
         {
           "type": "SYMBOL",
           "name": "string"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "null_literal"
         }
       ]
     },
@@ -3767,6 +3771,13 @@
           "name": "_automatic_semicolon"
         }
       ]
+    },
+    "null_literal": {
+      "type": "TOKEN",
+      "content": {
+        "type": "STRING",
+        "value": "null"
+      }
     },
     "comment": {
       "type": "TOKEN",

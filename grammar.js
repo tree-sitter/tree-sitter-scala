@@ -643,7 +643,8 @@ module.exports = grammar({
       $.boolean_literal,
       $.character_literal,
       $.symbol_literal,
-      $.string
+      $.string,
+      $.null_literal
     ),
 
     integer_literal: $ => token(
@@ -750,6 +751,8 @@ module.exports = grammar({
       ';',
       $._automatic_semicolon
     ),
+
+    null_literal: $ => token('null'),
 
     comment: $ => token(choice(
       seq('//', /.*/),
