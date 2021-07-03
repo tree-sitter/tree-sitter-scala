@@ -150,6 +150,10 @@
         "named": true
       },
       {
+        "type": "throw_expression",
+        "named": true
+      },
+      {
         "type": "try_expression",
         "named": true
       },
@@ -2317,6 +2321,21 @@
     }
   },
   {
+    "type": "throw_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "trait_definition",
     "named": true,
     "fields": {
@@ -3338,6 +3357,10 @@
   {
     "type": "symbol_literal",
     "named": true
+  },
+  {
+    "type": "throw",
+    "named": false
   },
   {
     "type": "trait",

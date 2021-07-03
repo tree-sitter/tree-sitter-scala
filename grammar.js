@@ -520,7 +520,8 @@ module.exports = grammar({
       $.identifier,
       $.literal,
       $.unit,
-      $.return_expression
+      $.return_expression,
+      $.throw_expression
     ),
 
     if_expression: $ => prec.right(seq(
@@ -759,6 +760,8 @@ module.exports = grammar({
     unit: $ => seq('(', ')'),
 
     return_expression: $ => prec.left(seq('return', optional($._expression))),
+
+    throw_expression: $ => prec.left(seq('throw', $._expression)),
 
     comment: $ => token(choice(
       seq('//', /.*/),

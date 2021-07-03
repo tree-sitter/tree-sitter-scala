@@ -2689,6 +2689,10 @@
         {
           "type": "SYMBOL",
           "name": "return_expression"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "throw_expression"
         }
       ]
     },
@@ -3821,6 +3825,23 @@
                 "type": "BLANK"
               }
             ]
+          }
+        ]
+      }
+    },
+    "throw_expression": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "throw"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_expression"
           }
         ]
       }
