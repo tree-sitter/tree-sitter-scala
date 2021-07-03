@@ -331,3 +331,17 @@ class C {
             (prefix_expression (identifier))
             (operator_identifier)
             (identifier)))))))
+
+===============================
+Unit expressions
+===============================
+
+val x = ()
+def f(): Unit = { (   
+); }
+
+---
+(compilation_unit
+  (val_definition (identifier) (unit))
+  (function_definition (identifier) (parameters) (type_identifier) (block (unit)))
+  )

@@ -2681,6 +2681,10 @@
         {
           "type": "SYMBOL",
           "name": "literal"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "unit"
         }
       ]
     },
@@ -3778,6 +3782,19 @@
         "type": "STRING",
         "value": "null"
       }
+    },
+    "unit": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        }
+      ]
     },
     "comment": {
       "type": "TOKEN",

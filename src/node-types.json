@@ -152,6 +152,10 @@
       {
         "type": "tuple_expression",
         "named": true
+      },
+      {
+        "type": "unit",
+        "named": true
       }
     ]
   },
@@ -2702,6 +2706,11 @@
         ]
       }
     }
+  },
+  {
+    "type": "unit",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "upper_bound",
