@@ -138,6 +138,10 @@
         "named": true
       },
       {
+        "type": "return_expression",
+        "named": true
+      },
+      {
         "type": "string",
         "named": true
       },
@@ -2232,6 +2236,21 @@
     }
   },
   {
+    "type": "return_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "stable_identifier",
     "named": true,
     "fields": {},
@@ -3306,6 +3325,10 @@
   },
   {
     "type": "protected",
+    "named": false
+  },
+  {
+    "type": "return",
     "named": false
   },
   {

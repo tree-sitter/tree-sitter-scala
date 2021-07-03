@@ -519,7 +519,8 @@ module.exports = grammar({
       $.block,
       $.identifier,
       $.literal,
-      $.unit
+      $.unit,
+      $.return_expression
     ),
 
     if_expression: $ => prec.right(seq(
@@ -756,6 +757,8 @@ module.exports = grammar({
     null_literal: $ => token('null'),
 
     unit: $ => seq('(', ')'),
+
+    return_expression: $ => prec.left(seq('return', optional($._expression))),
 
     comment: $ => token(choice(
       seq('//', /.*/),

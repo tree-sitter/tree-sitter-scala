@@ -2685,6 +2685,10 @@
         {
           "type": "SYMBOL",
           "name": "unit"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "return_expression"
         }
       ]
     },
@@ -3795,6 +3799,31 @@
           "value": ")"
         }
       ]
+    },
+    "return_expression": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "return"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "_expression"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          }
+        ]
+      }
     },
     "comment": {
       "type": "TOKEN",
