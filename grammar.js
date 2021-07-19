@@ -755,7 +755,7 @@ module.exports = grammar({
       $._automatic_semicolon
     ),
 
-    null_literal: $ => token('null'),
+    null_literal: $ => 'null',
 
     unit: $ => seq('(', ')'),
 

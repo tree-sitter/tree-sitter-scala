@@ -3785,11 +3785,8 @@
       ]
     },
     "null_literal": {
-      "type": "TOKEN",
-      "content": {
-        "type": "STRING",
-        "value": "null"
-      }
+      "type": "STRING",
+      "value": "null"
     },
     "unit": {
       "type": "SEQ",
