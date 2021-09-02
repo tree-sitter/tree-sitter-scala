@@ -11,7 +11,8 @@ enum TokenType {
   INTERPOLATED_MULTILINE_STRING_END,
   ELSE,
   CATCH,
-  FINALLY
+  FINALLY,
+  EXTENDS,
 };
 
 void *tree_sitter_scala_external_scanner_create() { return NULL; }
@@ -75,6 +76,10 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   }
 
   if (valid_symbols[AUTOMATIC_SEMICOLON] && newline_count > 0) {
+    // NOTE: When there's a dot after a new line it could be a multi-line field
+    // expression, in which case we don't recognize it as an automatic semicolon.
+    if (lexer->lookahead == '.') return false;
+
     lexer->mark_end(lexer);
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
 
@@ -139,6 +144,25 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       if (lexer->lookahead != 'l') return true;
       advance(lexer);
       if (lexer->lookahead != 'y') return true;
+      advance(lexer);
+      if (iswalpha(lexer->lookahead)) return true;
+      return false;
+    }
+
+    if (valid_symbols[EXTENDS]) {
+      if (lexer->lookahead != 'e') return true;
+      advance(lexer);
+      if (lexer->lookahead != 'x') return true;
+      advance(lexer);
+      if (lexer->lookahead != 't') return true;
+      advance(lexer);
+      if (lexer->lookahead != 'e') return true;
+      advance(lexer);
+      if (lexer->lookahead != 'n') return true;
+      advance(lexer);
+      if (lexer->lookahead != 'd') return true;
+      advance(lexer);
+      if (lexer->lookahead != 's') return true;
       advance(lexer);
       if (iswalpha(lexer->lookahead)) return true;
       return false;
