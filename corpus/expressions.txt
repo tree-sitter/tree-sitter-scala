@@ -7,6 +7,9 @@ class C {
     a()
     a(123)
     a(b, c)
+    a(b, c)(d, e, f)
+    a { b }
+    a { b } (c, d)
   }
 }
 
@@ -22,7 +25,14 @@ class C {
         (block
           (call_expression (identifier) (arguments))
           (call_expression (identifier) (arguments (integer_literal)))
-          (call_expression (identifier) (arguments (identifier) (identifier))))))))
+          (call_expression (identifier) (arguments (identifier) (identifier)))
+          (call_expression
+            (call_expression (identifier) (arguments (identifier) (identifier)))
+            (arguments (identifier) (identifier) (identifier)))
+          (call_expression (identifier) (arguments (block (identifier))))
+          (call_expression
+            (call_expression (identifier) (arguments (block (identifier))))
+            (arguments (identifier) (identifier))))))))
 
 ===============================
 Generic functions

@@ -381,20 +381,6 @@
           }
         ]
       },
-      "body": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "block",
-            "named": true
-          },
-          {
-            "type": "case_block",
-            "named": true
-          }
-        ]
-      },
       "function": {
         "multiple": false,
         "required": true,
@@ -536,6 +522,21 @@
       "types": [
         {
           "type": "case_block",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "class_arguments",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "expression",
           "named": true
         }
       ]
@@ -1053,7 +1054,7 @@
       "required": false,
       "types": [
         {
-          "type": "arguments",
+          "type": "class_arguments",
           "named": true
         }
       ]

@@ -297,7 +297,7 @@ module.exports = grammar({
     extends_clause: $ => seq(
       'extends',
       field('type', $._type),
-      optional($.arguments)
+      optional($.class_arguments)
     ),
 
     // TODO: Allow only the last parameter list to be implicit.
@@ -585,8 +585,7 @@ module.exports = grammar({
 
     call_expression: $ => prec(PREC.call, seq(
       field('function', $.expression),
-      field('arguments', $.arguments),
-      field('body', optional(choice($.block, $.case_block)))
+      field('arguments', $.arguments)
     )),
 
     field_expression: $ => prec(PREC.field, seq(
@@ -630,11 +629,12 @@ module.exports = grammar({
       ']'
     ),
 
-    arguments: $ => seq(
-      '(',
-      commaSep($.expression),
-      ')'
+    arguments: $ => choice(
+      seq('(', commaSep($.expression), ')'),
+      $.block,
+      $.case_block
     ),
+    class_arguments: $ => seq('(', commaSep($.expression), ')'), // class args cannot be bare block expression
 
     // TODO: Include operators.
     identifier: $ => /[a-zA-Z_]\w*/,
@@ -747,7 +747,7 @@ module.exports = grammar({
       )
     ),
 
-    string :$ => 
+    string :$ =>
       choice(
         $._simple_string,
         $._simple_multiline_string
