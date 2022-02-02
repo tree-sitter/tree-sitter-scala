@@ -208,6 +208,14 @@
         "named": true
       },
       {
+        "type": "macro_quote_expression",
+        "named": true
+      },
+      {
+        "type": "macro_splice_expression",
+        "named": true
+      },
+      {
         "type": "match_expression",
         "named": true
       },
@@ -2123,6 +2131,36 @@
     }
   },
   {
+    "type": "macro_quote_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "macro_splice_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "match_expression",
     "named": true,
     "fields": {
@@ -3580,6 +3618,14 @@
   },
   {
     "type": "$",
+    "named": false
+  },
+  {
+    "type": "${",
+    "named": false
+  },
+  {
+    "type": "'{",
     "named": false
   },
   {

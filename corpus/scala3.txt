@@ -1,0 +1,23 @@
+===================================
+Macro expressions
+===================================
+
+def string(arg: Int) = 
+  ${ '{ ${ yesh('arg) } } }
+
+---
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (macro_splice_expression
+      (macro_quote_expression
+        (macro_splice_expression
+          (call_expression
+            (identifier)
+            (arguments
+              (symbol_literal))))))))
