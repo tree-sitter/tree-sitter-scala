@@ -1,0 +1,22 @@
+===================================
+ Backquoted identifiers
+ ===================================
+
+ object Main {
+   val `test-this` = 1
+
+   `my!object`.`method-call`(`test-this`)
+ }
+
+ ---
+
+ (compilation_unit
+   (object_definition (identifier) (template_body
+     (val_definition
+       (identifier) (integer_literal))
+     (call_expression 
+       (field_expression (identifier) (identifier))
+       (arguments (identifier))
+     )
+   )))
+

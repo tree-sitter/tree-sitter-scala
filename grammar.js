@@ -59,7 +59,7 @@ module.exports = grammar({
     [$.binding, $.expression],
   ],
 
-  word: $ => $.identifier,
+  word: $ => $._plainid,
 
   rules: {
     compilation_unit: $ => repeat($._top_level_definition),
@@ -708,7 +708,9 @@ module.exports = grammar({
     ),
 
     // TODO: Include operators.
-    identifier: $ => /[a-zA-Z_]\w*/,
+    _plainid: $ => /[a-zA-Z_]\w*/,
+    _backquoted_id: $=> /`[^\n`]+`/,
+    identifier: $ => choice($._plainid, $._backquoted_id),
 
     wildcard: $ => '_',
 
