@@ -3753,6 +3753,10 @@
     "named": false
   },
   {
+    "type": "end",
+    "named": false
+  },
+  {
     "type": "extends",
     "named": false
   },

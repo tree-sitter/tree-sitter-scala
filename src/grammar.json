@@ -963,29 +963,80 @@
       ]
     },
     "template_body": {
-      "type": "SEQ",
+      "type": "CHOICE",
       "members": [
         {
-          "type": "STRING",
-          "value": "{"
+          "type": "PREC_LEFT",
+          "value": 0,
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": ":"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_block"
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_end_signifier"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
-          "type": "CHOICE",
+          "type": "SEQ",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "_block"
+              "type": "STRING",
+              "value": "{"
             },
             {
-              "type": "BLANK"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_block"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "}"
             }
           ]
-        },
-        {
-          "type": "STRING",
-          "value": "}"
         }
       ]
+    },
+    "_end_signifier": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "end"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_end_identifier"
+          }
+        ]
+      }
     },
     "annotation": {
       "type": "PREC_RIGHT",
@@ -3749,6 +3800,10 @@
     "identifier": {
       "type": "PATTERN",
       "value": "[a-zA-Z_]\\w*"
+    },
+    "_end_identifier": {
+      "type": "PATTERN",
+      "value": "(end)?[a-zA-Z_]\\w*"
     },
     "wildcard": {
       "type": "STRING",
