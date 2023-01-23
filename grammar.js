@@ -6,6 +6,7 @@ const PREC = {
   while: 2,
   binding_def: 3,
   assign: 3,
+  case: 3,
   stable_id: 4,
   unit: 4,
   ascription: 4,
@@ -210,7 +211,7 @@ module.exports = grammar({
 
     namespace_selectors: $ => seq(
       '{',
-        commaSep1(choice(
+        trailingCommaSep1(choice(
           $._namespace_given_by_type,
           $.namespace_wildcard,
           $.identifier,
@@ -279,7 +280,7 @@ module.exports = grammar({
     // make that distinction.
     type_parameters: $ => seq(
       '[',
-      commaSep1($._variant_type_parameter),
+      trailingCommaSep1($._variant_type_parameter),
       ']'
     ),
 
@@ -599,14 +600,14 @@ module.exports = grammar({
     class_parameters: $ => prec(1, seq(
       '(',
       optional(choice('implicit', 'using')),
-      commaSep($.class_parameter),
+      trailingCommaSep($.class_parameter),
       ')'
     )),
 
     parameters: $ => seq(
       '(',
       optional(choice('implicit', 'using')),
-      commaSep($.parameter),
+      trailingCommaSep($.parameter),
       ')'
     ),
 
@@ -704,7 +705,7 @@ module.exports = grammar({
 
     tuple_type: $ => seq(
       '(',
-      commaSep1($._type),
+      trailingCommaSep1($._type),
       ')',
     ),
 
@@ -747,7 +748,7 @@ module.exports = grammar({
     parameter_types: $ => prec(-1, choice(
       $._annotated_type,
       // Prioritize a parenthesized param list over a single tuple_type.
-      prec.dynamic(1, seq('(', commaSep($._param_type), ')' )),
+      prec.dynamic(1, seq('(', trailingCommaSep($._param_type), ')' )),
       $.compound_type,
       $.infix_type,
     )),
@@ -776,6 +777,7 @@ module.exports = grammar({
     _pattern: $ => choice(
       $._identifier,
       $.stable_identifier,
+      $.interpolated_string_expression,
       $.capture_pattern,
       $.tuple_pattern,
       $.case_class_pattern,
@@ -790,7 +792,7 @@ module.exports = grammar({
     case_class_pattern: $ => seq(
       field('type', choice($._type_identifier, $.stable_type_identifier)),
       '(',
-      field('pattern', commaSep($._pattern)),
+      field('pattern', trailingCommaSep($._pattern)),
       ')'
     ),
 
@@ -939,7 +941,7 @@ module.exports = grammar({
 
     bindings: $ => seq(
       '(',
-      commaSep($.binding),
+      trailingCommaSep($.binding),
       ')',
     ),
 
@@ -948,18 +950,23 @@ module.exports = grammar({
       seq('{', repeat1($.case_clause), '}'),
     ),
 
-    case_clause: $ => prec.left(seq(
+    case_clause: $ => prec.left(PREC.control, seq(
       'case',
-      field('pattern', $._pattern),
-      optional($.guard),
-      '=>',
+      $._case_pattern,
       field('body', optional($._block)),
     )),
 
-    guard: $ => seq(
+    // This is created to capture guard from the right
+    _case_pattern: $ => prec.right(10, seq(
+      field('pattern', $._pattern),
+      optional($.guard),
+      '=>',
+    )),
+
+    guard: $ => prec.left(PREC.control, seq(
       'if',
       field('condition', $._postfix_expression_choice)
-    ),
+    )),
 
     assignment_expression: $ => prec.right(PREC.assign, seq(
       field('left', choice(
@@ -1098,6 +1105,7 @@ module.exports = grammar({
       '(',
       $.expression,
       repeat1(seq(',', $.expression)),
+      optional(','),
       ')'
     ),
 
@@ -1109,13 +1117,13 @@ module.exports = grammar({
 
     type_arguments: $ => seq(
       '[',
-      commaSep1($._type),
+      trailingCommaSep1($._type),
       ']'
     ),
 
     arguments: $ => seq(
       '(',
-      commaSep($.expression),
+      trailingCommaSep($.expression),
       ')'
     ),
 
@@ -1281,7 +1289,7 @@ module.exports = grammar({
     )),
 
     interpolated_string_expression: $ => seq(
-      $.identifier,
+      field('interpolator', $.identifier),
       $.interpolated_string
     ),
 
@@ -1310,7 +1318,7 @@ module.exports = grammar({
       )
     ),
 
-    string :$ =>
+    string: $ =>
       choice(
         $._simple_string,
         $._simple_multiline_string
@@ -1426,6 +1434,18 @@ function commaSep(rule) {
 
 function commaSep1(rule) {
   return sep1(',', rule)
+}
+
+function trailingCommaSep(rule) {
+  return optional(trailingCommaSep1(rule))
+}
+
+function trailingCommaSep1(rule) {
+  return trailingSep1(',', rule)
+}
+
+function trailingSep1(delimiter, rule) {
+  return seq(sep1(delimiter, rule), optional(delimiter))
 }
 
 function sep1(delimiter, rule) {

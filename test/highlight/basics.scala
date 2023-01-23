@@ -1,3 +1,7 @@
+import java.time.Instant
+//^include
+//     ^namespace
+//               ^type
 object Hello {
 // ^ keyword 
 //       ^ type
@@ -15,6 +19,10 @@ object Hello {
 //        ^keyword.operator
 //            ^type
 
+  var mutation = "mutant"
+//  ^keyword
+//    ^variable
+
   trait Test {
 // ^ keyword 
 //       ^ type
@@ -24,6 +32,13 @@ object Hello {
 //                                  ^type    
 //        ^method
 //                             ^parameter 
+  
+  val anonFun: Int => Int = (a: Int) => a
+//      ^variable
+//             ^type
+//                 ^operator
+//                    ^type
+//                           ^parameter
   }
 
   protected abstract class Bla(test: String)
@@ -42,7 +57,7 @@ object Hello {
 // ^ keyword
 //      ^ type
     self: X =>
-//  ^constant
+//  ^type
 //        ^type
   }
 
@@ -54,5 +69,9 @@ object Hello {
   type A = B[({ type f[x] = M[S, x] })#f]
 //               ^keyword
 //                   ^type.definition
+
+  val hello = c"some $stuff"
+//            ^function.call
+//                   ^punctuation.special
 }
 
