@@ -101,7 +101,7 @@ jobs:
       - name: copy nvim-treesitter queries
         if: ${{ runner.os == 'Linux' }}
         shell: bash
-        run: cp ./nvim_treesitter/queries/scala/*.scm ./queries/scala/
+        run: cp ./nvim_treesitter/queries/scala/*.scm ./queries/
 
       - name: Check if queries are out of sync with nvim-treesitter
         if: ${{ runner.os == 'Linux' }}
