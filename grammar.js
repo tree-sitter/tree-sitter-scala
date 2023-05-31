@@ -1,7 +1,6 @@
 const PREC = {
   control: 1,
   stable_type_id: 2,
-  lambda: 2,
   binding_decl: 2,
   while: 2,
   binding_def: 3,
@@ -18,7 +17,6 @@ const PREC = {
   compound: 7,
   call: 8,
   field: 8,
-  end_marker: 9,
   macro: 10,
   binding: 10,
 }
@@ -28,7 +26,8 @@ module.exports = grammar({
 
   extras: $ => [
     /\s/,
-    $.comment
+    $.comment,
+    $.block_comment,
   ],
 
   supertypes: $ => [
@@ -63,6 +62,13 @@ module.exports = grammar({
     $.literal,
   ],
 
+  // Doc: https://tree-sitter.github.io/tree-sitter/creating-parsers, search "precedences"
+  // These names can be used in the prec functions to define precedence relative only to other names in the array, rather than globally. 
+  precedences: $ => [
+    ['mod', 'soft_id'], 
+    ['end', 'soft_id'],
+  ],
+
   conflicts: $ => [
     [$.tuple_type, $.parameter_types],
     [$.binding, $._simple_expression],
@@ -74,20 +80,36 @@ module.exports = grammar({
     [$._indentable_expression, $.do_while_expression],
     [$.if_expression],
     [$.match_expression],
+    [$._function_constructor, $._type_identifier],
     [$._type_identifier, $.identifier],
     [$.instance_expression],
+    // In case of: 'extension'  _indent  '{'  'case'  operator_identifier  'if'  operator_identifier  •  '=>'  …
+    // we treat `operator_identifier` as `simple_expression`
+    [$._simple_expression, $.lambda_expression],
+    // 'package'  package_identifier  '{'  operator_identifier  •  ':'  …
+    [$.self_type, $._simple_expression],
+    // 'package'  package_identifier  '{'  operator_identifier  '=>'  •  'enum'  …
+    [$.self_type, $.lambda_expression],
+    // 'class'  _class_constructor  •  _automatic_semicolon  …
+    [$._class_definition],
+    // 'class'  operator_identifier  •  _automatic_semicolon  …
+    [$._class_constructor],
+    // 'enum'  _class_constructor  '{'  'case'  operator_identifier  _full_enum_def_repeat1  •  _automatic_semicolon  …
+    [$._full_enum_def],
   ],
 
   word: $ => $._alpha_identifier,
 
   rules: {
-    compilation_unit: $ => repeat($._top_level_definition),
+    // TopStats          ::=  TopStat {semi TopStat}
+    compilation_unit: $ => optional(trailingSep1($._semicolon, $._top_level_definition)),
 
     _top_level_definition: $ => choice(
       $.package_clause,
       $.package_object,
       $._definition,
       $._end_marker,
+      $.expression,
     ),
 
     _definition: $ => choice(
@@ -109,6 +131,7 @@ module.exports = grammar({
     ),
 
     enum_definition: $ => seq(
+      repeat($.annotation),
       'enum',
       $._class_constructor,
       field('extend', optional($.extends_clause)),
@@ -144,6 +167,7 @@ module.exports = grammar({
     ),
 
     enum_case_definitions: $ => seq(
+      repeat($.annotation),
       'case',
       choice(
         commaSep1($.simple_enum_case),
@@ -151,7 +175,7 @@ module.exports = grammar({
       )
     ),
 
-    simple_enum_case: $ => seq(field('name', $._identifier), field('extend', optional($.extends_clause))),
+    simple_enum_case: $ => prec.left(seq(field('name', $._identifier), field('extend', optional($.extends_clause)))),
 
     full_enum_case: $ => seq(field('name', $._identifier), $._full_enum_def),
 
@@ -161,16 +185,15 @@ module.exports = grammar({
       field('extend', optional($.extends_clause))
     ),
 
-    package_clause: $ => seq(
+    package_clause: $ => prec.right(seq(
       'package',
       field('name', $.package_identifier),
-      optional($._semicolon),
       // This is slightly more permissive than the EBNF in that it allows any
       // kind of delcaration inside of the package blocks. As we're more
       // concerned with the structure rather than the validity of the program
       // we'll allow it.
       field('body', optional($.template_body))
-    ),
+    )),
 
     package_identifier: $ => prec.right(sep1(
       '.', $._identifier
@@ -194,7 +217,7 @@ module.exports = grammar({
 
 
     _namespace_expression: $ => prec.left(seq(
-      field('path', sep1('.', $.identifier)),
+      field('path', sep1('.', $._identifier)),
       optional(seq(
         '.',
         choice(
@@ -219,7 +242,7 @@ module.exports = grammar({
         trailingCommaSep1(choice(
           $._namespace_given_by_type,
           $.namespace_wildcard,
-          $.identifier,
+          $._identifier,
           $.arrow_renamed_identifier,
           $.as_renamed_identifier
         )),
@@ -230,15 +253,15 @@ module.exports = grammar({
     _import_selectors: $ => alias($.namespace_selectors, $.import_selectors),
 
     arrow_renamed_identifier: $ => seq(
-      field('name', $.identifier),
+      field('name', $._identifier),
       '=>',
-      field('alias', choice($.identifier, $.wildcard))
+      field('alias', choice($._identifier, $.wildcard))
     ),
 
     as_renamed_identifier: $ => seq(
-      field('name', $.identifier),
+      field('name', $._identifier),
       'as',
-      field('alias', choice($.identifier, $.wildcard))
+      field('alias', choice($._identifier, $.wildcard))
     ),
 
     object_definition: $ => seq(
@@ -252,30 +275,41 @@ module.exports = grammar({
     _object_definition: $ => prec.left(seq(
       field('name', $._identifier),
       field('extend', optional($.extends_clause)),
-      field('body', optional($.template_body)),
+      field('derive', optional($.derives_clause)),
+      field('body', optional($._definition_body)),
     )),
 
-    class_definition: $ => prec.left(seq(
+    class_definition: $ => seq(
       repeat($.annotation),
       optional($.modifiers),
       optional('case'),
       'class',
+      $._class_definition,
+    ),
+
+    _class_definition: $ => seq(
       $._class_constructor,
       field('extend', optional($.extends_clause)),
-      field('body', optional($.template_body))
-    )),
+      field('derive', optional($.derives_clause)),
+      optional($._definition_body),
+    ),
+
+    _definition_body: $ => seq(
+      optional($._automatic_semicolon),
+      field('body', $.template_body)
+    ),
 
     /**
      * ClassConstr       ::=  [ClsTypeParamClause] [ConstrMods] ClsParamClauses
      * ConstrMods        ::=  {Annotation} [AccessModifier]
      */
-    _class_constructor: $ => prec.right(seq(
+    _class_constructor: $ => seq(
       field('name', $._identifier),
       field('type_parameters', optional($.type_parameters)),
       optional($.annotation),
       optional($.access_modifier),
       field('class_parameters', repeat($.class_parameters)),
-    )),
+    ),
 
     trait_definition: $ => prec.left(seq(
       repeat($.annotation),
@@ -283,7 +317,7 @@ module.exports = grammar({
       'trait',
       $._class_constructor,
       field('extend', optional($.extends_clause)),
-      field('body', optional($.template_body))
+      field('body', optional($._definition_body))
     )),
 
     // The EBNF makes a distinction between function type parameters and other
@@ -318,8 +352,8 @@ module.exports = grammar({
     _type_parameter: $ => seq(
       field('name', choice($.wildcard, $._identifier)),
       field('type_parameters', optional($.type_parameters)),
-      field('bound', optional($.upper_bound)),
       field('bound', optional($.lower_bound)),
+      field('bound', optional($.upper_bound)),
       field('bound', optional(repeat($.view_bound))),
       field('bound', optional(repeat($.context_bound))),
     ),
@@ -338,8 +372,8 @@ module.exports = grammar({
     template_body: $ => choice(
       prec.left(PREC.control, seq(
         ':',
-        optional($.self_type),
         $._indent,
+        optional($.self_type),
         $._block,
         $._outdent,
       )),
@@ -374,7 +408,7 @@ module.exports = grammar({
       ),
     ),
 
-    _end_marker: $ => prec.left(PREC.end_marker, seq(
+    _end_marker: $ => prec.left('end', seq(
       'end',
       choice(
         'if',
@@ -391,7 +425,8 @@ module.exports = grammar({
       ),
     )),
 
-    self_type: $ => prec(4, seq(
+    // Dynamic precedences added here to win over $.call_expression
+    self_type: $ => prec.dynamic(1, seq(
       $._identifier, optional($._self_type_ascription), '=>'
     )),
 
@@ -405,7 +440,10 @@ module.exports = grammar({
 
     val_definition: $ => prec(PREC.binding_def, seq(
       $._start_val,
-      field('pattern', $._pattern),
+      field('pattern', choice(
+        $._pattern,
+        $.identifiers
+      )),
       optional(seq(':', field('type', $._type))),
       '=',
       field('value', $._indentable_expression)
@@ -462,8 +500,8 @@ module.exports = grammar({
     _type_constructor: $ => prec.left(seq(
       field('name', $._type_identifier),
       field('type_parameters', optional($.type_parameters)),
-      field('bound', optional($.upper_bound)),
       field('bound', optional($.lower_bound)),
+      field('bound', optional($.upper_bound)),
     )),
 
     function_definition: $ => seq(
@@ -485,14 +523,14 @@ module.exports = grammar({
     )),
 
     // Created for memory-usage optimization during codegen.
-    _function_constructor: $ => prec.left(PREC.control, seq(
+    _function_constructor: $ => prec.left(seq(
       field('name', $._identifier),
       field('type_parameters', optional($.type_parameters)),
       field('parameters', repeat($.parameters)),
       optional(seq(':', field('return_type', $._type))),
     )),
 
-    opaque_modifier: $ => 'opaque',
+    opaque_modifier: $ => prec('mod', 'opaque'),
 
     /**
      *   Extension         ::=  'extension' [DefTypeParamClause] {UsingParamClause}
@@ -568,7 +606,7 @@ module.exports = grammar({
       sep1('with', $._constructor_application),
     )),
 
-    modifiers: $ => repeat1(choice(
+    modifiers: $ => prec.left(repeat1(choice(
       'abstract',
       'final',
       'sealed',
@@ -580,7 +618,7 @@ module.exports = grammar({
       $.infix_modifier,
       $.open_modifier,
       $.transparent_modifier
-    )),
+    ))),
 
     access_modifier: $ => prec.left(seq(
       choice('private', 'protected'),
@@ -593,10 +631,10 @@ module.exports = grammar({
       ']',
     ),
 
-    inline_modifier: $ => 'inline',
-    infix_modifier: $ => 'infix',
-    open_modifier: $ => 'open',
-    transparent_modifier: $ => 'transparent',
+    inline_modifier: $ => prec('mod', 'inline'),
+    infix_modifier: $ => prec('mod', 'infix'),
+    open_modifier: $ => prec('mod', 'open'),
+    transparent_modifier: $ => prec('mod', 'transparent'),
 
     /**
      * InheritClauses    ::=  ['extends' ConstrApps] ['derives' QualId {',' QualId}]
@@ -607,22 +645,46 @@ module.exports = grammar({
       optional($.arguments)
     )),
 
-    derives_clause: $ => seq(
+    derives_clause: $ => prec.left(seq(
       'derives',
       commaSep1(field('type', $._type_identifier))
-    ),
+    )),
 
     class_parameters: $ => prec(1, seq(
+      optional($._automatic_semicolon),
       '(',
       optional(choice('implicit', 'using')),
       trailingCommaSep($.class_parameter),
       ')'
     )),
 
-    parameters: $ => seq(
+    /*
+    * DefParamClauses   ::=  {DefParamClause} [[nl] ‘(’ [‘implicit’] DefParams ‘)’]
+    * DefParamClause    ::=  [nl] ‘(’ DefParams ‘)’ | UsingParamClause
+    * DefParams         ::=  DefParam {‘,’ DefParam}
+    */
+    parameters: $ => choice(
+      seq(
+        '(',
+        optional('implicit'),
+        trailingCommaSep($.parameter), 
+        ')'
+      ),
+      $._using_parameters_clause
+    ),
+
+    /*
+    * UsingParamClause  ::=  [nl] ‘(’ ‘using’ (DefParams | FunArgTypes) ‘)’
+    * DefParams         ::=  DefParam {‘,’ DefParam}
+    * FunArgTypes       ::=  FunArgType { ‘,’ FunArgType }
+    */
+    _using_parameters_clause: $ => seq(
       '(',
-      optional(choice('implicit', 'using')),
-      trailingCommaSep($.parameter),
+      'using',
+      choice(
+        trailingCommaSep1($.parameter), 
+        trailingCommaSep1($._param_type)
+      ),
       ')'
     ),
 
@@ -631,18 +693,22 @@ module.exports = grammar({
       optional($.modifiers),
       optional(choice('val', 'var')),
       field('name', $._identifier),
-      optional(seq(':', field('type', $._type))),
-      optional('*'),
-      optional(seq('=', field('default_value', $.expression)))
-    ),
-
-    parameter: $ => seq(
-      repeat($.annotation),
-      optional($.inline_modifier),
-      field('name', $._identifier),
       optional(seq(':', field('type', $._param_type))),
       optional(seq('=', field('default_value', $.expression)))
     ),
+
+    /*
+    * DefParam          ::=  {Annotation} [‘inline’] Param
+    * Param             ::=  id ‘:’ ParamType [‘=’ Expr]
+    */
+    parameter: $ => prec.left(PREC.control, seq(
+      repeat($.annotation),
+      optional($.inline_modifier),
+      field('name', $._identifier),
+      ':',
+      field('type', $._param_type),
+      optional(seq('=', field('default_value', $.expression)))
+    )),
 
     _block: $ => prec.left(seq(
       sep1($._semicolon, choice(
@@ -672,9 +738,15 @@ module.exports = grammar({
       optional($._end_marker),
     )),
 
-    indented_cases: $ => prec.left(PREC.end_marker, seq(
+    indented_cases: $ => prec.left(seq(
       $._indent,
       repeat1($.case_clause),
+      $._outdent,
+    )),
+
+    _indented_type_cases: $ => prec.left(seq(
+      $._indent,
+      repeat1($.type_case_clause),
       $._outdent,
     )),
 
@@ -685,6 +757,7 @@ module.exports = grammar({
       $.function_type,
       $.compound_type,
       $.infix_type,
+      $.match_type,
       $._annotated_type,
       $.literal_type,
       alias($.template_body, $.structural_type)
@@ -706,16 +779,37 @@ module.exports = grammar({
       $.wildcard,
     ),
 
-    compound_type: $ => prec(PREC.compound, seq(
-      field('base', $._annotated_type),
-      repeat1(seq('with', field('extra', $._annotated_type))),
-      // TODO: Refinement.
+    compound_type: $ => choice(
+      prec.left(PREC.compound, seq(
+        field('base', $._annotated_type),
+        repeat1(seq('with', field('extra', $._annotated_type))),
+      )),
+      prec.left(-1, seq(
+        field('base', $._annotated_type),
+        $._refinement,
+      )),
+      prec.left(-1, seq(
+        prec.left(PREC.compound, seq(
+          field('base', $._annotated_type),
+          repeat1(seq('with', field('extra', $._annotated_type))),
+        )),
+        $._refinement,
+      )),
+    ),
+
+    _refinement: $ => alias($.template_body, $.refinement),
+
+    // This does not include _simple_type since _annotated_type covers it.
+    _infix_type_choice: $ => prec.left(PREC.infix, choice(
+      $.compound_type,
+      $.infix_type,
+      $._annotated_type
     )),
 
     infix_type: $ => prec.left(PREC.infix, seq(
-      field('left', choice($.compound_type, $.infix_type, $._annotated_type)),
+      field('left', $._infix_type_choice),
       field('operator', $._identifier),
-      field('right', choice($.compound_type, $.infix_type, $._annotated_type))
+      field('right', $._infix_type_choice)
     )),
 
     tuple_type: $ => seq(
@@ -753,8 +847,24 @@ module.exports = grammar({
       field('selector', $._type_identifier),
     ),
 
-    function_type: $ => prec.right(seq(
+    match_type: $ => prec.left(seq(
+      $._infix_type_choice,
+      'match',
+      $._indented_type_cases
+    )),
+
+    type_case_clause: $ => prec.left(PREC.control, seq(
+      'case',
+      $._infix_type_choice,
+      field('body', $._arrow_then_type)
+    )),
+
+    function_type: $ => prec.left(seq(
       field('parameter_types', $.parameter_types),
+      $._arrow_then_type
+    )),
+
+    _arrow_then_type: $ => prec.right(seq(
       choice('=>', '?=>'),
       field('return_type', $._type)
     )),
@@ -901,7 +1011,7 @@ module.exports = grammar({
       $.call_expression,
     ),
 
-    lambda_expression: $ => prec.right(PREC.lambda, seq(
+    lambda_expression: $ => prec.right(seq(
       field('parameters', choice(
         $.bindings,
         $._identifier,
@@ -945,7 +1055,18 @@ module.exports = grammar({
     /*
      *   Catches           ::=  'catch' (Expr | ExprCaseClause)
      */
-    catch_clause: $ => prec.right(seq('catch', $._indentable_expression)),
+    catch_clause: $ => prec.right(seq('catch', 
+      choice(
+        $._indentable_expression,
+        $._expr_case_clause,
+      )
+    )),
+
+    _expr_case_clause: $ => prec.left(seq(
+      'case',
+      $._case_pattern,
+      field('body', $.expression),
+    )),
 
     finally_clause: $ => prec.right(seq('finally', $._indentable_expression)),
 
@@ -965,7 +1086,7 @@ module.exports = grammar({
       seq('{', repeat1($.case_clause), '}'),
     ),
 
-    case_clause: $ => prec.left(PREC.control, seq(
+    case_clause: $ => prec.left(seq(
       'case',
       $._case_pattern,
       field('body', optional($._block)),
@@ -1136,11 +1257,21 @@ module.exports = grammar({
       ']'
     ),
 
-    arguments: $ => seq(
+    arguments: $ => 
+    seq(
       '(',
-      trailingCommaSep($.expression),
+      choice(
+        optional($._exprs_in_parens),
+        seq(
+          'using',
+          $._exprs_in_parens,
+        ),
+      ),
       ')'
     ),
+
+    // ExprsInParens     ::=  ExprInParens {‘,’ ExprInParens}
+    _exprs_in_parens: $ => trailingCommaSep1($.expression),
 
     splice_expression: $ => prec.left(PREC.macro, seq(
       '$',
@@ -1186,7 +1317,18 @@ module.exports = grammar({
     identifier: $ => prec.left(choice(
       $._alpha_identifier,
       $._backquoted_id,
+      $._soft_identifier,
     )),
+
+    // https://docs.scala-lang.org/scala3/reference/soft-modifier.html
+   _soft_identifier: $ => prec('soft_id', choice(
+     'infix',
+     'inline',
+     'opaque',
+     'open',
+     'transparent',
+     'end',
+   )),
 
     /**
      * alphaid          ::=  upper idrest
@@ -1203,10 +1345,16 @@ module.exports = grammar({
 
     _identifier: $ => choice($.identifier, $.operator_identifier),
 
+    identifiers: $ => prec.left(-1, seq(
+      $.identifier,
+      ',',
+      commaSep1($.identifier)
+    )),
+
     wildcard: $ => '_',
 
     /**
-     * Regex patterns created to avoid matching // comments.
+     * Regex patterns created to avoid matching // comments and /* comment starts.
      * This could technically match illeagal tokens such as val ?// = 1
      */
     operator_identifier: $ => token(choice(
@@ -1221,14 +1369,14 @@ module.exports = grammar({
       seq(
         // opchar
         /[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
-        // opchar minus slash
-        /[\-!#%&*+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
+        // opchar minus slash and asterisk
+        /[\-!#%&+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
         // opchar*
         repeat(/[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/),
       ),
     )),
 
-    _non_null_literal: $ => 
+    _non_null_literal: $ =>
       choice(
         $.integer_literal,
         $.floating_point_literal,
@@ -1432,14 +1580,14 @@ module.exports = grammar({
       repeat1($.guard),
     ),
 
-    comment: $ => token(choice(
-      seq('//', /.*/),
-      seq(
-        '/*',
-        /[^*]*\*+([^/*][^*]*\*+)*/,
-        '/'
-      )
-    ))
+    comment: $ => token(seq('//', /.*/)),
+
+    block_comment: $ => seq(
+      token('/*'),
+      repeat(token(/./)),
+      token('*/')
+    ),
+    
   }
 })
 
