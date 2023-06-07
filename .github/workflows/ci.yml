@@ -66,7 +66,7 @@ jobs:
         run: gcc test/test-stack.c -o a.out && ./a.out
 
       - name: Generate parser from scratch and test it
-        if: ${{ runner.os == 'Linux' }}
+        if: ${{ runner.os == 'Linux' || needs.changedfiles.outputs.c }}
         shell: bash
         run: |
           npm install
@@ -74,7 +74,7 @@ jobs:
           npm test
 
       - name: Check parser
-        if: ${{ runner.os != 'Linux' && needs.changedfiles.outputs.c }}
+        if: ${{ runner.os == 'Linux' && needs.changedfiles.outputs.c }}
         shell: bash
         run: |
           # `git diff --quiet` doesn't seem to work on Github Actions
@@ -84,11 +84,6 @@ jobs:
             git diff --exit-code
             exit 1
           fi
-
-      - name: Parser tests
-        if: ${{ needs.changedfiles.outputs.c }}
-        shell: bash
-        run: npm install && npm test
 
       - name: Smoke test
         if: ${{ runner.os == 'Linux' }}
