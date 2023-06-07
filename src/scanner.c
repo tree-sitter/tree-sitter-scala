@@ -4,6 +4,7 @@
 #include <string.h>
 #include <wctype.h>
 
+// Just a comment to trigger CI on MacOS and Windows
 enum TokenType {
   AUTOMATIC_SEMICOLON,
   INDENT,
