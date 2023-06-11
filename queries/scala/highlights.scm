@@ -235,8 +235,13 @@
 
 "return" @keyword.return
 
-(comment) @comment @spell
-(block_comment) @comment @spell
+[
+  (comment)
+  (block_comment)
+] @comment @spell
+
+((block_comment) @comment.documentation
+  (#lua-match? @comment.documentation "^/[*][*][^*].*[*]/$"))
 
 ;; `case` is a conditional keyword in case_block
 

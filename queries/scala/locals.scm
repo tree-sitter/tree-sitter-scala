@@ -1,29 +1,42 @@
-(template_body) @local.scope
-(lambda_expression) @local.scope
+; Scopes
 
+[
+  (template_body)
+  (lambda_expression)
+  (function_definition)
+  (block)
+] @scope
+
+; References
+
+(identifier) @reference
+
+; Definitions
 
 (function_declaration
-      name: (identifier) @local.definition) @local.scope
+  name: (identifier) @definition.function)
 
 (function_definition
-      name: (identifier) @local.definition)
+  name: (identifier) @definition.function)
 
 (parameter
-  name: (identifier) @local.definition)
+  name: (identifier) @definition.parameter)
+
+(class_parameter
+  name: (identifier) @definition.parameter)
 
 (binding
-  name: (identifier) @local.definition)
+  name: (identifier) @definition.var)
 
 (val_definition
-  pattern: (identifier) @local.definition)
+  pattern: (identifier) @definition.var)
 
 (var_definition
-  pattern: (identifier) @local.definition)
+  pattern: (identifier) @definition.var)
 
 (val_declaration
-  name: (identifier) @local.definition)
+  name: (identifier) @definition.var)
 
 (var_declaration
-  name: (identifier) @local.definition)
+  name: (identifier) @definition.var)
 
-(identifier) @local.reference
