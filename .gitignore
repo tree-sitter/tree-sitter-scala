@@ -9,6 +9,7 @@ Cargo.lock
 .scalafmt.conf
 *worksheet.sc
 *.out
+*.o
 .direnv
 .metals
 report-*
