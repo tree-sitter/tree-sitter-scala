@@ -592,6 +592,9 @@ Type Lambdas (Scala 3)
 
 type A = [B <: C] =>> D
 type Z = [X, Y] =>> Map[Y, X]
+class A[
+  [B <: C] =>> D
+]
 
 --------------------------------------------------------------------------------
 
@@ -612,4 +615,12 @@ type Z = [X, Y] =>> Map[Y, X]
         (type_identifier)
         (type_arguments
           (type_identifier)
-          (type_identifier))))))
+          (type_identifier)))))
+  (class_definition
+    (identifier)
+    (type_parameters
+      (type_lambda
+        (identifier)
+        (upper_bound
+          (type_identifier))
+        (type_identifier)))))
