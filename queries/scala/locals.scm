@@ -1,6 +1,6 @@
 (template_body) @local.scope
 (lambda_expression) @local.scope
-
+(for_expression) @local.scope
 
 (function_declaration
       name: (identifier) @local.definition) @local.scope
@@ -25,6 +25,12 @@
 
 (var_declaration
   name: (identifier) @local.definition)
+
+(for_expression
+  enumerators: (enumerators
+    (enumerator
+      (tuple_pattern
+        (identifier) @local.definition))))
 
 (identifier) @local.reference
 
