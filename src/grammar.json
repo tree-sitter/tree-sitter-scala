@@ -7882,10 +7882,6 @@
       "match_expression"
     ],
     [
-      "_function_constructor",
-      "_type_identifier"
-    ],
-    [
       "_given_constructor",
       "_type_identifier"
     ],
@@ -7923,10 +7919,6 @@
     [
       "_type",
       "compound_type"
-    ],
-    [
-      "lambda_expression",
-      "modifiers"
     ],
     [
       "_if_condition",

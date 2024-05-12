@@ -4,12 +4,12 @@ class C:
 //    ^type
 
   def test(aaaa: A): Int =
-  //^keyword.function
-  //  ^method
+  // <- keyword.function
+  //  ^ method
     // no curly braces, but this is still in test method
     val bbb = 1
-    //^keyword
-    //  ^variable
+    //^ keyword
+    //  ^ variable
     val ccc = 2
     //^keyword
     //  ^variable
@@ -20,8 +20,8 @@ object O1:
 //     ^type
 
   def test: Unit = ()
-  //^keyword.function
-  //  ^method
+  //^ keyword.function
+  //  ^ method
 
 object O2:
   type Elem[A] = A match
@@ -74,7 +74,7 @@ enum Simple:
   case A, B, C
 //     ^type
 enum Test(a: Int) derives Codec:
-// ^keyword   
+// ^keyword
 //    ^type
 //            ^type
 //                   ^keyword
@@ -82,7 +82,7 @@ enum Test(a: Int) derives Codec:
 //    ^type
 //        ^parameter
   case Test(b: String)
-  // ^keyword     
+  // ^keyword
   //               ^type
   //      ^type
   //        ^parameter
@@ -94,22 +94,22 @@ enum Test(a: Int) derives Codec:
 
 opaque type Blow <: Int = 25
 // ^type.qualifier
-//      ^keyword     
-//                   ^type     
+//      ^keyword
+//                   ^type
 //            ^type.definition
 
 inline given Test = new Test {
 // ^ storageclass
-  inline def hello(inline x: Boolean) = 
+  inline def hello(inline x: Boolean) =
 // ^ storageclass
 //                   ^ storageclass
-    inline if x then "hi" else "bye" 
+    inline if x then "hi" else "bye"
     // ^storageclass
     //            ^conditional
-    inline x match 
+    inline x match
     // ^storageclass
-      case true => 25 
-      case false => 26 
+      case true => 25
+      case false => 26
 }
 
 object A:

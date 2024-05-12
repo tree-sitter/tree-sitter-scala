@@ -57,7 +57,7 @@ module.exports = grammar({
 
   // Doc: https://tree-sitter.github.io/tree-sitter/creating-parsers, search "precedences"
   // These names can be used in the prec functions to define precedence relative only to other names in the array, rather than globally.
-  precedences: $ => [
+  precedences: _ => [
     ["mod", "soft_id"],
     ["end", "soft_id"],
     ["new", "structural_type"],
@@ -70,7 +70,6 @@ module.exports = grammar({
     [$.while_expression, $._simple_expression],
     [$.if_expression],
     [$.match_expression],
-    [$._function_constructor, $._type_identifier],
     [$._given_constructor, $._type_identifier],
     [$.instance_expression],
     // In case of: 'extension'  _indent  '{'  'case'  operator_identifier  'if'  operator_identifier  •  '=>'  …
@@ -92,7 +91,6 @@ module.exports = grammar({
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
     [$._type, $.compound_type],
-    [$.lambda_expression, $.modifiers],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
     // _postfix_expression_choice  ':'  '('  wildcard  •  ':'  …

@@ -1,116 +1,58 @@
-name: Build/test
+name: CI
+
 on:
   push:
+    branches: [master]
+    paths:
+      - grammar.js
+      - src/**
+      - test/**
+      - bindings/**
+      - binding.gyp
   pull_request:
-    branches:
-      - master
+    paths:
+      - grammar.js
+      - src/**
+      - test/**
+      - bindings/**
+      - binding.gyp
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
 jobs:
-  changedfiles:
-    runs-on: ubuntu-latest
-    outputs:
-      all: ${{ steps.changes.outputs.all}}
-      c: ${{ steps.changes.outputs.c }}
-      gen: ${{ steps.changes.outputs.gen }}
-    steps:
-      - name: checkout tree-sitter-scala
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 10
-
-      - name: Get changed files
-        id: changes
-        run: |
-          echo "all=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | xargs)" >> $GITHUB_OUTPUT
-          echo "c=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.\(c\|h\)$' | xargs)" >> $GITHUB_OUTPUT
-          # Generated C code
-          echo "gen=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.\(c\|h\)$' | grep -v 'src/scanner.c' | xargs)" >> $GITHUB_OUTPUT
   test:
-    runs-on: ${{ matrix.os }}
-    needs: changedfiles
+    name: Test parser
+    runs-on: ${{matrix.os}}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-14]
     steps:
-      - name: checkout tree-sitter-scala
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 10
-
-      - name: checkout scala/scala
-        if: ${{ runner.os == 'Linux' }}
+      - name: Set up tree-sitter
+        uses: tree-sitter/setup-action/cli@v1
+      - name: Clone scala
         uses: actions/checkout@v4
         with:
           repository: scala/scala
+          path: examples/scala
           ref: v2.13.10
-          path: scala_scala
-
-      - name: checkout lampepfl/dotty
-        if: ${{ runner.os == 'Linux' }}
+      - name: Clone scala3
         uses: actions/checkout@v4
         with:
-          repository: lampepfl/dotty
+          repository: scala/scala3
+          path: examples/scala3
           ref: 3.3.0
-          path: dotty
-
-      - name: checkout nvim-treesitter/nvim-treesitter
-        if: ${{ runner.os == 'Linux' }}
-        uses: actions/checkout@v4
+      - name: Run tests
+        uses: tree-sitter/parser-test-action@v2
         with:
-          repository: nvim-treesitter/nvim-treesitter
-          path: nvim_treesitter
-
-      - uses: actions/setup-node@v4
+          test-rust: ${{runner.os == 'Linux'}}
+      - name: Parse examples
+        id: examples
+        uses: tree-sitter/parse-action@v4
         with:
-          node-version: 20
-
-      - name: Test C stack code
-        run: gcc test/test-stack.c -o a.out && ./a.out
-
-      - name: Generate parser from scratch and test it
-        if: ${{ runner.os == 'Linux' || needs.changedfiles.outputs.c }}
-        shell: bash
-        run: |
-          npm install
-          npm run build
-          npm test
-
-      - name: Check fidelity of checked-in C code
-        if: ${{ runner.os == 'Linux' && needs.changedfiles.outputs.gen }}
-        shell: bash
-        run: |
-          # `git diff --quiet` doesn't seem to work on Github Actions
-          changes=$(git diff --name-only --diff-filter=ACMRT | xargs)
-          if [ ! -z "$changes" ]; then
-            echo "::error file=grammar.js::Generated $changes differs from the checked in version"
-            git diff --exit-code
-            exit 1
-          fi
-
-      - name: Smoke test
-        if: ${{ runner.os == 'Linux' }}
-        shell: bash
-        env:
-          SCALA_SCALA_DIR: scala_scala
-          DOTTY_DIR: dotty
-        run: script/smoke_test.sh
-
-      - name: copy nvim-treesitter queries
-        if: ${{ runner.os == 'Linux' }}
-        shell: bash
-        run: cp ./nvim_treesitter/queries/scala/*.scm ./queries/
-
-      - name: Check if queries are out of sync with nvim-treesitter
-        if: ${{ runner.os == 'Linux' }}
-        uses: tj-actions/verify-changed-files@v19
-        id: verify-changed-files
-        with:
-          files: |
-            queries/scala/*.scm
-
-      - name: Test quries if out of sync with nvim-treesitter
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        run: |
-          echo "::warning Queries in ${{ steps.verify-changed-files.outputs.changed_files }} in this repo are out of sync with nvim-treesitter"
-          git diff queries/scala/
-          npm run test
+          files: examples/**/*.scala
+          invalid-files-list: test/invalid-files.txt
