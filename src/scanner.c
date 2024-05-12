@@ -165,12 +165,13 @@ static bool detect_comment_start(TSLexer *lexer) {
   return false;
 }
 
-static bool scan_word(TSLexer *lexer, const char* const word) {
+static bool scan_word(TSLexer *lexer, const char* const word, bool *did_advance) {
   for (uint8_t i = 0; word[i] != '\0'; i++) {
     if (lexer->lookahead != word[i]) {
       return false;
     }
     advance(lexer);
+    *did_advance = true;
   }
   return !iswalnum(lexer->lookahead);
 }
@@ -338,36 +339,38 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       }
     }
 
+    bool did_advance = false;
+
     if (valid_symbols[ELSE]) {
-      return !scan_word(lexer, "else");
+      return !scan_word(lexer, "else", &did_advance);
     }
 
     if (valid_symbols[CATCH]) {
-      if (scan_word(lexer, "catch")) {
+      if (scan_word(lexer, "catch", &did_advance)) {
         return false;
       }
     }
 
     if (valid_symbols[FINALLY]) {
-      if  (scan_word(lexer, "finally")) {
+      if (scan_word(lexer, "finally", &did_advance)) {
         return false;
       }
     }
 
     if (valid_symbols[EXTENDS]) {
-      if (scan_word(lexer, "extends")) {
+      if (scan_word(lexer, "extends", &did_advance)) {
         return false;
       }
     }
 
     if (valid_symbols[WITH]) {
-      if (scan_word(lexer, "with")) {
+      if (scan_word(lexer, "with", &did_advance)) {
         return false;
       }
     }
 
     if (valid_symbols[DERIVES]) {
-      if (scan_word(lexer, "derives")) {
+      if (scan_word(lexer, "derives", &did_advance)) {
         return false;
       }
     }
@@ -376,7 +379,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       return true;
     }
 
-    return true;
+    return !did_advance && !lexer->eof(lexer);
   }
 
   while (iswspace(lexer->lookahead)) {
