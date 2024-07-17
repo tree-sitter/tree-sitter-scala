@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -66,8 +67,9 @@ static unsigned serialiseStack(ScannerStack *stack, char *buf) {
   if (elements < 0) {
     elements = 0;
   }
-  unsigned result_length = (elements + 3) * sizeof(int);
-  int *placement = (int *)buf;
+  unsigned buf_alignment_pad = (sizeof(int) - ((uintptr_t)buf % sizeof(int))) % sizeof(int);
+  unsigned result_length = buf_alignment_pad + (elements + 3) * sizeof(int);
+  int *placement = (int *)(buf + buf_alignment_pad);
   memcpy(placement, stack->stack, elements * sizeof(int));
   placement[elements] = stack->last_indentation_size;
   placement[elements + 1] = stack->last_newline_count;
@@ -78,7 +80,9 @@ static unsigned serialiseStack(ScannerStack *stack, char *buf) {
 
 static void deserialiseStack(ScannerStack* stack, const char* buf, unsigned length) {
   if (length != 0) {
-    int *intBuf = (int *)buf;
+    unsigned buf_alignment_pad = (sizeof(int) - ((uintptr_t)buf % sizeof(int))) % sizeof(int);
+    length -= buf_alignment_pad;
+    int *intBuf = (int *)(buf + buf_alignment_pad);
 
     unsigned elements = length / sizeof(int) - 3;
     stack->top = (int)elements;
