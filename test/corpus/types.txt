@@ -624,3 +624,34 @@ class A[
         (upper_bound
           (type_identifier))
         (type_identifier)))))
+
+================================================================================
+Union and Intersection Types (Scala 3)
+================================================================================
+
+type A = Foo | Bar & Buz
+type B = "foo" | "bar" & "buz"
+
+--------------------------------------------------------------------------------
+(compilation_unit
+  (type_definition
+    (type_identifier)
+    (infix_type
+      (infix_type
+        (type_identifier)
+        (operator_identifier)
+        (type_identifier))
+      (operator_identifier)
+      (type_identifier)))
+  (type_definition
+    (type_identifier)
+    (infix_type
+      (infix_type
+        (literal_type
+          (string))
+        (operator_identifier)
+        (literal_type
+          (string)))
+      (operator_identifier)
+      (literal_type
+        (string)))))
