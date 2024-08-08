@@ -32,7 +32,7 @@ run_tree_sitter () {
 
   if [ ! -e "$PRODUCE_REPORTS" ]; then
     local report_file="report-$name.txt"
-    echo "$out" | sed G | sed -E 's/([0-9]+) ms//' | grep -v 'success percentage' > "report-$name.txt" 
+    echo "$out" | sed G | sed -E 's/([0-9]+) ms//' | grep -v 'success percentage' > "report-$name.txt"
     echo "Report written to $report_file"
   fi
 
@@ -50,7 +50,7 @@ run_tree_sitter () {
 check_complexity () {
   local expected=$1
   name="complexity"
-  cmd="npm exec -c 'tree-sitter generate --report-states-for-rule compilation_unit' 2>&1"
+  cmd="npm exec -c 'tree-sitter generate --report-states-for-rule compilation_unit' 2>&1 >/dev/null"
   echo
   echo "Checking syntax complexity: $cmd"
   out=$( (eval "$cmd") || true)
