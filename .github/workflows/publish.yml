@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   npm:
-    uses: tree-sitter/workflows/.github/workflows/package-npm.yml@main
+    uses: tree-sitter/workflows/.github/workflows/package-npm.yml@66df2de139d7a77a89644f67a88c803d4a8cf67e
     secrets:
       NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
   # TODO: comment this out for now since we publish the crate manually
