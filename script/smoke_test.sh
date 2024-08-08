@@ -50,7 +50,8 @@ run_tree_sitter () {
 check_complexity () {
   local expected=$1
   name="complexity"
-  npm exec -c 'tree-sitter generate --report-states-for-rule compilation_unit' 2>&1
+  echo "check_complexity"
+  npm exec -c 'tree-sitter generate --report-states-for-rule compilation_unit' 2>/dev/null
   cmd="npm exec -c 'tree-sitter generate --report-states-for-rule compilation_unit' 2>&1"
   echo
   echo "Checking syntax complexity: $cmd"
