@@ -4159,6 +4159,10 @@
           {
             "type": "SYMBOL",
             "name": "_annotated_type"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "literal_type"
           }
         ]
       }
