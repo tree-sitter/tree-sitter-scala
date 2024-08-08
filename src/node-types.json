@@ -3873,6 +3873,10 @@
             "named": true
           },
           {
+            "type": "literal_type",
+            "named": true
+          },
+          {
             "type": "projected_type",
             "named": true
           },
@@ -3930,6 +3934,10 @@
           },
           {
             "type": "infix_type",
+            "named": true
+          },
+          {
+            "type": "literal_type",
             "named": true
           },
           {
@@ -4481,6 +4489,10 @@
         },
         {
           "type": "infix_type",
+          "named": true
+        },
+        {
+          "type": "literal_type",
           "named": true
         },
         {
@@ -6343,6 +6355,10 @@
         },
         {
           "type": "infix_type",
+          "named": true
+        },
+        {
+          "type": "literal_type",
           "named": true
         },
         {
