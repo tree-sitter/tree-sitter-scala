@@ -8,6 +8,9 @@
 (function_definition
       name: (identifier) @local.definition)
 
+(lambda_expression
+      parameters: (identifier) @local.definition)
+
 (parameter
   name: (identifier) @local.definition)
 
