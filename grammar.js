@@ -877,7 +877,12 @@ module.exports = grammar({
     _infix_type_choice: $ =>
       prec.left(
         PREC.infix,
-        choice($.compound_type, $.infix_type, $._annotated_type, $.literal_type),
+        choice(
+          $.compound_type,
+          $.infix_type,
+          $._annotated_type,
+          $.literal_type,
+        ),
       ),
 
     infix_type: $ =>
