@@ -7,7 +7,7 @@ on:
 jobs:
   check-and-sync:
     runs-on: ubuntu-latest
-    if: github.repository == "tree-sitter/tree-sitter-scala"
+    if: github.repository == 'tree-sitter/tree-sitter-scala'
     outputs:
       all: ${{ steps.changes.outputs.all}}
       c: ${{ steps.changes.outputs.c }}
