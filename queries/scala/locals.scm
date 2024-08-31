@@ -1,14 +1,17 @@
 (template_body) @local.scope
 (lambda_expression) @local.scope
-
+(block) @local.scope
 
 (function_declaration
-      name: (identifier) @local.definition) @local.scope
-
-(function_definition
       name: (identifier) @local.definition)
 
+(function_definition
+      name: (identifier) @local.definition) @local.scope
+
 (parameter
+  name: (identifier) @local.definition)
+
+(class_parameter
   name: (identifier) @local.definition)
 
 (binding
