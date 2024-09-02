@@ -282,8 +282,10 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   // Recover newline_count from the outdent reset
   bool is_eof = lexer->eof(lexer);
   if (
-      scanner->last_newline_count > 0 &&
-      (is_eof && scanner->last_column == -1) ||
+      (
+        scanner->last_newline_count > 0 &&
+        (is_eof && scanner->last_column == -1)
+      ) ||
       (!is_eof && lexer->get_column(lexer) == (uint32_t)scanner->last_column)
   ) {
     newline_count += scanner->last_newline_count;
