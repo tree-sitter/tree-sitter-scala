@@ -20,12 +20,14 @@ jobs:
       - name: Generate parser from scratch
         run: |
           npm install
-          npm run build
+          export PATH=./node_modules/.bin:$PATH
+          tree-sitter generate
 
       - name: Format Javascipt
         run: |
           npm install
-          npm run format
+          export PATH=./node_modules/.bin:$PATH
+          prettier --write --ignore-unknown grammar.js
 
       - name: Check for changes
         uses: tj-actions/verify-changed-files@v19

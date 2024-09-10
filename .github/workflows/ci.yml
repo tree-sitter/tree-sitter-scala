@@ -77,6 +77,10 @@ jobs:
         shell: bash
         run: |
           npm install
+          export PATH=./node_modules/.bin:$PATH
+          tree-sitter generate
+          tree-sitter test
+          tree-sitter parse examples/*.scala --quiet --time
           npm test
 
       - name: Check fidelity of checked-in C code
