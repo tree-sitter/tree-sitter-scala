@@ -59,15 +59,15 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
   }
 
   size_t size = 0;
-  *(int16_t *)&buffer[size] = scanner->last_indentation_size;
+  memcpy(buffer + size, &scanner->last_indentation_size, sizeof(int16_t));
   size += sizeof(int16_t);
-  *(int16_t *)&buffer[size] = scanner->last_newline_count;
+  memcpy(buffer + size, &scanner->last_newline_count, sizeof(int16_t));
   size += sizeof(int16_t);
-  *(int16_t *)&buffer[size] = scanner->last_column;
+  memcpy(buffer + size, &scanner->last_column, sizeof(int16_t));
   size += sizeof(int16_t);
 
   for (unsigned i = 0; i < scanner->indents.size; i++) {
-    *(int16_t *)&buffer[size] = scanner->indents.contents[i];
+    memcpy(buffer + size, &scanner->indents.contents[i], sizeof(int16_t));
     size += sizeof(int16_t);
   }
 
