@@ -72,16 +72,25 @@ jobs:
         with:
           node-version: 20
 
+      - name: Set up tree-sitter
+        uses: tree-sitter/setup-action/cli@v1
+
       - name: Generate parser from scratch and test it
         if: ${{ runner.os == 'Linux' || needs.changedfiles.outputs.c }}
         shell: bash
-        run: |
-          npm install
-          export PATH=./node_modules/.bin:$PATH
-          tree-sitter generate
-          tree-sitter test
-          tree-sitter parse examples/*.scala --quiet --time
-          npm test
+        run: tree-sitter generate
+
+      - name: Run parser and binding tests
+        uses: tree-sitter/parser-test-action@v2
+        with:
+          test-rust: ${{runner.os == 'Linux'}}
+          test-swift: ${{runner.os == 'macOS'}}
+
+      - name: Parse sample files
+        uses: tree-sitter/parse-action@v4
+        id: parse-files
+        with:
+          files: examples/**
 
       - name: Check fidelity of checked-in C code
         if: ${{ runner.os == 'Linux' && needs.changedfiles.outputs.gen }}

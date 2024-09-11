@@ -17,11 +17,12 @@ jobs:
         with:
           fetch-depth: 10
 
+      - name: Set up tree-sitter
+        uses: tree-sitter/setup-action/cli@v1
+
       - name: Generate parser from scratch
-        run: |
-          npm install
-          export PATH=./node_modules/.bin:$PATH
-          tree-sitter generate
+        shell: bash
+        run: tree-sitter generate
 
       - name: Format Javascipt
         run: |
