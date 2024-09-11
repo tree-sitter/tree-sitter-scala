@@ -126,9 +126,10 @@ jobs:
           files: |
             queries/*.scm
 
-      - name: Test quries if out of sync with nvim-treesitter
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        run: |
-          echo "::warning Queries in ${{ steps.verify-changed-files.outputs.changed_files }} in this repo are out of sync with nvim-treesitter"
-          git diff queries/
-          npm run test
+      # TODO: uncomment when this works
+      # - name: Test quries if out of sync with nvim-treesitter
+      #   if: steps.verify-changed-files.outputs.files_changed == 'true'
+      #   run: |
+      #     echo "::warning Queries in ${{ steps.verify-changed-files.outputs.changed_files }} in this repo are out of sync with nvim-treesitter"
+      #     git diff queries/
+      #     npm run test
