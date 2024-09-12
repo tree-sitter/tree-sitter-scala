@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-scala",
-  "version": "0.23.0",
+  "version": "0.23.2",
   "description": "Scala grammar for tree-sitter",
   "repository": "github:tree-sitter/tree-sitter-scala",
   "license": "MIT",
