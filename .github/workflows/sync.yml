@@ -17,15 +17,18 @@ jobs:
         with:
           fetch-depth: 10
 
+      - name: Set up tree-sitter
+        uses: tree-sitter/setup-action/cli@v1
+
       - name: Generate parser from scratch
-        run: |
-          npm install
-          npm run build
+        shell: bash
+        run: tree-sitter generate
 
       - name: Format Javascipt
         run: |
           npm install
-          npm run format
+          export PATH=./node_modules/.bin:$PATH
+          prettier --write --ignore-unknown grammar.js
 
       - name: Check for changes
         uses: tj-actions/verify-changed-files@v19

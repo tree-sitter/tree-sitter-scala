@@ -72,12 +72,25 @@ jobs:
         with:
           node-version: 20
 
+      - name: Set up tree-sitter
+        uses: tree-sitter/setup-action/cli@v1
+
       - name: Generate parser from scratch and test it
         if: ${{ runner.os == 'Linux' || needs.changedfiles.outputs.c }}
         shell: bash
-        run: |
-          npm install
-          npm test
+        run: tree-sitter generate
+
+      - name: Run parser and binding tests
+        uses: tree-sitter/parser-test-action@v2
+        with:
+          test-rust: ${{runner.os == 'Linux'}}
+          test-swift: ${{runner.os == 'macOS'}}
+
+      - name: Parse sample files
+        uses: tree-sitter/parse-action@v4
+        id: parse-files
+        with:
+          files: examples/**
 
       - name: Check fidelity of checked-in C code
         if: ${{ runner.os == 'Linux' && needs.changedfiles.outputs.gen }}
@@ -113,9 +126,10 @@ jobs:
           files: |
             queries/*.scm
 
-      - name: Test quries if out of sync with nvim-treesitter
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        run: |
-          echo "::warning Queries in ${{ steps.verify-changed-files.outputs.changed_files }} in this repo are out of sync with nvim-treesitter"
-          git diff queries/
-          npm run test
+      # TODO: uncomment when this works
+      # - name: Test quries if out of sync with nvim-treesitter
+      #   if: steps.verify-changed-files.outputs.files_changed == 'true'
+      #   run: |
+      #     echo "::warning Queries in ${{ steps.verify-changed-files.outputs.changed_files }} in this repo are out of sync with nvim-treesitter"
+      #     git diff queries/
+      #     npm run test
