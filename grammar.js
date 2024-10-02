@@ -416,7 +416,9 @@ module.exports = grammar({
     with_template_body: $ =>
       prec.left(
         PREC.control,
-        seq($._indent, optional($.self_type), $._block, $._outdent),
+        choice(
+          seq($._indent, optional($.self_type), $._block, $._outdent),
+          seq("{", optional($._block), "}")),
       ),
 
     _extension_template_body: $ =>
