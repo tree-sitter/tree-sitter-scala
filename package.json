@@ -38,16 +38,5 @@
     "prestart": "tree-sitter build --wasm",
     "start": "tree-sitter playground",
     "test": "node --test bindings/node/*_test.js"
-  },
-  "tree-sitter": [
-    {
-      "scope": "source.scala",
-      "file-types": [
-        "scala",
-        "sbt"
-      ],
-      "highlights": "queries/highlights.scm",
-      "locals": "queries/locals.scm"
-    }
-  ]
+  }
 }

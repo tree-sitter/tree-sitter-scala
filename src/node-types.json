@@ -1605,6 +1605,7 @@
   {
     "type": "compilation_unit",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -3453,97 +3454,6 @@
         },
         {
           "type": "namespace_wildcard",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "import_selectors",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "annotated_type",
-          "named": true
-        },
-        {
-          "type": "arrow_renamed_identifier",
-          "named": true
-        },
-        {
-          "type": "as_renamed_identifier",
-          "named": true
-        },
-        {
-          "type": "compound_type",
-          "named": true
-        },
-        {
-          "type": "function_type",
-          "named": true
-        },
-        {
-          "type": "generic_type",
-          "named": true
-        },
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "infix_type",
-          "named": true
-        },
-        {
-          "type": "literal_type",
-          "named": true
-        },
-        {
-          "type": "match_type",
-          "named": true
-        },
-        {
-          "type": "namespace_wildcard",
-          "named": true
-        },
-        {
-          "type": "operator_identifier",
-          "named": true
-        },
-        {
-          "type": "projected_type",
-          "named": true
-        },
-        {
-          "type": "singleton_type",
-          "named": true
-        },
-        {
-          "type": "stable_type_identifier",
-          "named": true
-        },
-        {
-          "type": "structural_type",
-          "named": true
-        },
-        {
-          "type": "tuple_type",
-          "named": true
-        },
-        {
-          "type": "type_identifier",
-          "named": true
-        },
-        {
-          "type": "type_lambda",
-          "named": true
-        },
-        {
-          "type": "wildcard",
           "named": true
         }
       ]
