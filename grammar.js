@@ -1424,8 +1424,6 @@ module.exports = grammar({
         ),
       ),
 
-    symbol_literal: $ => "__no_longer_used_symbol_literal_",
-
     /**
      * id               ::=  plainid
      *                       |  ‘`’ { charNoBackQuoteOrNewline | UnicodeEscape | charEscapeSeq
