@@ -23,7 +23,8 @@ jobs:
           echo "all=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | xargs)" >> $GITHUB_OUTPUT
           echo "c=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.\(c\|h\)$' | xargs)" >> $GITHUB_OUTPUT
           # Generated C code
-          echo "gen=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.\(c\|h\)$' | grep -v 'src/scanner.c' | xargs)" >> $GITHUB_OUTPUT
+          echo "gen=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.\(c\)$' | grep -v 'src/scanner.c' | grep -v 'bindings/python/tree_sitter_scala/binding.c' | xargs)" >> $GITHUB_OUTPUT
+
   test:
     runs-on: ${{ matrix.os }}
     needs: changedfiles
