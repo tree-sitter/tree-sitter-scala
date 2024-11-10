@@ -6560,10 +6560,6 @@
         ]
       }
     },
-    "symbol_literal": {
-      "type": "STRING",
-      "value": "__no_longer_used_symbol_literal_"
-    },
     "identifier": {
       "type": "PREC_LEFT",
       "value": 0,
