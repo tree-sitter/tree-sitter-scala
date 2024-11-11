@@ -70,7 +70,6 @@ module.exports = grammar({
     [$.while_expression, $._simple_expression],
     [$.if_expression],
     [$.match_expression],
-    [$._function_constructor, $._type_identifier],
     [$._given_constructor, $._type_identifier],
     [$.instance_expression],
     // In case of: 'extension'  _indent  '{'  'case'  operator_identifier  'if'  operator_identifier  •  '=>'  …
@@ -92,7 +91,6 @@ module.exports = grammar({
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
     [$._type, $.compound_type],
-    [$.lambda_expression, $.modifiers],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
     // _postfix_expression_choice  ':'  '('  wildcard  •  ':'  …
