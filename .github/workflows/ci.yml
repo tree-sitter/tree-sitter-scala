@@ -117,6 +117,13 @@ jobs:
           LILA_DIR: lila
         run: script/smoke_test.sh
 
+      - name: Check that prettier exists
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          npm install
+          export PATH=./node_modules/.bin:$PATH
+          prettier --write --ignore-unknown grammar.js
+
       - name: copy nvim-treesitter queries
         if: ${{ runner.os == 'Linux' }}
         shell: bash
