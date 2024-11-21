@@ -61,7 +61,8 @@ check_complexity () {
     echo "Report written to $report_file"
   fi
 
-  top=$(echo "$out" | head -n 1 | sed 's/ \+/ /g')
+  out1=$(echo "$out" | grep -v "ExperimentalWarning" | grep -v "experimental" | grep -v "node")
+  top=$(echo "$out1" | head -n 1 | sed 's/ \+/ /g')
   top_definition=$(echo "$top" | cut -d' ' -f1)
   top_definition_line=$(grep -n "$top_definition:" grammar.js | head -n 1 | cut -d : -f 1)
   actual=$(echo "$top" | cut -d' ' -f2)
