@@ -38,3 +38,7 @@ dist/
 *.tar.gz
 *.tgz
 *.zip
+
+# scala-cli
+.scala-build
+.bsp

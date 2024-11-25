@@ -95,6 +95,8 @@ module.exports = grammar({
     [$._if_condition, $._simple_expression],
     // _postfix_expression_choice  ':'  '('  wildcard  •  ':'  …
     [$.binding, $._simple_type],
+    // expression  'match'  'case'  _case_pattern  ';'  _automatic_semicolon  expression  •  'match'  …
+    [$.match_expression, $._block],
   ],
 
   word: $ => $._alpha_identifier,
@@ -806,6 +808,9 @@ module.exports = grammar({
     indented_cases: $ =>
       prec.left(seq($._indent, repeat1($.case_clause), $._outdent)),
 
+    non_indented_cases: $ =>
+      prec.right(sep1($._automatic_semicolon, $.case_clause)),
+
     _indented_type_cases: $ =>
       prec.left(seq($._indent, repeat1($.type_case_clause), $._outdent)),
 
@@ -1157,7 +1162,7 @@ module.exports = grammar({
         optional($.inline_modifier),
         field("value", $.expression),
         "match",
-        field("body", choice($.case_block, $.indented_cases)),
+        field("body", choice($.case_block, $.indented_cases, $.non_indented_cases)),
       ),
 
     try_expression: $ =>

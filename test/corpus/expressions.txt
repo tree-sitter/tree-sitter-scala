@@ -689,12 +689,12 @@ def matchTest(x: Int): String = x match {
   case 3 => {
     "3"
   }
-  case 4 => 
+  case 4 =>
     ;
   case A if a == 1 =>
   case A if a == 2 => 2
   case ((i, _)) => i
-  case s"$l1 -- $l2" => 
+  case s"$l1 -- $l2" =>
     l1 + l2
   case _ =>
     val x = "many"
@@ -791,6 +791,10 @@ def matchTest(x: Int): String =
     case _ =>
       val x = "many"
       "more"
+  y match
+  case 0 => "zero"
+    case 1 => "one"
+  case _ => "idk"
 
 --------------------------------------------------------------------------------
 
@@ -837,6 +841,18 @@ def matchTest(x: Int): String =
             (val_definition
               (identifier)
               (string))
+            (string))))
+      (match_expression
+        (identifier)
+        (non_indented_cases
+          (case_clause
+            (integer_literal)
+            (string))
+          (case_clause
+            (integer_literal)
+            (string))
+          (case_clause
+            (wildcard)
             (string)))))))
 
 ================================================================================
@@ -850,8 +866,8 @@ class C {
     a
       .b
       // comment1
-      /* 
-         comment2 
+      /*
+         comment2
       */
       .c
   }
@@ -1105,11 +1121,11 @@ object O {
   val l = a => a + 1
   val b = (x: Int, y: Int) => { x * y }
   val f = _ => 2
-  foo { i => 
-    val x = 2 + i 
+  foo { i =>
+    val x = 2 + i
     x
   }
-  { x => 
+  { x =>
     val y = 2 * x
     y * y
   }
@@ -1223,7 +1239,7 @@ Unit expressions
 ================================================================================
 
 val x = ()
-def f(): Unit = { (   
+def f(): Unit = { (
 ); }
 
 --------------------------------------------------------------------------------
@@ -1649,9 +1665,9 @@ class A:
 Inline matches (Scala 3)
 ================================================================================
 
-def hello = 
+def hello =
   inline c match {
-    case 1 => 
+    case 1 =>
   }
 
 --------------------------------------------------------------------------------
