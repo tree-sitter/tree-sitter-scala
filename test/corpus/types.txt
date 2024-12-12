@@ -141,6 +141,32 @@ object Main {
             (type_identifier)))))))
 
 ================================================================================
+Polymorphic function types (Scala 3 syntax)
+================================================================================
+
+class A:
+  type Comparer = [X: Ord] => (X, X) => Boolean
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (type_definition
+        (type_identifier)
+        (function_type
+          (type_parameters
+            (identifier)
+            (context_bound
+              (type_identifier)))
+          (function_type
+            (parameter_types
+              (type_identifier)
+              (type_identifier))
+            (type_identifier)))))))
+
+================================================================================
 Context function types (Scala 3 syntax)
 ================================================================================
 
