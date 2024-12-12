@@ -1267,6 +1267,8 @@ object A:
   trait B:
     given c: Context[T]
 
+  given (config: Config) => Factory = ConcreteFactory()
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -1429,7 +1431,16 @@ object A:
             (generic_type
               (type_identifier)
               (type_arguments
-                (type_identifier)))))))))
+              (type_identifier))))))
+          (given_definition
+            (given_conditional
+              (parameter
+                (identifier)
+                (type_identifier)))
+            (type_identifier)
+            (call_expression
+              (identifier)
+              (arguments))))))
 
 ================================================================================
 Top-level Definitions (Scala 3 syntax)

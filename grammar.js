@@ -617,6 +617,7 @@ module.exports = grammar({
           optional($.modifiers),
           "given",
           optional($._given_constructor),
+          repeat($._given_sig),
           choice(
             field("return_type", $._structural_instance),
             seq(
@@ -626,6 +627,14 @@ module.exports = grammar({
           ),
         ),
       ),
+
+    _given_sig: $ =>
+      seq(
+        $._given_conditional,
+        "=>"
+      ),
+
+    _given_conditional: $ => alias($.parameters, $.given_conditional),
 
     _given_constructor: $ =>
       prec.right(
