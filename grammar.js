@@ -550,10 +550,14 @@ module.exports = grammar({
       prec.right(
         seq(
           field("name", $._identifier),
-          field("type_parameters", optional($.type_parameters)),
           field(
             "parameters",
-            repeat(seq(optional($._automatic_semicolon), $.parameters)),
+            repeat(seq(optional($._automatic_semicolon),
+              choice(
+                $.parameters,
+                $.type_parameters
+              )
+            )),
           ),
           optional($._automatic_semicolon),
         ),
