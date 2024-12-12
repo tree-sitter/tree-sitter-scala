@@ -544,6 +544,7 @@ module.exports = grammar({
           field("type_parameters", optional($.type_parameters)),
           field("bound", optional($.lower_bound)),
           field("bound", optional($.upper_bound)),
+          field("bound", optional($._context_bounds)),
         ),
       ),
 
