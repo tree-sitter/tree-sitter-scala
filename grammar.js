@@ -373,7 +373,14 @@ module.exports = grammar({
 
     view_bound: $ => seq("<%", field("type", $._type)),
 
-    context_bound: $ => seq(":", field("type", $._type)),
+    context_bound: $ => seq(
+      ":",
+      field("type", $._type),
+      optional(seq(
+        "as",
+        field("name", $._identifier),
+      )),
+    ),
 
     /*
      * TemplateBody      ::=  :<<< [SelfType] TemplateStat {semi TemplateStat} >>>
