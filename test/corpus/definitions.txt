@@ -1237,6 +1237,9 @@ object A:
   given intFoo: CanFoo[Int] with
     def foo(x: Int): Int = 0
 
+  given intFoo: CanFoo[Int]:
+    def foo(x: Int): Int = 0
+
   given CanFoo[Int] with
     def foo(x: Int): Int = 0
 
@@ -1274,6 +1277,21 @@ object A:
         (identifier)
         (type_identifier)
         (identifier))
+      (given_definition
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))
+        (with_template_body
+          (function_definition
+            (identifier)
+            (parameters
+              (parameter
+                (identifier)
+                (type_identifier)))
+            (type_identifier)
+            (integer_literal))))
       (given_definition
         (identifier)
         (generic_type
