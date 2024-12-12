@@ -3,6 +3,7 @@ const PREC = {
   using_directive: 2,
   control: 1,
   stable_type_id: 2,
+  type: 2,
   while: 2,
   assign: 3,
   case: 3,
@@ -93,8 +94,12 @@ module.exports = grammar({
     [$._type, $.compound_type],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
-    // _postfix_expression_choice  ':'  '('  wildcard  •  ':'  …
-    [$.binding, $._simple_type],
+    [$.block, $._braced_template_body1],
+    [$._simple_expression, $.self_type, $._type_identifier],
+    [$._simple_expression, $._type_identifier],
+    [$.lambda_expression, $.self_type, $._type_identifier],
+    [$.lambda_expression, $._type_identifier],
+    [$.binding, $._simple_expression, $._type_identifier],
   ],
 
   word: $ => $._alpha_identifier,
@@ -364,7 +369,7 @@ module.exports = grammar({
         field("bound", optional($.lower_bound)),
         field("bound", optional($.upper_bound)),
         field("bound", optional(repeat($.view_bound))),
-        field("bound", optional(repeat($.context_bound))),
+        field("bound", optional($._context_bounds)),
       ),
 
     upper_bound: $ => seq("<:", field("type", $._type)),
@@ -373,8 +378,20 @@ module.exports = grammar({
 
     view_bound: $ => seq("<%", field("type", $._type)),
 
+    _context_bounds: $ => choice(
+      repeat1(seq(
+        ":",
+        $.context_bound
+      )),
+      seq(
+        ":",
+        "{",
+        trailingCommaSep1($.context_bound),
+        "}",
+      )
+    ),
+
     context_bound: $ => seq(
-      ":",
       field("type", $._type),
       optional(seq(
         "as",
@@ -839,14 +856,17 @@ module.exports = grammar({
     annotated_type: $ => prec.right(seq($._simple_type, repeat1($.annotation))),
 
     _simple_type: $ =>
-      choice(
-        $.generic_type,
-        $.projected_type,
-        $.tuple_type,
-        $.singleton_type,
-        $.stable_type_identifier,
-        $._type_identifier,
-        $.wildcard,
+      prec.left(
+        PREC.type,
+        choice(
+          $.generic_type,
+          $.projected_type,
+          $.tuple_type,
+          $.singleton_type,
+          $.stable_type_identifier,
+          $._type_identifier,
+          $.wildcard,
+        )
       ),
 
     compound_type: $ =>
@@ -1526,7 +1546,8 @@ module.exports = grammar({
         $.string,
       ),
 
-    literal_type: $ => $._non_null_literal,
+    literal_type: $ =>
+      prec.left(PREC.type, $._non_null_literal),
 
     literal: $ => choice($._non_null_literal, $.null_literal),
 
