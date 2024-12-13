@@ -552,12 +552,12 @@ module.exports = grammar({
           field("name", $._identifier),
           field(
             "parameters",
-            repeat(seq(optional($._automatic_semicolon),
-              choice(
-                $.parameters,
-                $.type_parameters
-              )
-            )),
+            repeat(
+              seq(
+                optional($._automatic_semicolon),
+                choice($.parameters, $.type_parameters),
+              ),
+            ),
           ),
           optional($._automatic_semicolon),
         ),
