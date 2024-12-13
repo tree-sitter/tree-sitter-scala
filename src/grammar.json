@@ -2526,22 +2526,6 @@
           },
           {
             "type": "FIELD",
-            "name": "type_parameters",
-            "content": {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "type_parameters"
-                },
-                {
-                  "type": "BLANK"
-                }
-              ]
-            }
-          },
-          {
-            "type": "FIELD",
             "name": "parameters",
             "content": {
               "type": "REPEAT",
@@ -2561,8 +2545,17 @@
                     ]
                   },
                   {
-                    "type": "SYMBOL",
-                    "name": "parameters"
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "parameters"
+                      },
+                      {
+                        "type": "SYMBOL",
+                        "name": "type_parameters"
+                      }
+                    ]
                   }
                 ]
               }
