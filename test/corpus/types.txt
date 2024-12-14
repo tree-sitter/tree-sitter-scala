@@ -98,6 +98,29 @@ object Main {
           (type_identifier))))))
 
 ================================================================================
+Named tuple types (Scala 3 syntax)
+================================================================================
+
+object O:
+  type A = (name: String, age: Int)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (type_definition
+        (type_identifier)
+        (named_tuple_type
+          (name_and_type
+            (identifier)
+            (type_identifier))
+          (name_and_type
+            (identifier)
+            (type_identifier)))))))
+
+================================================================================
 Function types
 ================================================================================
 

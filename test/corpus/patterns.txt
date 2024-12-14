@@ -112,6 +112,31 @@ val x = y match {
           (identifier))))))
 
 ================================================================================
+Name tuple patterns (Scala 3 syntax)
+================================================================================
+
+val x = y match
+  case (a = A, b = B) => ???
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (named_tuple_pattern
+            (named_pattern
+              (identifier)
+              (identifier))
+            (named_pattern
+              (identifier)
+              (identifier)))
+          (operator_identifier))))))
+
+================================================================================
 Case class patterns
 ================================================================================
 
