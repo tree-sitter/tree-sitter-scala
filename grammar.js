@@ -1072,14 +1072,17 @@ module.exports = grammar({
     // TODO: Flatten this.
     alternative_pattern: $ => prec.left(-2, seq($._pattern, "|", $._pattern)),
 
-    tuple_pattern: $ => seq("(", $._pattern, repeat(seq(",", $._pattern)), ")"),
+    tuple_pattern: $ => seq(
+      "(",
+      trailingCommaSep1($._pattern),
+      ")",
+    ),
 
     named_pattern: $ => prec.left(-1, seq($._identifier, "=", $._pattern)),
 
     named_tuple_pattern: $ => seq(
       "(",
-      $.named_pattern,
-      repeat(seq(",", $.named_pattern)),
+      trailingCommaSep1($.named_pattern),
       ")",
     ),
 
