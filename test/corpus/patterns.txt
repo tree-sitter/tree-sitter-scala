@@ -204,6 +204,35 @@ def showNotification(notification: Notification): String = {
                   (identifier))))))))))
 
 ================================================================================
+Case class patterns (Scala 3 syntax)
+================================================================================
+
+class A:
+  c match
+    case c @ City(name = "Hoboken") => c.population
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (capture_pattern
+              (identifier)
+              (case_class_pattern
+                (type_identifier)
+                (named_pattern
+                  (identifier)
+                  (string))))
+            (field_expression
+              (identifier)
+              (identifier))))))))
+
+================================================================================
 Infix patterns
 ================================================================================
 

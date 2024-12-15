@@ -1032,7 +1032,10 @@ module.exports = grammar({
       seq(
         field("type", choice($._type_identifier, $.stable_type_identifier)),
         "(",
-        field("pattern", trailingCommaSep($._pattern)),
+        choice(
+          field("pattern", trailingCommaSep($._pattern)),
+          field("pattern", trailingCommaSep($.named_pattern)),
+        ),
         ")",
       ),
 
