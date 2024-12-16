@@ -112,6 +112,31 @@ val x = y match {
           (identifier))))))
 
 ================================================================================
+Name tuple patterns (Scala 3 syntax)
+================================================================================
+
+val x = y match
+  case (a = A, b = B) => ???
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (named_tuple_pattern
+            (named_pattern
+              (identifier)
+              (identifier))
+            (named_pattern
+              (identifier)
+              (identifier)))
+          (operator_identifier))))))
+
+================================================================================
 Case class patterns
 ================================================================================
 
@@ -177,6 +202,35 @@ def showNotification(notification: Notification): String = {
                   (identifier))
                 (interpolation
                   (identifier))))))))))
+
+================================================================================
+Case class patterns (Scala 3 syntax)
+================================================================================
+
+class A:
+  c match
+    case c @ City(name = "Hoboken") => c.population
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (capture_pattern
+              (identifier)
+              (case_class_pattern
+                (type_identifier)
+                (named_pattern
+                  (identifier)
+                  (string))))
+            (field_expression
+              (identifier)
+              (identifier))))))))
 
 ================================================================================
 Infix patterns

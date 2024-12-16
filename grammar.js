@@ -91,6 +91,11 @@ module.exports = grammar({
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
     [$._type, $.compound_type],
+    // 'given'  '('  operator_identifier  ':'  _type  •  ','  …
+    [$.name_and_type, $.parameter],
+    [$._simple_expression, $.binding, $.tuple_pattern],
+    [$._simple_expression, $.tuple_pattern],
+    [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
     // _postfix_expression_choice  ':'  '('  wildcard  •  ':'  …
@@ -785,6 +790,19 @@ module.exports = grammar({
         ),
       ),
 
+    /*
+     * NameAndType       ::=  id ':' Type
+     */
+    name_and_type: $ =>
+      prec.left(
+        PREC.control,
+        seq(
+          field("name", $._identifier),
+          ":",
+          field("type", $._param_type),
+        ),
+      ),
+
     _block: $ =>
       prec.left(
         seq(
@@ -837,6 +855,7 @@ module.exports = grammar({
         $.generic_type,
         $.projected_type,
         $.tuple_type,
+        $.named_tuple_type,
         $.singleton_type,
         $.stable_type_identifier,
         $._type_identifier,
@@ -896,6 +915,12 @@ module.exports = grammar({
       ),
 
     tuple_type: $ => seq("(", trailingCommaSep1($._type), ")"),
+
+    named_tuple_type: $ => seq(
+      "(",
+      trailingCommaSep1($.name_and_type),
+      ")",
+    ),
 
     singleton_type: $ =>
       prec.left(
@@ -991,6 +1016,7 @@ module.exports = grammar({
         $.interpolated_string_expression,
         $.capture_pattern,
         $.tuple_pattern,
+        $.named_tuple_pattern,
         $.case_class_pattern,
         $.infix_pattern,
         $.alternative_pattern,
@@ -1006,7 +1032,10 @@ module.exports = grammar({
       seq(
         field("type", choice($._type_identifier, $.stable_type_identifier)),
         "(",
-        field("pattern", trailingCommaSep($._pattern)),
+        choice(
+          field("pattern", trailingCommaSep($._pattern)),
+          field("pattern", trailingCommaSep($.named_pattern)),
+        ),
         ")",
       ),
 
@@ -1034,15 +1063,28 @@ module.exports = grammar({
 
     typed_pattern: $ =>
       prec.right(
+        -1,
         seq(field("pattern", $._pattern), ":", field("type", $._type)),
       ),
 
     given_pattern: $ => seq("given", field("type", $._type)),
 
     // TODO: Flatten this.
-    alternative_pattern: $ => prec.left(-1, seq($._pattern, "|", $._pattern)),
+    alternative_pattern: $ => prec.left(-2, seq($._pattern, "|", $._pattern)),
 
-    tuple_pattern: $ => seq("(", $._pattern, repeat(seq(",", $._pattern)), ")"),
+    tuple_pattern: $ => seq(
+      "(",
+      trailingCommaSep1($._pattern),
+      ")",
+    ),
+
+    named_pattern: $ => prec.left(-1, seq($._identifier, "=", $._pattern)),
+
+    named_tuple_pattern: $ => seq(
+      "(",
+      trailingCommaSep1($.named_pattern),
+      ")",
+    ),
 
     // ---------------------------------------------------------------
     // Expressions
