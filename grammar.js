@@ -989,7 +989,7 @@ module.exports = grammar({
         choice(
           seq(field("type_parameters", $.type_parameters), $._arrow_then_type),
           seq(field("parameter_types", $.parameter_types), $._arrow_then_type),
-        )
+        ),
       ),
 
     _arrow_then_type: $ =>
@@ -1163,15 +1163,7 @@ module.exports = grammar({
     lambda_expression: $ =>
       prec.right(
         seq(
-          optional(
-            seq(
-              field(
-                "type_parameters",
-                $.type_parameters,
-              ),
-              "=>",
-            ),
-          ),
+          optional(seq(field("type_parameters", $.type_parameters), "=>")),
           field(
             "parameters",
             choice(
