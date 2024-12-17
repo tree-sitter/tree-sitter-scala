@@ -383,26 +383,17 @@ module.exports = grammar({
 
     view_bound: $ => seq("<%", field("type", $._type)),
 
-    _context_bounds: $ => choice(
-      repeat1(seq(
-        ":",
-        $.context_bound
-      )),
-      seq(
-        ":",
-        "{",
-        trailingCommaSep1($.context_bound),
-        "}",
-      )
-    ),
+    _context_bounds: $ =>
+      choice(
+        repeat1(seq(":", $.context_bound)),
+        seq(":", "{", trailingCommaSep1($.context_bound), "}"),
+      ),
 
-    context_bound: $ => seq(
-      field("type", $._type),
-      optional(seq(
-        "as",
-        field("name", $._identifier),
-      )),
-    ),
+    context_bound: $ =>
+      seq(
+        field("type", $._type),
+        optional(seq("as", field("name", $._identifier))),
+      ),
 
     /*
      * TemplateBody      ::=  :<<< [SelfType] TemplateStat {semi TemplateStat} >>>
@@ -638,11 +629,7 @@ module.exports = grammar({
         ),
       ),
 
-    _given_sig: $ =>
-      seq(
-        $._given_conditional,
-        "=>"
-      ),
+    _given_sig: $ => seq($._given_conditional, "=>"),
 
     _given_conditional: $ => alias($.parameters, $.given_conditional),
 
@@ -668,10 +655,7 @@ module.exports = grammar({
         PREC.compound,
         seq(
           $._constructor_application,
-          choice(
-            ":",
-            "with"
-          ),
+          choice(":", "with"),
           field("body", $.with_template_body),
         ),
       ),
@@ -833,11 +817,7 @@ module.exports = grammar({
     name_and_type: $ =>
       prec.left(
         PREC.control,
-        seq(
-          field("name", $._identifier),
-          ":",
-          field("type", $._param_type),
-        ),
+        seq(field("name", $._identifier), ":", field("type", $._param_type)),
       ),
 
     _block: $ =>
@@ -899,7 +879,7 @@ module.exports = grammar({
           $.stable_type_identifier,
           $._type_identifier,
           $.wildcard,
-        )
+        ),
       ),
 
     compound_type: $ =>
@@ -956,11 +936,7 @@ module.exports = grammar({
 
     tuple_type: $ => seq("(", trailingCommaSep1($._type), ")"),
 
-    named_tuple_type: $ => seq(
-      "(",
-      trailingCommaSep1($.name_and_type),
-      ")",
-    ),
+    named_tuple_type: $ => seq("(", trailingCommaSep1($.name_and_type), ")"),
 
     singleton_type: $ =>
       prec.left(
@@ -1112,19 +1088,11 @@ module.exports = grammar({
     // TODO: Flatten this.
     alternative_pattern: $ => prec.left(-2, seq($._pattern, "|", $._pattern)),
 
-    tuple_pattern: $ => seq(
-      "(",
-      trailingCommaSep1($._pattern),
-      ")",
-    ),
+    tuple_pattern: $ => seq("(", trailingCommaSep1($._pattern), ")"),
 
     named_pattern: $ => prec.left(-1, seq($._identifier, "=", $._pattern)),
 
-    named_tuple_pattern: $ => seq(
-      "(",
-      trailingCommaSep1($.named_pattern),
-      ")",
-    ),
+    named_tuple_pattern: $ => seq("(", trailingCommaSep1($.named_pattern), ")"),
 
     // ---------------------------------------------------------------
     // Expressions
@@ -1602,8 +1570,7 @@ module.exports = grammar({
         $.string,
       ),
 
-    literal_type: $ =>
-      prec.left(PREC.type, $._non_null_literal),
+    literal_type: $ => prec.left(PREC.type, $._non_null_literal),
 
     literal: $ => choice($._non_null_literal, $.null_literal),
 
