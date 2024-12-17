@@ -3,6 +3,7 @@ const PREC = {
   using_directive: 2,
   control: 1,
   stable_type_id: 2,
+  type: 2,
   while: 2,
   assign: 3,
   case: 3,
@@ -93,10 +94,19 @@ module.exports = grammar({
     [$._type, $.compound_type],
     // 'given'  '('  '['  _type_parameter  •  ','  …
     [$._variant_type_parameter, $.type_lambda],
+    // 'given'  '('  operator_identifier  ':'  _type  •  ','  …
+    [$.name_and_type, $.parameter],
+    [$._simple_expression, $.binding, $.tuple_pattern],
+    [$._simple_expression, $.tuple_pattern],
+    [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
-    // _postfix_expression_choice  ':'  '('  wildcard  •  ':'  …
-    [$.binding, $._simple_type],
+    [$.block, $._braced_template_body1],
+    [$._simple_expression, $.self_type, $._type_identifier],
+    [$._simple_expression, $._type_identifier],
+    [$.lambda_expression, $.self_type, $._type_identifier],
+    [$.lambda_expression, $._type_identifier],
+    [$.binding, $._simple_expression, $._type_identifier],
   ],
 
   word: $ => $._alpha_identifier,
@@ -366,7 +376,7 @@ module.exports = grammar({
         field("bound", optional($.lower_bound)),
         field("bound", optional($.upper_bound)),
         field("bound", optional(repeat($.view_bound))),
-        field("bound", optional(repeat($.context_bound))),
+        field("bound", optional($._context_bounds)),
       ),
 
     upper_bound: $ => seq("<:", field("type", $._type)),
@@ -375,7 +385,26 @@ module.exports = grammar({
 
     view_bound: $ => seq("<%", field("type", $._type)),
 
-    context_bound: $ => seq(":", field("type", $._type)),
+    _context_bounds: $ => choice(
+      repeat1(seq(
+        ":",
+        $.context_bound
+      )),
+      seq(
+        ":",
+        "{",
+        trailingCommaSep1($.context_bound),
+        "}",
+      )
+    ),
+
+    context_bound: $ => seq(
+      field("type", $._type),
+      optional(seq(
+        "as",
+        field("name", $._identifier),
+      )),
+    ),
 
     /*
      * TemplateBody      ::=  :<<< [SelfType] TemplateStat {semi TemplateStat} >>>
@@ -522,6 +551,7 @@ module.exports = grammar({
           field("type_parameters", optional($.type_parameters)),
           field("bound", optional($.lower_bound)),
           field("bound", optional($.upper_bound)),
+          field("bound", optional($._context_bounds)),
         ),
       ),
 
@@ -552,10 +582,14 @@ module.exports = grammar({
       prec.right(
         seq(
           field("name", $._identifier),
-          field("type_parameters", optional($.type_parameters)),
           field(
             "parameters",
-            repeat(seq(optional($._automatic_semicolon), $.parameters)),
+            repeat(
+              seq(
+                optional($._automatic_semicolon),
+                choice($.parameters, $.type_parameters),
+              ),
+            ),
           ),
           optional($._automatic_semicolon),
         ),
@@ -595,6 +629,7 @@ module.exports = grammar({
           optional($.modifiers),
           "given",
           optional($._given_constructor),
+          repeat($._given_sig),
           choice(
             field("return_type", $._structural_instance),
             seq(
@@ -604,6 +639,14 @@ module.exports = grammar({
           ),
         ),
       ),
+
+    _given_sig: $ =>
+      seq(
+        $._given_conditional,
+        "=>"
+      ),
+
+    _given_conditional: $ => alias($.parameters, $.given_conditional),
 
     _given_constructor: $ =>
       prec.right(
@@ -627,7 +670,10 @@ module.exports = grammar({
         PREC.compound,
         seq(
           $._constructor_application,
-          "with",
+          choice(
+            ":",
+            "with"
+          ),
           field("body", $.with_template_body),
         ),
       ),
@@ -783,6 +829,19 @@ module.exports = grammar({
         ),
       ),
 
+    /*
+     * NameAndType       ::=  id ':' Type
+     */
+    name_and_type: $ =>
+      prec.left(
+        PREC.control,
+        seq(
+          field("name", $._identifier),
+          ":",
+          field("type", $._param_type),
+        ),
+      ),
+
     _block: $ =>
       prec.left(
         seq(
@@ -831,14 +890,18 @@ module.exports = grammar({
     annotated_type: $ => prec.right(seq($._simple_type, repeat1($.annotation))),
 
     _simple_type: $ =>
-      choice(
-        $.generic_type,
-        $.projected_type,
-        $.tuple_type,
-        $.singleton_type,
-        $.stable_type_identifier,
-        $._type_identifier,
-        $.wildcard,
+      prec.left(
+        PREC.type,
+        choice(
+          $.generic_type,
+          $.projected_type,
+          $.tuple_type,
+          $.named_tuple_type,
+          $.singleton_type,
+          $.stable_type_identifier,
+          $._type_identifier,
+          $.wildcard,
+        )
       ),
 
     compound_type: $ =>
@@ -894,6 +957,12 @@ module.exports = grammar({
       ),
 
     tuple_type: $ => seq("(", trailingCommaSep1($._type), ")"),
+
+    named_tuple_type: $ => seq(
+      "(",
+      trailingCommaSep1($.name_and_type),
+      ")",
+    ),
 
     singleton_type: $ =>
       prec.left(
@@ -992,6 +1061,7 @@ module.exports = grammar({
         $.interpolated_string_expression,
         $.capture_pattern,
         $.tuple_pattern,
+        $.named_tuple_pattern,
         $.case_class_pattern,
         $.infix_pattern,
         $.alternative_pattern,
@@ -1007,7 +1077,10 @@ module.exports = grammar({
       seq(
         field("type", choice($._type_identifier, $.stable_type_identifier)),
         "(",
-        field("pattern", trailingCommaSep($._pattern)),
+        choice(
+          field("pattern", trailingCommaSep($._pattern)),
+          field("pattern", trailingCommaSep($.named_pattern)),
+        ),
         ")",
       ),
 
@@ -1035,15 +1108,28 @@ module.exports = grammar({
 
     typed_pattern: $ =>
       prec.right(
+        -1,
         seq(field("pattern", $._pattern), ":", field("type", $._type)),
       ),
 
     given_pattern: $ => seq("given", field("type", $._type)),
 
     // TODO: Flatten this.
-    alternative_pattern: $ => prec.left(-1, seq($._pattern, "|", $._pattern)),
+    alternative_pattern: $ => prec.left(-2, seq($._pattern, "|", $._pattern)),
 
-    tuple_pattern: $ => seq("(", $._pattern, repeat(seq(",", $._pattern)), ")"),
+    tuple_pattern: $ => seq(
+      "(",
+      trailingCommaSep1($._pattern),
+      ")",
+    ),
+
+    named_pattern: $ => prec.left(-1, seq($._identifier, "=", $._pattern)),
+
+    named_tuple_pattern: $ => seq(
+      "(",
+      trailingCommaSep1($.named_pattern),
+      ")",
+    ),
 
     // ---------------------------------------------------------------
     // Expressions
@@ -1530,7 +1616,8 @@ module.exports = grammar({
         $.string,
       ),
 
-    literal_type: $ => $._non_null_literal,
+    literal_type: $ =>
+      prec.left(PREC.type, $._non_null_literal),
 
     literal: $ => choice($._non_null_literal, $.null_literal),
 

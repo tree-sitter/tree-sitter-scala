@@ -98,6 +98,29 @@ object Main {
           (type_identifier))))))
 
 ================================================================================
+Named tuple types (Scala 3 syntax)
+================================================================================
+
+object O:
+  type A = (name: String, age: Int)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (type_definition
+        (type_identifier)
+        (named_tuple_type
+          (name_and_type
+            (identifier)
+            (type_identifier))
+          (name_and_type
+            (identifier)
+            (type_identifier)))))))
+
+================================================================================
 Function types
 ================================================================================
 
@@ -428,6 +451,51 @@ class A[B : C : D]
         (type_identifier))
       (context_bound
         (type_identifier)))))
+
+================================================================================
+Context bound (Scala 3 syntax)
+================================================================================
+
+def reduce[A : Monoid as m](xs: List[A]): A = ()
+
+def showMax[X : {Ordering, Show}](x: X, y: X): String = ()
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (type_parameters
+      (identifier)
+      (context_bound
+        (type_identifier)
+        (identifier)))
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (type_identifier)
+    (unit))
+  (function_definition
+    (identifier)
+    (type_parameters
+      (identifier)
+      (context_bound
+        (type_identifier))
+      (context_bound
+        (type_identifier)))
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (unit)))
 
 ================================================================================
 Projections

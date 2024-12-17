@@ -1505,6 +1505,7 @@ def f(): Unit =
   for n <- nums yield n + 1
 
   for
+    a = 1
     x <- xs
     y <- ys
   yield
@@ -1534,6 +1535,9 @@ def f(): Unit =
           (integer_literal)))
       (for_expression
         (enumerators
+          (enumerator
+            (identifier)
+            (integer_literal))
           (enumerator
             (identifier)
             (identifier))

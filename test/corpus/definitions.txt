@@ -1028,6 +1028,25 @@ class A {
           (identifier))))))
 
 ================================================================================
+Type definitions (Scala 3 syntax)
+================================================================================
+
+class A:
+  type Element: Order
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (type_definition
+        (type_identifier)
+        (context_bound
+          (type_identifier))))))
+
+
+================================================================================
 Function declarations
 ================================================================================
 
@@ -1152,6 +1171,11 @@ class A:
     val y = 2
     x + y
 
+  // SIP-47 - Clause Interleaving
+  def getOrElse(k: Key)[V >: k.Value](default: V): V
+
+  def aaa[A](using a: A)(b: List[A])[C <: a.type, D](cd: (C, D))[E]: Unit
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -1175,7 +1199,55 @@ class A:
           (infix_expression
             (identifier)
             (operator_identifier)
-            (identifier)))))))
+            (identifier))
+          (comment)))
+      (function_declaration
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_parameters
+          (identifier)
+          (lower_bound
+            (stable_type_identifier
+              (identifier)
+              (type_identifier))))
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+            (type_identifier))
+      (function_declaration
+        (identifier)
+        (type_parameters
+          (identifier))
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (parameters
+          (parameter
+            (identifier)
+            (generic_type
+              (type_identifier)
+              (type_arguments
+                (type_identifier)))))
+        (type_parameters
+          (identifier)
+          (upper_bound
+            (singleton_type
+              (identifier)))
+          (identifier))
+        (parameters
+          (parameter
+            (identifier)
+            (tuple_type
+              (type_identifier)
+              (type_identifier))))
+        (type_parameters
+          (identifier))
+        (type_identifier)))))
 
 ================================================================================
 Extension methods (Scala 3 syntax)
@@ -1237,6 +1309,9 @@ object A:
   given intFoo: CanFoo[Int] with
     def foo(x: Int): Int = 0
 
+  given intFoo: CanFoo[Int]:
+    def foo(x: Int): Int = 0
+
   given CanFoo[Int] with
     def foo(x: Int): Int = 0
 
@@ -1264,6 +1339,8 @@ object A:
   trait B:
     given c: Context[T]
 
+  given (config: Config) => Factory = ConcreteFactory()
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -1274,6 +1351,21 @@ object A:
         (identifier)
         (type_identifier)
         (identifier))
+      (given_definition
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))
+        (with_template_body
+          (function_definition
+            (identifier)
+            (parameters
+              (parameter
+                (identifier)
+                (type_identifier)))
+            (type_identifier)
+            (integer_literal))))
       (given_definition
         (identifier)
         (generic_type
@@ -1411,7 +1503,16 @@ object A:
             (generic_type
               (type_identifier)
               (type_arguments
-                (type_identifier)))))))))
+              (type_identifier))))))
+          (given_definition
+            (given_conditional
+              (parameter
+                (identifier)
+                (type_identifier)))
+            (type_identifier)
+            (call_expression
+              (identifier)
+              (arguments))))))
 
 ================================================================================
 Top-level Definitions (Scala 3 syntax)
