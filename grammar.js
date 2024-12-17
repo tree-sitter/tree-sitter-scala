@@ -92,6 +92,8 @@ module.exports = grammar({
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
     [$._type, $.compound_type],
+    // 'given'  '('  '['  _type_parameter  •  ','  …
+    [$._variant_type_parameter, $.type_lambda],
     // 'given'  '('  operator_identifier  ':'  _type  •  ','  …
     [$.name_and_type, $.parameter],
     [$._simple_expression, $.binding, $.tuple_pattern],
@@ -984,7 +986,10 @@ module.exports = grammar({
 
     function_type: $ =>
       prec.left(
-        seq(field("parameter_types", $.parameter_types), $._arrow_then_type),
+        choice(
+          seq(field("type_parameters", $.type_parameters), $._arrow_then_type),
+          seq(field("parameter_types", $.parameter_types), $._arrow_then_type),
+        )
       ),
 
     _arrow_then_type: $ =>
@@ -1158,6 +1163,15 @@ module.exports = grammar({
     lambda_expression: $ =>
       prec.right(
         seq(
+          optional(
+            seq(
+              field(
+                "type_parameters",
+                $.type_parameters,
+              ),
+              "=>",
+            ),
+          ),
           field(
             "parameters",
             choice(

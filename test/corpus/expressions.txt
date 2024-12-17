@@ -1116,7 +1116,6 @@ object O {
   { b =>
    if (c) d.e }
   { a => implicit b => b }
-  { (a: Int) ?=> (b: Int) => b }
   { (_, a) => a }
 }
 
@@ -1201,6 +1200,31 @@ object O {
         (lambda_expression
           (bindings
             (binding
+              (wildcard))
+            (binding
+              (identifier)))
+          (identifier))))))
+
+================================================================================
+Lambda Expression (Scala 3 syntax)
+================================================================================
+
+object O:
+  val f = (a: Int) ?=> (b: Int) => b
+
+  val less: Comparer = [X: Ord] => (x: X, y: X) => ???
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (lambda_expression
+          (bindings
+            (binding
               (identifier)
               (type_identifier)))
           (lambda_expression
@@ -1209,14 +1233,22 @@ object O {
                 (identifier)
                 (type_identifier)))
             (identifier))))
-      (block
+      (val_definition
+        (identifier)
+        (type_identifier)
         (lambda_expression
+          (type_parameters
+            (identifier)
+            (context_bound
+              (type_identifier)))
           (bindings
             (binding
-              (wildcard))
+              (identifier)
+              (type_identifier))
             (binding
-              (identifier)))
-          (identifier))))))
+              (identifier)
+              (type_identifier)))
+          (operator_identifier))))))
 
 ================================================================================
 Unit expressions
