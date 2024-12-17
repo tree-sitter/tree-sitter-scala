@@ -2933,7 +2933,7 @@
     "fields": {
       "parameter_types": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "parameter_types",
@@ -3007,6 +3007,16 @@
           },
           {
             "type": "wildcard",
+            "named": true
+          }
+        ]
+      },
+      "type_parameters": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_parameters",
             "named": true
           }
         ]
@@ -4244,6 +4254,16 @@
           },
           {
             "type": "wildcard",
+            "named": true
+          }
+        ]
+      },
+      "type_parameters": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_parameters",
             "named": true
           }
         ]

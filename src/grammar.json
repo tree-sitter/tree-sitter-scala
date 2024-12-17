@@ -4679,19 +4679,41 @@
       "type": "PREC_LEFT",
       "value": 0,
       "content": {
-        "type": "SEQ",
+        "type": "CHOICE",
         "members": [
           {
-            "type": "FIELD",
-            "name": "parameter_types",
-            "content": {
-              "type": "SYMBOL",
-              "name": "parameter_types"
-            }
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "type_parameters",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "type_parameters"
+                }
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_arrow_then_type"
+              }
+            ]
           },
           {
-            "type": "SYMBOL",
-            "name": "_arrow_then_type"
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "parameter_types",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "parameter_types"
+                }
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_arrow_then_type"
+              }
+            ]
           }
         ]
       }
@@ -5587,6 +5609,31 @@
       "content": {
         "type": "SEQ",
         "members": [
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "FIELD",
+                    "name": "type_parameters",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "type_parameters"
+                    }
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "=>"
+                  }
+                ]
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          },
           {
             "type": "FIELD",
             "name": "parameters",
@@ -8322,6 +8369,10 @@
     [
       "_type",
       "compound_type"
+    ],
+    [
+      "_variant_type_parameter",
+      "type_lambda"
     ],
     [
       "name_and_type",
