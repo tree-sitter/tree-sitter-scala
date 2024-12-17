@@ -427,6 +427,51 @@ class A[B : C : D]
         (type_identifier)))))
 
 ================================================================================
+Context bound (Scala 3 syntax)
+================================================================================
+
+def reduce[A : Monoid as m](xs: List[A]): A = ()
+
+def showMax[X : {Ordering, Show}](x: X, y: X): String = ()
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (type_parameters
+      (identifier)
+      (context_bound
+        (type_identifier)
+        (identifier)))
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (type_identifier)
+    (unit))
+  (function_definition
+    (identifier)
+    (type_parameters
+      (identifier)
+      (context_bound
+        (type_identifier))
+      (context_bound
+        (type_identifier)))
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (unit)))
+
+================================================================================
 Projections
 ================================================================================
 
