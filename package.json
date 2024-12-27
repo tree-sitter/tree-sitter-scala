@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-scala",
-  "version": "0.23.3",
+  "version": "0.23.4",
   "description": "Scala grammar for tree-sitter",
   "repository": "https://github.com/tree-sitter/tree-sitter-scala",
   "license": "MIT",
@@ -47,6 +47,7 @@
     "install": "node-gyp-build",
     "prestart": "tree-sitter build --wasm",
     "start": "tree-sitter playground",
-    "test": "node --test bindings/node/*_test.js"
+    "test": "node --test bindings/node/*_test.js",
+    "prebuildify": "prebuildify --napi --strip"
   }
 }
