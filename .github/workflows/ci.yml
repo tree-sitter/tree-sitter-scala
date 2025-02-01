@@ -75,6 +75,8 @@ jobs:
 
       - name: Set up tree-sitter
         uses: tree-sitter/setup-action/cli@v1
+        with:
+          tree-sitter-ref: v0.24.7
 
       - name: Generate parser from scratch and test it
         shell: bash
