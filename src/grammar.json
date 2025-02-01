@@ -8529,5 +8529,6 @@
     "expression",
     "_definition",
     "_pattern"
-  ]
+  ],
+  "reserved": {}
 }
