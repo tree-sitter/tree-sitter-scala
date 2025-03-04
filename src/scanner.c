@@ -15,20 +15,52 @@
 enum TokenType {
   AUTOMATIC_SEMICOLON,
   INDENT,
-  INTERPOLATED_STRING_MIDDLE,
-  INTERPOLATED_STRING_END,
-  INTERPOLATED_MULTILINE_STRING_MIDDLE,
-  INTERPOLATED_MULTILINE_STRING_END,
   OUTDENT,
-  SIMPLE_MULTILINE_STRING,
-  SIMPLE_STRING,
+  SIMPLE_STRING_START,
+  SIMPLE_STRING_MIDDLE,
+  SIMPLE_MULTILINE_STRING_START,
+  INTERPOLATED_STRING_MIDDLE,
+  INTERPOLATED_MULTILINE_STRING_MIDDLE,
+  RAW_STRING_MIDDLE,
+  RAW_MULTILINE_STRING_MIDDLE,
+  SINGLE_LINE_STRING_END,
+  MULTILINE_STRING_END,
   ELSE,
   CATCH,
   FINALLY,
   EXTENDS,
   DERIVES,
   WITH,
+  ERROR_SENTINEL
 };
+
+const char* token_name[] = {
+  "AUTOMATIC_SEMICOLON",
+  "INDENT",
+  "OUTDENT",
+  "SIMPLE_STRING_START",
+  "SIMPLE_STRING_MIDDLE",
+  "SIMPLE_MULTILINE_STRING_START",
+  "INTERPOLATED_STRING_MIDDLE",
+  "INTERPOLATED_MULTILINE_STRING_MIDDLE",
+  "RAW_STRING_MIDDLE",
+  "RAW_MULTILINE_STRING_MIDDLE",
+  "SINGLE_LINE_STRING_END",
+  "MULTILINE_STRING_END",
+  "ELSE",
+  "CATCH",
+  "FINALLY",
+  "EXTENDS",
+  "DERIVES",
+  "WITH",
+  "ERROR_SENTINEL"
+};
+
+typedef enum {
+  STRING_MODE_SIMPLE,
+  STRING_MODE_INTERPOLATED,
+  STRING_MODE_RAW,
+} StringMode;
 
 typedef struct {
   Array(int16_t) indents;
@@ -107,43 +139,54 @@ static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 
-static bool scan_string_content(TSLexer *lexer, bool is_multiline, bool has_interpolation) {
+static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode string_mode) {
   unsigned closing_quote_count = 0;
   for (;;) {
     if (lexer->lookahead == '"') {
       advance(lexer);
       closing_quote_count++;
       if (!is_multiline) {
-        lexer->result_symbol = has_interpolation ? INTERPOLATED_STRING_END : SIMPLE_STRING;
+        lexer->result_symbol = SINGLE_LINE_STRING_END;
+        lexer->mark_end(lexer);
         return true;
       }
       if (closing_quote_count >= 3 && lexer->lookahead != '"') {
-        lexer->result_symbol = has_interpolation ? INTERPOLATED_MULTILINE_STRING_END : SIMPLE_MULTILINE_STRING;
+        lexer->result_symbol = MULTILINE_STRING_END;
+        lexer->mark_end(lexer);
         return true;
       }
-    } else if (lexer->lookahead == '$') {
-      if (is_multiline && has_interpolation) {
-        lexer->result_symbol =  INTERPOLATED_MULTILINE_STRING_MIDDLE;
-        return true;
+    } else if (lexer->lookahead == '$' && string_mode != STRING_MODE_SIMPLE) {
+      if (string_mode == STRING_MODE_INTERPOLATED) {
+        lexer->result_symbol = is_multiline ? INTERPOLATED_MULTILINE_STRING_MIDDLE : INTERPOLATED_STRING_MIDDLE;
+      } else if (string_mode == STRING_MODE_RAW) {
+        lexer->result_symbol = is_multiline ? RAW_MULTILINE_STRING_MIDDLE : RAW_STRING_MIDDLE;
+      } else {
+        LOG("unreachable state\n");
+        advance(lexer);
       }
-      if (has_interpolation) {
-        lexer->result_symbol = INTERPOLATED_STRING_MIDDLE;
-        return true;
-      }
-      advance(lexer);
+
+      lexer->mark_end(lexer);
+      return true;
     } else {
       closing_quote_count = 0;
       if (lexer->lookahead == '\\') {
-        advance(lexer);
-        if (!lexer->eof(lexer)) {
+        // Multiline strings and raw strings ignore escape sequences
+        if (is_multiline || string_mode == STRING_MODE_RAW) {
           advance(lexer);
-        }
-      } else if (lexer->lookahead == '\n') {
-        if (is_multiline) {
-          advance(lexer);
+          if (!lexer->eof(lexer)) {
+            advance(lexer);
+          }
+        } else if (string_mode == STRING_MODE_INTERPOLATED) {
+          lexer->result_symbol = INTERPOLATED_STRING_MIDDLE;
+          lexer->mark_end(lexer);
+          return true;
         } else {
-          return false;
+          lexer->result_symbol = SIMPLE_STRING_MIDDLE;
+          lexer->mark_end(lexer);
+          return true;
         }
+      } else if (lexer->lookahead == '\n' && !is_multiline) {
+        return false;
       } else if (lexer->eof(lexer)) {
         return false;
       } else {
@@ -185,6 +228,24 @@ static inline void debug_indents(Scanner *scanner) {
 
 bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
                                              const bool *valid_symbols) {
+  #ifdef DEBUG
+  {
+    if (valid_symbols[ERROR_SENTINEL]) {
+      LOG("entering tree_sitter_scala_external_scanner_scan. ERROR_SENTINEL is valid\n");
+    } else {
+      char debug_str[1024] = "entering tree_sitter_scala_external_scanner_scan valid symbols: ";
+      for (unsigned i = 0; i < ERROR_SENTINEL; i++) {
+        if (valid_symbols[i]) {
+          strcat(debug_str, token_name[i]);
+          strcat(debug_str, ", ");
+        }
+      }
+      strcat(debug_str, "\n");
+      LOG("%s", debug_str);
+    }
+  }
+  #endif
+
   Scanner *scanner = (Scanner *)payload;
   int16_t prev = scanner->indents.size > 0 ? *array_back(&scanner->indents) : -1;
   int16_t newline_count = 0;
@@ -249,7 +310,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   }
 
   // This saves the indentation_size and newline_count so it can be used
-  // in subsequent calls for multiple outdent or autosemicolon.
+  // in subsequent calls for multiple outdent or auto-semicolon.
   if (valid_symbols[OUTDENT] &&
       (lexer->lookahead == 0 ||
       (
@@ -388,30 +449,53 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     skip(lexer);
   }
 
-  if (valid_symbols[SIMPLE_STRING] && lexer->lookahead == '"') {
+  if (valid_symbols[SIMPLE_STRING_START] && lexer->lookahead == '"') {
     advance(lexer);
+    lexer->mark_end(lexer);
 
-    bool is_multiline = false;
     if (lexer->lookahead == '"') {
       advance(lexer);
       if (lexer->lookahead == '"') {
         advance(lexer);
-        is_multiline = true;
-      } else {
-        lexer->result_symbol = SIMPLE_STRING;
+        lexer->result_symbol = SIMPLE_MULTILINE_STRING_START;
+        lexer->mark_end(lexer);
         return true;
       }
     }
 
-    return scan_string_content(lexer, is_multiline, false);
+    lexer->result_symbol = SIMPLE_STRING_START;
+    return true;
+  }
+
+  if (valid_symbols[SIMPLE_STRING_MIDDLE]) {
+    return scan_string_content(lexer, false, STRING_MODE_SIMPLE);
+
   }
 
   if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, true);
+    return scan_string_content(lexer, false, STRING_MODE_INTERPOLATED);
+    LOG("returning %s\n", token_name[lexer->result_symbol]);
   }
 
   if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, true, true);
+    return scan_string_content(lexer, true, STRING_MODE_INTERPOLATED);
+    LOG("returning %s\n", token_name[lexer->result_symbol]);
+  }
+
+  if (valid_symbols[RAW_STRING_MIDDLE]) {
+    return scan_string_content(lexer, false, STRING_MODE_RAW);
+    LOG("returning %s\n", token_name[lexer->result_symbol]);
+  }
+
+  if (valid_symbols[RAW_MULTILINE_STRING_MIDDLE]) {
+    return scan_string_content(lexer, true, STRING_MODE_RAW);
+  }
+
+  // We have to check for MULTILINE_STRING_END after last because we don't have a
+  // MULTILINE_STRING_MIDDLE token with which to distinguish multi-line simple strings
+  // from multi-line interpolated or raw strings.
+  if (valid_symbols[MULTILINE_STRING_END]) {
+    return scan_string_content(lexer, true, STRING_MODE_SIMPLE);
   }
 
   return false;
