@@ -2,15 +2,30 @@
 Simple strings
 ================================================================================
 
+val emptyString = ""
+
 val oneLineString = "I'm just on one line"
+
+val stringWithCommentLikeContent1 = "// not a comment"
+
+val stringWithCommentLikeContent2 = "/* not a comment */"
+
+val stringWithEscapeSequence = "first line\nsecond line"
 
 val multiLineString = """
   a
   $thisIsntInterpolated
   ${thisEither}
+  no escape codes in multiline strings \uD83D\uDE00 \n
 """
 
-val multiLineString2 = """""""
+val emptyMultilineStringf = """"""
+
+val stringOfOneDoubleQuote = """""""
+
+val multiLineString3 = """\{@inheritDoc\p{Zs}*\}"""
+
+val blackslashDoesNotEscapeClosingQuote = """\"""
 
 --------------------------------------------------------------------------------
 
@@ -23,17 +38,84 @@ val multiLineString2 = """""""
     (string))
   (val_definition
     (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string
+      (escape_sequence)))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
     (string)))
+
+================================================================================
+Escape sequences in strings
+================================================================================
+
+val singleEscapeCode = "\n"
+
+val singleCharacterEscapes = "\n\r\t\b\f\'\"\\"
+
+val unicodeEscape = "\uD83D\UDE00"
+
+val repeatedUs = "\uuuuD83D\UUDE00"
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (string
+      (escape_sequence)))
+  (val_definition
+    (identifier)
+    (string
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)))
+  (val_definition
+    (identifier)
+    (string
+      (escape_sequence)
+      (escape_sequence)))
+  (val_definition
+    (identifier)
+    (string
+      (escape_sequence)
+      (escape_sequence))))
 
 ================================================================================
 Interpolated strings
 ================================================================================
 
+val empty = s""
+
+val emptyMultiline = s""""""
+
 val string1 = s"a $b ${c}"
 
 val string2 = f"hi $name%s"
 
-val string3 = raw"Not a new line \n${ha}"
+val string3 = raw"Not a really a new line \n${ha}."
 
 val string4 = s"""
 works even in multiline strings, ${name}
@@ -47,9 +129,29 @@ val string7 = s"$$ $a"
 
 val string8 = s"$"$a"
 
+val string9 = s"$"$a\uD83D\UDE00\n"
+
+val multiline = raw"""
+  $$
+  ${interp}
+  \n
+  \x
+  \"
+\"""
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string)))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string)))
   (val_definition
     (identifier)
     (interpolated_string_expression
@@ -99,16 +201,9 @@ val string8 = s"$"$a"
     (identifier)
     (interpolated_string_expression
       (identifier)
-        (interpolated_string
-          (interpolation
-            (identifier))
-          (interpolation
-            (identifier)))))
-  (val_definition
-    (identifier)
-    (interpolated_string_expression
-      (identifier)
       (interpolated_string
+        (interpolation
+          (identifier))
         (interpolation
           (identifier)))))
   (val_definition
@@ -116,8 +211,178 @@ val string8 = s"$"$a"
     (interpolated_string_expression
       (identifier)
       (interpolated_string
+        (escape_sequence)
         (interpolation
-          (identifier))))))
+          (identifier)))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence)
+        (interpolation
+          (identifier)))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence)
+        (interpolation
+          (identifier))
+        (escape_sequence)
+        (escape_sequence)
+        (escape_sequence))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence)
+        (interpolation
+          (block
+            (identifier)))))))
+
+================================================================================
+Raw strings
+================================================================================
+
+val emptyRaw = raw""
+
+val emptyMultilineRaw = raw""""""
+
+val invalidEscapeCodesAllowedAndValidEscapesIgnored = raw"\n\t\x\w\g\k"
+
+val ErasedFunctionN = raw"ErasedFunction(\d+)".r
+
+val escapedAndInterpolated = raw"Not a really a new line \n${ha}."
+
+val blackslashQuoteDoesNotCloseString = raw"\""
+
+val doubleSlashQuoteDoesCloseString = raw"\\"
+
+val dollarEscapeInSingleLine = raw"$$"
+
+val slashDoesNotEscapeDollarSign = raw"\$$"
+
+val multiline = raw"""
+  $$
+  ${interp}
+  \n
+  \x
+  \"
+\"""
+
+val ensureIdentifierNamedRawStillWorks = someFunction(raw)
+
+val raw = raw(raw)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string)))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string)))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string)))
+  (val_definition
+    (identifier)
+    (field_expression
+      (interpolated_string_expression
+        (identifier)
+        (interpolated_string))
+      (identifier)))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (interpolation
+          (block
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string)))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string)))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence)
+        (interpolation
+          (block
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (arguments
+        (identifier))))
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (arguments
+        (identifier)))))
+
+================================================================================
+Raw and interpolated strings have equivalent parse trees
+================================================================================
+
+val raw = raw"Foo $$ ${bar}"
+
+val raw = s"Foo $$ ${bar}"
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence)
+        (interpolation
+          (block
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (escape_sequence)
+        (interpolation
+          (block
+            (identifier)))))))
 
 
 ================================================================================
