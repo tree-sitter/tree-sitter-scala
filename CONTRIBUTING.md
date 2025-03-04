@@ -36,7 +36,7 @@ to `grammar.js`, regenerate and recompile the parser, and run the tests:
 
 ```sh
 tree-sitter generate
-npm test
+tree-sitter test
 ```
 
 Then adjust as necessary. Note that depending on your change you may also have
