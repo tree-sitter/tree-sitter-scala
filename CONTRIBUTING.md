@@ -51,7 +51,7 @@ means much of our testing is in relation to it. You can find the syntax
 highlighting tests in `test/highlight/*.scala`. You can read more about this
 type of testing 
 [here](https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#unit-testing). 
-These test will be run automatically with `npm run test`.
+These test will be run automatically with `tree-sitter test`.
 
 ### tree-sitter highlight
 
