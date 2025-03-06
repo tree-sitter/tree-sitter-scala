@@ -7,11 +7,12 @@ tree-sitter.
 
 ## Requirements
 
+- [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/tree/master/cli)
 - Node.js version 18.0 or greater
 - C Compiler
 
 Refer to the [tree-sitter
-documentation](https://tree-sitter.github.io/tree-sitter/creating-parsers#dependencies)
+documentation](https://tree-sitter.github.io/tree-sitter/creating-parsers/1-getting-started.html)
 for more details and specifics.
 
 If you use nix you can enter a nix-shell (`nix-shell .`) which will install them
@@ -26,16 +27,16 @@ project's dependencies:
 npm install
 ```
 
-The general flow will often start with adding a test case to `./corpus`. You can
+The general flow will often start with adding a test case to `./test/corpus`. You can
 find details on how testing works with tree-sitter
-[here](https://tree-sitter.github.io/tree-sitter/creating-parsers#command-test).
+[here](https://tree-sitter.github.io/tree-sitter/creating-parsers/5-writing-tests.html).
 
 Once you've added your test case you'll want to then make the required changes
 to `grammar.js`, regenerate and recompile the parser, and run the tests:
 
 ```sh
-npm run build
-npm test
+tree-sitter generate
+tree-sitter test
 ```
 
 Then adjust as necessary. Note that depending on your change you may also have
@@ -48,15 +49,18 @@ Right now the most common use-case for syntax highlight using tree-sitter is
 [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter), which
 means much of our testing is in relation to it. You can find the syntax
 highlighting tests in `test/highlight/*.scala`. You can read more about this
-type of testing
-[here](https://tree-sitter.github.io/tree-sitter/syntax-highlighting#unit-testing). These test will be automatically ran with `npm run test`.
+type of testing 
+[here](https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#unit-testing). 
+These test will be run automatically with `tree-sitter test`.
 
 ### tree-sitter highlight
 
 Another way to test your syntax highlighting locally is to use the `tree-sitter
 highlight` command. Note that you'll need to have `tree-sitter` installed
 globally for this to work. Once you have it installed you'll want to follow the
-instructions [here](https://tree-sitter.github.io/tree-sitter/syntax-highlighting#per-user-configuration) to setup a local config that points towards this repo to be used as a parser. Once done you can then do the following:
+instructions [here](https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#overview) 
+to setup a local config that points towards this repo to be used as a parser. 
+Once done you can then do the following:
 
 ```sh
 tree-sitter highlight some/scala/file.scala
@@ -102,8 +106,7 @@ Then you can copy your Scala code in a file and pass that file into `npm run
 parse`:
 
 ```
-npm run parse <path/to/your/file.scala>
+tree-sitter parse <path/to/your/file.scala>
 ```
 
 Then the tree will be printed out for you to copy.
-
