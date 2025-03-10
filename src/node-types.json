@@ -830,6 +830,14 @@
           {
             "type": "expression",
             "named": true
+          },
+          {
+            "type": "indented_block",
+            "named": true
+          },
+          {
+            "type": "indented_cases",
+            "named": true
           }
         ]
       }
@@ -1209,68 +1217,20 @@
     "named": true,
     "fields": {
       "body": {
-        "multiple": true,
+        "multiple": false,
         "required": false,
         "types": [
-          {
-            "type": ";",
-            "named": false
-          },
-          {
-            "type": "_definition",
-            "named": true
-          },
-          {
-            "type": "_end_ident",
-            "named": false
-          },
-          {
-            "type": "end",
-            "named": false
-          },
           {
             "type": "expression",
             "named": true
           },
           {
-            "type": "extension",
-            "named": false
+            "type": "indented_block",
+            "named": true
           },
           {
-            "type": "for",
-            "named": false
-          },
-          {
-            "type": "given",
-            "named": false
-          },
-          {
-            "type": "if",
-            "named": false
-          },
-          {
-            "type": "match",
-            "named": false
-          },
-          {
-            "type": "new",
-            "named": false
-          },
-          {
-            "type": "this",
-            "named": false
-          },
-          {
-            "type": "try",
-            "named": false
-          },
-          {
-            "type": "val",
-            "named": false
-          },
-          {
-            "type": "while",
-            "named": false
+            "type": "indented_cases",
+            "named": true
           }
         ]
       },
@@ -1306,6 +1266,14 @@
         "types": [
           {
             "type": "expression",
+            "named": true
+          },
+          {
+            "type": "indented_block",
+            "named": true
+          },
+          {
+            "type": "indented_cases",
             "named": true
           }
         ]
@@ -1883,14 +1851,6 @@
           {
             "type": "view_bound",
             "named": true
-          },
-          {
-            "type": "{",
-            "named": false
-          },
-          {
-            "type": "}",
-            "named": false
           }
         ]
       },
@@ -1955,14 +1915,6 @@
           {
             "type": "view_bound",
             "named": true
-          },
-          {
-            "type": "{",
-            "named": false
-          },
-          {
-            "type": "}",
-            "named": false
           }
         ]
       },
@@ -2346,7 +2298,7 @@
     "fields": {
       "body": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": ";",
@@ -2406,14 +2358,6 @@
           },
           {
             "type": "while",
-            "named": false
-          },
-          {
-            "type": "{",
-            "named": false
-          },
-          {
-            "type": "}",
             "named": false
           }
         ]
@@ -2600,24 +2544,8 @@
         "required": true,
         "types": [
           {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
-          {
             "type": "enumerators",
             "named": true
-          },
-          {
-            "type": "{",
-            "named": false
-          },
-          {
-            "type": "}",
-            "named": false
           }
         ]
       }
@@ -5884,6 +5812,14 @@
         {
           "type": "expression",
           "named": true
+        },
+        {
+          "type": "indented_block",
+          "named": true
+        },
+        {
+          "type": "indented_cases",
+          "named": true
         }
       ]
     }
@@ -6214,6 +6150,14 @@
       "types": [
         {
           "type": "expression",
+          "named": true
+        },
+        {
+          "type": "indented_block",
+          "named": true
+        },
+        {
+          "type": "indented_cases",
           "named": true
         }
       ]
@@ -6765,14 +6709,6 @@
           {
             "type": "upper_bound",
             "named": true
-          },
-          {
-            "type": "{",
-            "named": false
-          },
-          {
-            "type": "}",
-            "named": false
           }
         ]
       },
@@ -6917,14 +6853,6 @@
           {
             "type": "view_bound",
             "named": true
-          },
-          {
-            "type": "{",
-            "named": false
-          },
-          {
-            "type": "}",
-            "named": false
           }
         ]
       },
@@ -7059,14 +6987,6 @@
           {
             "type": "view_bound",
             "named": true
-          },
-          {
-            "type": "{",
-            "named": false
-          },
-          {
-            "type": "}",
-            "named": false
           }
         ]
       },
@@ -7935,14 +7855,6 @@
     "named": false
   },
   {
-    "type": "(",
-    "named": false
-  },
-  {
-    "type": ")",
-    "named": false
-  },
-  {
     "type": "*",
     "named": false
   },
@@ -8020,14 +7932,6 @@
   },
   {
     "type": "@",
-    "named": false
-  },
-  {
-    "type": "[",
-    "named": false
-  },
-  {
-    "type": "]",
     "named": false
   },
   {
@@ -8267,15 +8171,7 @@
     "named": false
   },
   {
-    "type": "{",
-    "named": false
-  },
-  {
     "type": "|",
-    "named": false
-  },
-  {
-    "type": "}",
     "named": false
   },
   {

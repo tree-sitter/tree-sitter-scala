@@ -39,6 +39,13 @@ module.exports = grammar({
     $._outdent,
     $._simple_multiline_string,
     $._simple_string,
+    $._open_paren,
+    $._close_paren,
+    $._open_brack,
+    $._close_brack,
+    $._open_brace,
+    $._close_brace,
+    "end",
     "else",
     "catch",
     "finally",
@@ -61,7 +68,8 @@ module.exports = grammar({
   precedences: $ => [
     ["mod", "soft_id"],
     ["end", "soft_id"],
-    ["new", "structural_type"],
+    ["extension", "soft_id"],
+    ["new", "structural_type"]
   ],
 
   conflicts: $ => [
@@ -101,7 +109,6 @@ module.exports = grammar({
     [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
-    [$.block, $._braced_template_body1],
     [$._simple_expression, $.self_type, $._type_identifier],
     [$._simple_expression, $._type_identifier],
     [$.lambda_expression, $.self_type, $._type_identifier],
@@ -120,13 +127,7 @@ module.exports = grammar({
       ),
 
     _top_level_definition: $ =>
-      choice(
-        $.package_clause,
-        $.package_object,
-        $._definition,
-        $._end_marker,
-        $.expression,
-      ),
+      choice($.package_clause, $.package_object, $._definition, $.expression),
 
     _definition: $ =>
       choice(
@@ -160,11 +161,10 @@ module.exports = grammar({
     _enum_block: $ =>
       prec.left(
         seq(
-          sep1(
+          trailingSep1(
             $._semicolon,
             choice($.enum_case_definitions, $.expression, $._definition),
           ),
-          optional($._semicolon),
         ),
       ),
 
@@ -172,10 +172,10 @@ module.exports = grammar({
       choice(
         prec.left(PREC.control, seq(":", $._indent, $._enum_block, $._outdent)),
         seq(
-          "{",
+          $._open_brace,
           // TODO: self type
           optional($._enum_block),
-          "}",
+          $._close_brace,
         ),
       ),
 
@@ -213,12 +213,14 @@ module.exports = grammar({
           // concerned with the structure rather than the validity of the program
           // we'll allow it.
           field("body", optional($.template_body)),
+          optional($._end_marker),
         ),
       ),
 
     package_identifier: $ => prec.right(sep1(".", $._identifier)),
 
-    package_object: $ => seq("package", "object", $._object_definition),
+    package_object: $ =>
+      seq("package", "object", $._object_definition, optional($._end_marker)),
 
     import_declaration: $ =>
       prec.left(seq("import", sep1(",", $._namespace_expression))),
@@ -252,7 +254,7 @@ module.exports = grammar({
 
     namespace_selectors: $ =>
       seq(
-        "{",
+        $._open_brace,
         trailingCommaSep1(
           choice(
             $._namespace_given_by_type,
@@ -262,7 +264,7 @@ module.exports = grammar({
             $.as_renamed_identifier,
           ),
         ),
-        "}",
+        $._close_brace,
       ),
 
     // deprecated: Remove when highlight query is updated for Neovim
@@ -352,7 +354,7 @@ module.exports = grammar({
     // parameters. This isn't important to the structure of the AST so we don't
     // make that distinction.
     type_parameters: $ =>
-      seq("[", trailingCommaSep1($._variant_type_parameter), "]"),
+      seq($._open_brack, trailingCommaSep1($._variant_type_parameter), $._close_brack),
 
     _variant_type_parameter: $ =>
       seq(
@@ -388,7 +390,7 @@ module.exports = grammar({
     _context_bounds: $ =>
       choice(
         repeat1(seq(":", $.context_bound)),
-        seq(":", "{", trailingCommaSep1($.context_bound), "}"),
+        seq(":", $._open_brace, trailingCommaSep1($.context_bound), $._close_brace),
       ),
 
     context_bound: $ =>
@@ -406,28 +408,20 @@ module.exports = grammar({
     _indented_template_body: $ =>
       prec.left(
         PREC.control,
-        seq(":", $._indent, optional($.self_type), $._block, $._outdent),
+        seq(
+          ":",
+          $._indent,
+          optional($.self_type),
+          $._block,
+          $._outdent,
+          optional($._end_marker),
+        ),
       ),
 
     _braced_template_body: $ =>
       prec.left(
         PREC.control,
-        seq(
-          "{",
-          optional(choice($._braced_template_body1, $._braced_template_body2)),
-          "}",
-        ),
-      ),
-
-    _braced_template_body1: $ => seq(optional($.self_type), $._block),
-    _braced_template_body2: $ =>
-      seq(
-        choice(
-          seq($._indent, optional($.self_type)),
-          seq(optional($.self_type), $._indent),
-        ),
-        optional($._block),
-        $._outdent,
+        seq($._open_brace, optional(seq(optional($.self_type), $._block)), $._close_brace),
       ),
 
     /*
@@ -436,13 +430,22 @@ module.exports = grammar({
     with_template_body: $ =>
       prec.left(
         PREC.control,
-        seq($._indent, optional($.self_type), $._block, $._outdent),
+        seq(
+          $._indent,
+          optional($.self_type),
+          $._block,
+          $._outdent,
+          optional($._end_marker),
+        ),
       ),
 
     _extension_template_body: $ =>
       choice(
-        prec.left(PREC.control, seq($._indent, $._block, $._outdent)),
-        seq("{", optional($._block), "}"),
+        prec.left(
+          PREC.control,
+          seq($._indent, $._block, $._outdent, optional($._end_marker)),
+        ),
+        seq($._open_brace, optional($._block), $._close_brace),
       ),
 
     _end_marker: $ =>
@@ -468,10 +471,8 @@ module.exports = grammar({
 
     // Dynamic precedences added here to win over $.call_expression
     self_type: $ =>
-      prec.dynamic(
-        1,
         seq($._identifier, optional($._self_type_ascription), "=>"),
-      ),
+      
 
     _self_type_ascription: $ => seq(":", $._type),
 
@@ -594,16 +595,17 @@ module.exports = grammar({
      */
     extension_definition: $ =>
       prec.left(
-        seq(
-          "extension",
-          field("type_parameters", optional($.type_parameters)),
-          field("parameters", repeat($.parameters)),
-          field(
-            "body",
-            choice(
-              $._extension_template_body,
-              $.function_definition,
-              $.function_declaration,
+      "extension",
+      seq(
+        "extension",
+        field("type_parameters", optional($.type_parameters)),
+        field("parameters", repeat($.parameters)),
+        field(
+          "body",
+          choice(
+            $._extension_template_body,
+            $.function_definition,
+            $.function_declaration,
             ),
           ),
         ),
@@ -718,7 +720,7 @@ module.exports = grammar({
         seq(choice("private", "protected"), optional($.access_qualifier)),
       ),
 
-    access_qualifier: $ => seq("[", $._identifier, "]"),
+    access_qualifier: $ => seq($._open_brack, $._identifier, $._close_brack),
 
     inline_modifier: $ => prec("mod", "inline"),
     infix_modifier: $ => prec("mod", "infix"),
@@ -752,10 +754,10 @@ module.exports = grammar({
         1,
         seq(
           optional($._automatic_semicolon),
-          "(",
+          $._open_paren,
           optional(choice("implicit", "using")),
           trailingCommaSep($.class_parameter),
-          ")",
+          $._close_paren,
         ),
       ),
 
@@ -766,7 +768,7 @@ module.exports = grammar({
      */
     parameters: $ =>
       choice(
-        seq("(", optional("implicit"), trailingCommaSep($.parameter), ")"),
+        seq($._open_paren, optional("implicit"), trailingCommaSep($.parameter), $._close_paren),
         $._using_parameters_clause,
       ),
 
@@ -777,13 +779,13 @@ module.exports = grammar({
      */
     _using_parameters_clause: $ =>
       seq(
-        "(",
+        $._open_paren,
         "using",
         choice(
           trailingCommaSep1($.parameter),
           trailingCommaSep1($._param_type),
         ),
-        ")",
+        $._close_paren,
       ),
 
     class_parameter: $ =>
@@ -825,18 +827,14 @@ module.exports = grammar({
     _block: $ =>
       prec.left(
         seq(
-          sep1(
-            $._semicolon,
-            choice($.expression, $._definition, $._end_marker, ";"),
-          ),
-          optional($._semicolon),
+          trailingSep1($._semicolon, choice($._definition, $.expression, ";")),
         ),
       ),
 
     _indentable_expression: $ =>
       prec.right(choice($.indented_block, $.indented_cases, $.expression)),
 
-    block: $ => seq("{", optional($._block), "}"),
+    block: $ => seq($._open_brace, optional($._block), $._close_brace),
 
     indented_block: $ =>
       prec.left(
@@ -845,10 +843,24 @@ module.exports = grammar({
       ),
 
     indented_cases: $ =>
-      prec.left(seq($._indent, repeat1($.case_clause), $._outdent)),
+      prec.left(
+        seq(
+          $._indent,
+          repeat1($.case_clause),
+          $._outdent,
+          optional($._end_marker),
+        ),
+      ),
 
     _indented_type_cases: $ =>
-      prec.left(seq($._indent, repeat1($.type_case_clause), $._outdent)),
+      prec.left(
+        seq(
+          $._indent,
+          repeat1($.type_case_clause),
+          $._outdent,
+          optional($._end_marker),
+        ),
+      ),
 
     // ---------------------------------------------------------------
     // Types
@@ -936,9 +948,9 @@ module.exports = grammar({
         ),
       ),
 
-    tuple_type: $ => seq("(", trailingCommaSep1($._type), ")"),
+    tuple_type: $ => seq($._open_paren, trailingCommaSep1($._type), $._close_paren),
 
-    named_tuple_type: $ => seq("(", trailingCommaSep1($.name_and_type), ")"),
+    named_tuple_type: $ => seq($._open_paren, trailingCommaSep1($.name_and_type), $._close_paren),
 
     singleton_type: $ =>
       prec.left(
@@ -1002,7 +1014,7 @@ module.exports = grammar({
         choice(
           $._annotated_type,
           // Prioritize a parenthesized param list over a single tuple_type.
-          prec.dynamic(1, seq("(", trailingCommaSep($._param_type), ")")),
+          prec.dynamic(1, seq($._open_paren, trailingCommaSep($._param_type), $._close_paren)),
           $.compound_type,
           $.infix_type,
         ),
@@ -1020,9 +1032,9 @@ module.exports = grammar({
 
     type_lambda: $ =>
       seq(
-        "[",
+        $._open_brack,
         trailingCommaSep1($._type_parameter),
-        "]",
+        $._close_brack,
         "=>>",
         field("return_type", $._type),
       ),
@@ -1052,12 +1064,12 @@ module.exports = grammar({
     case_class_pattern: $ =>
       seq(
         field("type", choice($._type_identifier, $.stable_type_identifier)),
-        "(",
+        $._open_paren,
         choice(
           field("pattern", trailingCommaSep($._pattern)),
           field("pattern", trailingCommaSep($.named_pattern)),
         ),
-        ")",
+        $._close_paren,
       ),
 
     infix_pattern: $ =>
@@ -1093,11 +1105,11 @@ module.exports = grammar({
     // TODO: Flatten this.
     alternative_pattern: $ => prec.left(-2, seq($._pattern, "|", $._pattern)),
 
-    tuple_pattern: $ => seq("(", trailingCommaSep1($._pattern), ")"),
+    tuple_pattern: $ => seq($._open_paren, trailingCommaSep1($._pattern), $._close_paren),
 
     named_pattern: $ => prec.left(-1, seq($._identifier, "=", $._pattern)),
 
-    named_tuple_pattern: $ => seq("(", trailingCommaSep1($.named_pattern), ")"),
+    named_tuple_pattern: $ => seq($._open_paren, trailingCommaSep1($.named_pattern), $._close_paren),
 
     // ---------------------------------------------------------------
     // Expressions
@@ -1240,7 +1252,9 @@ module.exports = grammar({
       ),
 
     _expr_case_clause: $ =>
-      prec.left(seq("case", $._case_pattern, field("body", $.expression))),
+      prec.left(
+        seq("case", $._case_pattern, field("body", $._indentable_expression)),
+      ),
 
     finally_clause: $ => prec.right(seq("finally", $._indentable_expression)),
 
@@ -1256,14 +1270,18 @@ module.exports = grammar({
         ),
       ),
 
-    bindings: $ => seq("(", trailingCommaSep($.binding), ")"),
+    bindings: $ => seq($._open_paren, trailingCommaSep($.binding), $._close_paren),
 
     case_block: $ =>
-      choice(prec(-1, seq("{", "}")), seq("{", repeat1($.case_clause), "}")),
+      choice(prec(-1, seq($._open_brace, $._close_brace)), seq($._open_brace, repeat1($.case_clause), $._close_brace)),
 
     case_clause: $ =>
       prec.left(
-        seq("case", $._case_pattern, field("body", optional($._block))),
+        seq(
+          "case",
+          $._case_pattern,
+          field("body", optional($._indentable_expression)),
+        ),
       ),
 
     // This is created to capture guard from the right
@@ -1285,7 +1303,7 @@ module.exports = grammar({
         seq(
           field("left", choice($.prefix_expression, $._simple_expression)),
           "=",
-          field("right", $.expression),
+          field("right", $._indentable_expression),
         ),
       ),
 
@@ -1438,22 +1456,22 @@ module.exports = grammar({
 
     tuple_expression: $ =>
       seq(
-        "(",
+        $._open_paren,
         $.expression,
         repeat1(seq(",", $.expression)),
         optional(","),
-        ")",
+        $._close_paren,
       ),
 
-    parenthesized_expression: $ => seq("(", $.expression, ")"),
+    parenthesized_expression: $ => seq($._open_paren, $.expression, $._close_paren),
 
-    type_arguments: $ => seq("[", trailingCommaSep1($._type), "]"),
+    type_arguments: $ => seq($._open_brack, trailingCommaSep1($._type), $._close_brack),
 
     arguments: $ =>
       seq(
-        "(",
+        $._open_paren,
         choice(optional($._exprs_in_parens), seq("using", $._exprs_in_parens)),
-        ")",
+        $._close_paren,
       ),
 
     // ExprsInParens     ::=  ExprInParens {‘,’ ExprInParens}
@@ -1465,8 +1483,8 @@ module.exports = grammar({
         seq(
           "$",
           choice(
-            seq("{", $._block, "}"),
-            seq("[", $._type, "]"),
+            seq($._open_brace, $._block, $._close_brace),
+            seq($._open_brack, $._type, $._close_brack),
             // TODO: This would never hit, since identifier permits $ sign
             $.identifier,
           ),
@@ -1478,7 +1496,7 @@ module.exports = grammar({
         PREC.macro,
         seq(
           "'",
-          choice(seq("{", $._block, "}"), seq("[", $._type, "]"), $.identifier),
+          choice(seq($._open_brace, $._block, $._close_brace), seq($._open_brack, $._type, $._close_brack), $.identifier),
         ),
       ),
 
@@ -1495,7 +1513,7 @@ module.exports = grammar({
     _soft_identifier: $ =>
       prec(
         "soft_id",
-        choice("infix", "inline", "opaque", "open", "transparent", "end"),
+        choice("infix", "inline", "opaque", "open", "extension", "transparent", "end"),
       ),
 
     /**
@@ -1509,6 +1527,7 @@ module.exports = grammar({
      */
     _alpha_identifier: $ =>
       /[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9\$_\p{Ll}]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]+)?/,
+      
 
     /**
      * Despite what the lexical syntax suggests, the alphaid rule doesn't apply
@@ -1670,11 +1689,12 @@ module.exports = grammar({
 
     null_literal: $ => "null",
 
-    unit: $ => prec(PREC.unit, seq("(", ")")),
+    unit: $ => prec(PREC.unit, seq($._open_paren, $._close_paren)),
 
-    return_expression: $ => prec.left(seq("return", optional($.expression))),
+    return_expression: $ =>
+      prec.left(seq("return", optional($._indentable_expression))),
 
-    throw_expression: $ => prec.left(seq("throw", $.expression)),
+    throw_expression: $ => prec.left(seq("throw", $._indentable_expression)),
 
     /*
      *   Expr1             ::=  'while' '(' Expr ')' {nl} Expr
@@ -1725,8 +1745,8 @@ module.exports = grammar({
             field(
               "enumerators",
               choice(
-                seq("(", $.enumerators, ")"),
-                seq("{", $.enumerators, "}"),
+                seq($._open_paren, $.enumerators, $._close_paren),
+                seq($._open_brace, $.enumerators, $._close_brace),
               ),
             ),
             choice(
@@ -1819,3 +1839,4 @@ function trailingSep1(delimiter, rule) {
 function sep1(delimiter, rule) {
   return seq(rule, repeat(seq(delimiter, rule)));
 }
+

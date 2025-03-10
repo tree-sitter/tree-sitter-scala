@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -22,6 +22,13 @@ enum TokenType {
   OUTDENT,
   SIMPLE_MULTILINE_STRING,
   SIMPLE_STRING,
+  OPEN_PAREN,
+  CLOSE_PAREN,
+  OPEN_BRACK,
+  CLOSE_BRACK,
+  OPEN_BRACE,
+  CLOSE_BRACE,
+  END,
   ELSE,
   CATCH,
   FINALLY,
@@ -32,72 +39,182 @@ enum TokenType {
 
 typedef struct {
   Array(int16_t) indents;
-  int16_t last_indentation_size;
-  int16_t last_newline_count;
-  int16_t last_column;
+} IndentationFrame;
+
+typedef struct {
+  Array(IndentationFrame *) frames;  // Array of pointers to indentation frames
+  bool saved_should_auto_semicolon;
 } Scanner;
+
+static inline void debug_indents(Scanner *scanner) {
+  LOG("    Indentaion Frames(%d):\n", scanner->frames.size);
+  for (unsigned i = 0; i < scanner->frames.size; i++) {
+    IndentationFrame *frame = scanner->frames.contents[i];
+    LOG("      Frame[%d] (%d): ", i, frame->indents.size);
+    for (unsigned j = 0; j < frame->indents.size; j++) {
+      LOG("%d ", frame->indents.contents[j]);
+    }
+    LOG("\n");
+  }
+  LOG("\n");
+}
+
+// --- Stack Management ---
+static void push_indent_group(Scanner *scanner) {
+  IndentationFrame *frame = ts_malloc(sizeof(IndentationFrame));
+  array_init(&frame->indents);
+  array_push(&scanner->frames, frame);  // Push pointer
+}
+
+static void pop_indent_group(Scanner *scanner) {
+  IndentationFrame *frame = *array_back(&scanner->frames);
+  array_delete(&frame->indents);  // Free array inside frame
+  ts_free(frame);  // Free struct
+  array_pop(&scanner->frames);  // Remove pointer from list
+}
+
+static void push_indent_level(Scanner *scanner, int16_t indent) {
+  IndentationFrame *frame = *array_back(&scanner->frames);
+  array_push(&frame->indents, indent);
+}
+
+static void pop_indent_level(Scanner *scanner) {
+  IndentationFrame *frame = *array_back(&scanner->frames);
+  array_pop(&frame->indents);
+}
+
+static int16_t get_latest_indent(Scanner *scanner) {
+  IndentationFrame *frame = *array_back(&scanner->frames);
+  return *array_back(&frame->indents);
+}
+
+static void debug_valid_symbols(const bool *valid_symbols) {
+  LOG("Valid symbols: ");
+  if (valid_symbols[AUTOMATIC_SEMICOLON]) LOG("AUTOMATIC_SEMICOLON ");
+  if (valid_symbols[INDENT]) LOG("INDENT ");
+  if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) LOG("INTERPOLATED_STRING_MIDDLE ");
+  if (valid_symbols[INTERPOLATED_STRING_END]) LOG("INTERPOLATED_STRING_END ");
+  if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) LOG("INTERPOLATED_MULTILINE_STRING_MIDDLE ");
+  if (valid_symbols[INTERPOLATED_MULTILINE_STRING_END]) LOG("INTERPOLATED_MULTILINE_STRING_END ");
+  if (valid_symbols[OUTDENT]) LOG("OUTDENT ");
+  if (valid_symbols[OPEN_PAREN]) LOG("OPEN_PAREN ");
+  if (valid_symbols[CLOSE_PAREN]) LOG("CLOSE_PAREN ");
+  if (valid_symbols[OPEN_BRACK]) LOG("OPEN_BRACK ");
+  if (valid_symbols[CLOSE_BRACK]) LOG("CLOSE_BRACK ");
+  if (valid_symbols[OPEN_BRACE]) LOG("OPEN_BRACE ");
+  if (valid_symbols[CLOSE_BRACE]) LOG("CLOSE_BRACE ");
+  if (valid_symbols[SIMPLE_MULTILINE_STRING]) LOG("SIMPLE_MULTILINE_STRING ");
+  if (valid_symbols[SIMPLE_STRING]) LOG("SIMPLE_STRING ");
+  if (valid_symbols[END]) LOG("END ");
+  if (valid_symbols[ELSE]) LOG("ELSE ");
+  if (valid_symbols[CATCH]) LOG("CATCH ");
+  if (valid_symbols[FINALLY]) LOG("FINALLY ");
+  if (valid_symbols[EXTENDS]) LOG("EXTENDS ");
+  if (valid_symbols[DERIVES]) LOG("DERIVES ");
+  if (valid_symbols[WITH]) LOG("WITH ");
+  LOG("\n");
+}
 
 void *tree_sitter_scala_external_scanner_create() {
   Scanner *scanner = ts_calloc(1, sizeof(Scanner));
-  array_init(&scanner->indents);
-  scanner->last_indentation_size = -1;
-  scanner->last_column = -1;
+  array_init(&scanner->frames);
+
+  // Allocate and initialize the first indentation group
+  IndentationFrame *frame = ts_malloc(sizeof(IndentationFrame));
+  array_init(&frame->indents);
+  array_push(&frame->indents, 0);  // Ensure initial indent
+
+  array_push(&scanner->frames, frame);  // Push pointer
+
+  scanner->saved_should_auto_semicolon = false;
   return scanner;
 }
 
 void tree_sitter_scala_external_scanner_destroy(void *payload) {
-  Scanner *scanner = payload;
-  array_delete(&scanner->indents);
+  Scanner *scanner = (Scanner *)payload;
+
+  // Free each IndentStack in the array
+  for (unsigned i = 0; i < scanner->frames.size; i++) {
+    IndentationFrame *frame = scanner->frames.contents[i];
+    array_delete(&frame->indents);  // Free indent array
+    ts_free(frame);  // Free the stack itself
+  }
+  
+  array_delete(&scanner->frames);  // Free the array of pointers
   ts_free(scanner);
 }
 
 unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *scanner = (Scanner*)payload;
+  size_t size = 0;
 
-  if ((scanner->indents.size + 3) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+  if (scanner->frames.size * sizeof(int16_t) + sizeof(bool) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
 
-  size_t size = 0;
-  memcpy(buffer + size, &scanner->last_indentation_size, sizeof(int16_t));
-  size += sizeof(int16_t);
-  memcpy(buffer + size, &scanner->last_newline_count, sizeof(int16_t));
-  size += sizeof(int16_t);
-  memcpy(buffer + size, &scanner->last_column, sizeof(int16_t));
-  size += sizeof(int16_t);
+  memcpy(buffer + size, &scanner->saved_should_auto_semicolon, sizeof(bool));
+  size += sizeof(bool);
 
-  for (unsigned i = 0; i < scanner->indents.size; i++) {
-    memcpy(buffer + size, &scanner->indents.contents[i], sizeof(int16_t));
-    size += sizeof(int16_t);
+  memcpy(buffer + size, &scanner->frames.size, sizeof(uint32_t));
+  size += sizeof(uint32_t);
+
+  for (unsigned i = 0; i < scanner->frames.size; i++) {
+    IndentationFrame *frame = scanner->frames.contents[i];
+
+    memcpy(buffer + size, &frame->indents.size, sizeof(uint32_t));
+    size += sizeof(uint32_t);
+
+    for (unsigned j = 0; j < frame->indents.size; j++) {
+      memcpy(buffer + size, &frame->indents.contents[j], sizeof(int16_t));
+      size += sizeof(int16_t);
+    }
   }
 
   return size;
 }
 
-void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *buffer,
-                                                    unsigned length) {
-  Scanner *scanner = (Scanner*)payload;
-  array_clear(&scanner->indents);
-  scanner->last_indentation_size = -1;
-  scanner->last_column = -1;
-  scanner->last_newline_count = 0;
+void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
+  Scanner *scanner = (Scanner *)payload;
+  array_clear(&scanner->frames);  // Clear any existing state
+  scanner->saved_should_auto_semicolon = false;
 
   if (length == 0) {
-    return;
+      // Reinitialize with base indentation group
+      push_indent_group(scanner);
+      push_indent_level(scanner, 0);
+      return;
   }
 
   size_t size = 0;
 
-  scanner->last_indentation_size = *(int16_t *)&buffer[size];
-  size += sizeof(int16_t);
-  scanner->last_newline_count = *(int16_t *)&buffer[size];
-  size += sizeof(int16_t);
-  scanner->last_column = *(int16_t *)&buffer[size];
-  size += sizeof(int16_t);
+  // Deserialize saved_should_auto_semicolon
+  scanner->saved_should_auto_semicolon = *(bool *)&buffer[size];
+  size += sizeof(bool);
 
-  while (size < length) {
-    array_push(&scanner->indents, *(int16_t *)&buffer[size]);
-    size += sizeof(int16_t);
+  // Deserialize number of indentation stacks
+  uint32_t num_stacks;
+  memcpy(&num_stacks, buffer + size, sizeof(uint32_t));
+  size += sizeof(uint32_t);
+
+  for (uint32_t i = 0; i < num_stacks; i++) {
+    // Allocate new indent stack
+    IndentationFrame *frame = ts_malloc(sizeof(IndentationFrame));
+    array_init(&frame->indents);
+
+    // Deserialize number of indents in this stack
+    uint32_t num_indents;
+    memcpy(&num_indents, buffer + size, sizeof(uint32_t));
+    size += sizeof(uint32_t);
+
+    for (uint32_t j = 0; j < num_indents; j++) {
+        int16_t indent_value;
+        memcpy(&indent_value, buffer + size, sizeof(int16_t));
+        size += sizeof(int16_t);
+        array_push(&frame->indents, indent_value);
+    }
+
+    // Push the deserialized stack into the scanner
+    array_push(&scanner->frames, frame);
   }
 
   assert(size == length);
@@ -175,124 +292,164 @@ static bool scan_word(TSLexer *lexer, const char* const word) {
   return !iswalnum(lexer->lookahead);
 }
 
-static inline void debug_indents(Scanner *scanner) {
-  LOG("    indents(%d): ", scanner->indents.size);
-  for (unsigned i = 0; i < scanner->indents.size; i++) {
-    LOG("%d ", scanner->indents.contents[i]);
+// --- Helper function to handle opening a new indentation group ---
+static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
+  advance(lexer);
+  int16_t newline_count = 0;
+  while (iswspace(lexer->lookahead)) {
+    if (lexer->lookahead == '\n') {
+      newline_count++;
+    }
+    skip(lexer);
   }
+  int16_t current_indent = lexer->get_column(lexer);
+  LOG("    OPEN_GROUP '%c'\n", c);
+  int16_t starting_indent = newline_count > 0 ? current_indent : get_latest_indent(scanner);
+  debug_indents(scanner);
+  push_indent_group(scanner);
+  push_indent_level(scanner, starting_indent);
+  debug_indents(scanner);
   LOG("\n");
+
+  lexer->result_symbol = symbol;
+  lexer->mark_end(lexer);
+  scanner->saved_should_auto_semicolon = false;
+  return true;
 }
 
-bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
-                                             const bool *valid_symbols) {
+// --- Helper function to handle closing an indentation group ---
+static bool close_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
+  advance(lexer);
+  LOG("    CLOSE_GROUP '%c'\n", c);
+  debug_indents(scanner);
+  pop_indent_group(scanner);
+  debug_indents(scanner);
+  LOG("\n");
+
+  lexer->result_symbol = symbol;
+  lexer->mark_end(lexer);
+  scanner->saved_should_auto_semicolon = false;
+  return true;
+}
+
+// --- Checks whether the current indentation level can be popped ---
+static bool can_pop_indent(Scanner *scanner) {
+  if (scanner->frames.size == 0) {
+    return false;  // No frames exist
+  }
+  IndentationFrame *frame = *array_back(&scanner->frames);
+  return frame->indents.size > 1;  // Only pop if there's more than one indent
+}
+
+// --- Checks whether the current indentation frame can be popped ---
+static bool can_pop_frame(Scanner *scanner) {
+  return scanner->frames.size > 1;  // Don't pop the base frame
+}
+
+bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
   Scanner *scanner = (Scanner *)payload;
-  int16_t prev = scanner->indents.size > 0 ? *array_back(&scanner->indents) : -1;
+  int16_t latest_indent = get_latest_indent(scanner);
   int16_t newline_count = 0;
-  int16_t indentation_size = 0;
 
   while (iswspace(lexer->lookahead)) {
     if (lexer->lookahead == '\n') {
       newline_count++;
-      indentation_size = 0;
-    }
-    else {
-      indentation_size++;
     }
     skip(lexer);
   }
+  bool should_auto_semicolon = newline_count > 0;
 
-  // Before advancing the lexer, check if we can double outdent
-  if (
-      valid_symbols[OUTDENT] &&
-      (
-        lexer->lookahead == 0 ||
-        (
-          prev != -1 &&
-          (
-            lexer->lookahead == ')' ||
-            lexer->lookahead == ']' ||
-            lexer->lookahead == '}'
-          )
-        ) ||
-        (
-          scanner->last_indentation_size != -1 &&
-          prev != -1 &&
-          scanner->last_indentation_size < prev
-        )
-      )
-  ) {
-    if (scanner->indents.size > 0) {
-        array_pop(&scanner->indents);
-    }
-    LOG("    pop\n");
-    LOG("    OUTDENT\n");
-    lexer->result_symbol = OUTDENT;
-    return true;
+  int16_t current_indent = lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
+
+  LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
+  if (valid_symbols[INDENT]) {
+    LOG("DEBUG!\n");
+    LOG("newline_count = %d\n", newline_count);
+    LOG("latest_indent = %d\n", latest_indent);
+    LOG("current_indent = %d\n", current_indent);
+    LOG("\n");
   }
-  scanner->last_indentation_size = -1;
+  
 
-  if (
-      valid_symbols[INDENT] &&
-      newline_count > 0 &&
-      (
-        scanner->indents.size == 0 ||
-        indentation_size > *array_back(&scanner->indents)
-      )
-  ) {
+  debug_valid_symbols(valid_symbols);
+
+  if (valid_symbols[INDENT] && newline_count > 0 && current_indent > latest_indent) {
     if (detect_comment_start(lexer)) {
       return false;
     }
-    array_push(&scanner->indents, indentation_size);
-    lexer->result_symbol = INDENT;
+
+    LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
     LOG("    INDENT\n");
+    LOG("newline_count = %d\n", newline_count);
+    LOG("latest_indent = %d\n", latest_indent);
+    LOG("current_indent = %d\n", current_indent);
+    debug_indents(scanner);
+    push_indent_level(scanner, current_indent);
+    debug_indents(scanner);
+    LOG("\n");
+
+    lexer->result_symbol = INDENT;
+    lexer->mark_end(lexer);
+
     return true;
   }
 
-  // This saves the indentation_size and newline_count so it can be used
-  // in subsequent calls for multiple outdent or autosemicolon.
-  if (valid_symbols[OUTDENT] &&
-      (lexer->lookahead == 0 ||
-      (
-        newline_count > 0 &&
-        prev != -1 &&
-        indentation_size < prev
-      )
-      )
-  ) {
-    if (scanner->indents.size > 0) {
-      array_pop(&scanner->indents);
+  bool force_outdent = lexer->lookahead == ')' || lexer->lookahead == ']' || lexer->lookahead == '}';
+  if (valid_symbols[OUTDENT] && (current_indent < latest_indent || force_outdent) && can_pop_indent(scanner)) {
+    if (detect_comment_start(lexer)) {
+      return false;
     }
-    LOG("    pop\n");
+
+    LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
     LOG("    OUTDENT\n");
+    LOG("newline_count = %d\n", newline_count);
+    LOG("latest_indent = %d\n", latest_indent);
+    LOG("current_indent = %d\n", current_indent);
+    debug_indents(scanner);
+    pop_indent_level(scanner);
+    debug_indents(scanner);
+    LOG("\n");
+
     lexer->result_symbol = OUTDENT;
     lexer->mark_end(lexer);
-    if (detect_comment_start(lexer)) {
-      return false;
-    }
-    scanner->last_indentation_size = indentation_size;
-    scanner->last_newline_count = newline_count;
-    if (lexer->eof(lexer)) {
-      scanner->last_column = -1;
-    } else {
-      scanner->last_column = (int16_t)lexer->get_column(lexer);
-    }
+
+    // Set should_auto_semicolon if we have seen new lines as part of this OUTDENT
+    scanner->saved_should_auto_semicolon |= should_auto_semicolon;
+    scanner->saved_should_auto_semicolon &= !force_outdent;
+
     return true;
+  }
+
+  // Handle opening tokens: '(', '[', '{'
+  if (valid_symbols[OPEN_PAREN] && lexer->lookahead == '(') {
+    return open_group(scanner, lexer, OPEN_PAREN, '(');
+  }
+  if (valid_symbols[OPEN_BRACK] && lexer->lookahead == '[') {
+    return open_group(scanner, lexer, OPEN_BRACK, '[');
+  }
+  if (valid_symbols[OPEN_BRACE] && lexer->lookahead == '{') {
+    return open_group(scanner, lexer, OPEN_BRACE, '{');
+  }
+
+  // Handle closing tokens: ')', ']', '}'
+  if (valid_symbols[CLOSE_PAREN] && lexer->lookahead == ')' && can_pop_frame(scanner)) {
+    return close_group(scanner, lexer, CLOSE_PAREN, ')');
+  }
+  if (valid_symbols[CLOSE_BRACK] && lexer->lookahead == ']' && can_pop_frame(scanner)) {
+    return close_group(scanner, lexer, CLOSE_BRACK, ']');
+  }
+  if (valid_symbols[CLOSE_BRACE] && lexer->lookahead == '}' && can_pop_frame(scanner)) {
+    return close_group(scanner, lexer, CLOSE_BRACE, '}');
   }
 
   // Recover newline_count from the outdent reset
   bool is_eof = lexer->eof(lexer);
-  if (
-      (
-        scanner->last_newline_count > 0 &&
-        (is_eof && scanner->last_column == -1)
-      ) ||
-      (!is_eof && lexer->get_column(lexer) == (uint32_t)scanner->last_column)
-  ) {
-    newline_count += scanner->last_newline_count;
+  if (current_indent == latest_indent || is_eof) {
+    should_auto_semicolon |= scanner->saved_should_auto_semicolon;
   }
-  scanner->last_newline_count = 0;
-
-  if (valid_symbols[AUTOMATIC_SEMICOLON] && newline_count > 0) {
+  scanner->saved_should_auto_semicolon = false;
+  
+  if (valid_symbols[AUTOMATIC_SEMICOLON] && should_auto_semicolon) {
     // AUTOMATIC_SEMICOLON should not be issued in the middle of expressions
     // Thus, we exit this branch when encountering comments, else/catch clauses, etc.
 
@@ -336,55 +493,36 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
         // we should still produce AUTOMATIC_SEMICOLON, e.g. in
         // val a = 1
         // /* comment */ val b = 2
+        LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
+        LOG("    AUTOMATIC SEMICOLON\n");
+        LOG("newline_count = %d\n", newline_count);
+        LOG("latest_indent = %d\n", latest_indent);
+        LOG("current_indent = %d\n", current_indent);
+        LOG("\n");
+
         return true;
       }
     }
 
-    if (valid_symbols[ELSE]) {
-      return !scan_word(lexer, "else");
-    }
+    if (valid_symbols[END] && scan_word(lexer, "end")) return false;
+    if (valid_symbols[ELSE] && scan_word(lexer, "else")) return false;
+    if (valid_symbols[CATCH] && scan_word(lexer, "catch")) return false;
+    if (valid_symbols[FINALLY] && scan_word(lexer, "finally")) return false;
+    if (valid_symbols[EXTENDS] && scan_word(lexer, "extends")) return false;
+    if (valid_symbols[WITH] && scan_word(lexer, "with")) return false;
+    if (valid_symbols[DERIVES] && scan_word(lexer, "derives")) return false;
 
-    if (valid_symbols[CATCH]) {
-      if (scan_word(lexer, "catch")) {
-        return false;
-      }
-    }
-
-    if (valid_symbols[FINALLY]) {
-      if  (scan_word(lexer, "finally")) {
-        return false;
-      }
-    }
-
-    if (valid_symbols[EXTENDS]) {
-      if (scan_word(lexer, "extends")) {
-        return false;
-      }
-    }
-
-    if (valid_symbols[WITH]) {
-      if (scan_word(lexer, "with")) {
-        return false;
-      }
-    }
-
-    if (valid_symbols[DERIVES]) {
-      if (scan_word(lexer, "derives")) {
-        return false;
-      }
-    }
-
-    if (newline_count > 1) {
-      return true;
-    }
+    LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
+    LOG("    AUTOMATIC SEMICOLON\n");
+    LOG("newline_count = %d\n", newline_count);
+    LOG("latest_indent = %d\n", latest_indent);
+    LOG("current_indent = %d\n", current_indent);
+    LOG("\n");
 
     return true;
   }
 
   while (iswspace(lexer->lookahead)) {
-    if (lexer->lookahead == '\n') {
-      newline_count++;
-    }
     skip(lexer);
   }
 
