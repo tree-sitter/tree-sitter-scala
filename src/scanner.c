@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-// #define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -338,7 +338,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
-  bool force_outdent = lexer->lookahead == ')' || lexer->lookahead == ']' || lexer->lookahead == '}';
+  bool force_outdent = lexer->lookahead == ')' || lexer->lookahead == ']' || lexer->lookahead == '}'  || lexer->lookahead == ',';
   if (valid_symbols[OUTDENT] && (current_indent < latest_indent || force_outdent) && can_pop_indent(scanner)) {
     if (detect_comment_start(lexer)) {
       return false;
@@ -372,6 +372,18 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     //  .b
     //  .c
     if (lexer->lookahead == '.') {
+      return false;
+    }
+
+    if (lexer->lookahead == ')') {
+      return false;
+    }
+
+    if (lexer->lookahead == ']') {
+      return false;
+    }
+
+    if (lexer->lookahead == ',') {
       return false;
     }
 
