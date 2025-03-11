@@ -362,14 +362,6 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
   int16_t current_indent = lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
 
   LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
-  if (valid_symbols[INDENT]) {
-    LOG("DEBUG!\n");
-    LOG("newline_count = %d\n", newline_count);
-    LOG("latest_indent = %d\n", latest_indent);
-    LOG("current_indent = %d\n", current_indent);
-    LOG("\n");
-  }
-  
 
   debug_valid_symbols(valid_symbols);
 

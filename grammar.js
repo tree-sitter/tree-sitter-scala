@@ -69,7 +69,7 @@ module.exports = grammar({
     ["mod", "soft_id"],
     ["end", "soft_id"],
     ["extension", "soft_id"],
-    ["new", "structural_type"]
+    ["new", "structural_type"],
   ],
 
   conflicts: $ => [
@@ -109,6 +109,7 @@ module.exports = grammar({
     [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
+    [$.block, $._braced_template_body1],
     [$._simple_expression, $.self_type, $._type_identifier],
     [$._simple_expression, $._type_identifier],
     [$.lambda_expression, $.self_type, $._type_identifier],
@@ -418,11 +419,26 @@ module.exports = grammar({
         ),
       ),
 
-    _braced_template_body: $ =>
-      prec.left(
-        PREC.control,
-        seq($._open_brace, optional(seq(optional($.self_type), $._block)), $._close_brace),
-      ),
+      _braced_template_body: $ =>
+        prec.left(
+          PREC.control,
+          seq(
+            $._open_brace,
+            optional(choice($._braced_template_body1, $._braced_template_body2)),
+            $._close_brace,
+          ),
+        ),
+  
+      _braced_template_body1: $ => seq(optional($.self_type), $._block),
+      _braced_template_body2: $ =>
+        seq(
+          choice(
+            seq($._indent, optional($.self_type)),
+            seq(optional($.self_type), $._indent),
+          ),
+          optional($._block),
+          $._outdent,
+        ),
 
     /*
      * WithTemplateBody  ::=  <<< [SelfType] TemplateStat {semi TemplateStat} >>>
@@ -471,7 +487,9 @@ module.exports = grammar({
 
     // Dynamic precedences added here to win over $.call_expression
     self_type: $ =>
-        seq($._identifier, optional($._self_type_ascription), "=>"),
+      prec.dynamic(1,
+        seq($._identifier, optional($._self_type_ascription), "=>")
+      ),
       
 
     _self_type_ascription: $ => seq(":", $._type),

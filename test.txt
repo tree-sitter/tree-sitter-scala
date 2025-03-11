@@ -52,7 +52,7 @@
      49. ✓ [32mInitialization expressions[0m
      50. ✓ [32mOptional parameters[0m
      51. ✓ [32mEnums (Scala 3)[0m
-     52. ✗ [31mSelf types[0m
+     52. ✓ [32mSelf types[0m
      53. ✓ [32mInline methods and parameters (Scala 3)[0m
      54. ✓ [32mInline val (Scala 3)[0m
      55. ✓ [32mInline given (Scala 3)[0m
@@ -143,52 +143,11 @@
     136. ✓ [32mType Lambdas (Scala 3)[0m
     137. ✓ [32mUnion and Intersection Types (Scala 3)[0m
 
-9 failures:
+8 failures:
 
 correct / [32mexpected[0m / [31munexpected[0m
 
-  1. Self types:
-
-    (compilation_unit
-      (trait_definition
-        (identifier)
-        (template_body
-          (self_type
-            (identifier))
-          (function_declaration
-            (identifier)
-            (type_identifier))))
-      (trait_definition
-        (identifier)
-        (template_body
-[31m          (lambda_expression
-[0m[32m          (self_type
-[0m[32m            (identifier))
-[0m[32m          (function_declaration
-[0m            (identifier)
-[31m            (indented_block
-[0m[31m              (function_declaration
-[0m[31m                (identifier)
-[0m[31m                (type_identifier))))))
-[0m[32m            (type_identifier))))
-[0m      (class_definition
-        (identifier)
-        (template_body
-          (self_type
-            (identifier)
-            (generic_type
-              (type_identifier)
-              (type_arguments
-                (type_identifier))))
-          (class_definition
-            (identifier)
-            (class_parameters
-              (class_parameter
-                (identifier)
-                (type_identifier)))))))
-
-
-  2. If expressions (Scala 3 syntax):
+  1. If expressions (Scala 3 syntax):
 
     (compilation_unit
       (class_definition
@@ -304,7 +263,7 @@ correct / [32mexpected[0m / [31munexpected[0m
                   (unit))))))))
 
 
-  3. Try expressions (Scala 3 syntax):
+  2. Try expressions (Scala 3 syntax):
 
     (compilation_unit
       (function_definition
@@ -378,7 +337,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [32m              (identifier))))))[0m
 
 
-  4. Match expressions:
+  3. Match expressions:
 
     (compilation_unit
       (function_definition
@@ -465,7 +424,7 @@ correct / [32mexpected[0m / [31munexpected[0m
               (identifier))))))
 
 
-  5. Match expressions (Scala 3 syntax):
+  4. Match expressions (Scala 3 syntax):
 
     (compilation_unit
       (function_definition
@@ -524,7 +483,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                (string)))))))[0m
 
 
-  6. Lambda Expression:
+  5. Lambda Expression:
 
     (compilation_unit
       (object_definition
@@ -661,7 +620,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m              (identifier))))))[0m
 
 
-  7. For comprehensions:
+  6. For comprehensions:
 
     (compilation_unit
       (function_definition
@@ -727,7 +686,7 @@ correct / [32mexpected[0m / [31munexpected[0m
                   (identifier))))))))
 
 
-  8. Soft keywords used as identifiers (Scala 3):
+  7. Soft keywords used as identifiers (Scala 3):
 
     (compilation_unit
       (call_expression
@@ -764,7 +723,7 @@ correct / [32mexpected[0m / [31munexpected[0m
         (arguments)))
 
 
-  9. Case class patterns:
+  8. Case class patterns:
 
     (compilation_unit
       (function_definition
