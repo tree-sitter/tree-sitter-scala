@@ -311,7 +311,6 @@ static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c)
 
   lexer->result_symbol = symbol;
   lexer->mark_end(lexer);
-  scanner->saved_should_auto_semicolon = false;
   return true;
 }
 
@@ -326,7 +325,6 @@ static bool close_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c
 
   lexer->result_symbol = symbol;
   lexer->mark_end(lexer);
-  scanner->saved_should_auto_semicolon = false;
   return true;
 }
 
@@ -410,28 +408,6 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
-  // Handle opening tokens: '(', '[', '{'
-  if (valid_symbols[OPEN_PAREN] && lexer->lookahead == '(') {
-    return open_group(scanner, lexer, OPEN_PAREN, '(');
-  }
-  if (valid_symbols[OPEN_BRACK] && lexer->lookahead == '[') {
-    return open_group(scanner, lexer, OPEN_BRACK, '[');
-  }
-  if (valid_symbols[OPEN_BRACE] && lexer->lookahead == '{') {
-    return open_group(scanner, lexer, OPEN_BRACE, '{');
-  }
-
-  // Handle closing tokens: ')', ']', '}'
-  if (valid_symbols[CLOSE_PAREN] && lexer->lookahead == ')' && can_pop_frame(scanner)) {
-    return close_group(scanner, lexer, CLOSE_PAREN, ')');
-  }
-  if (valid_symbols[CLOSE_BRACK] && lexer->lookahead == ']' && can_pop_frame(scanner)) {
-    return close_group(scanner, lexer, CLOSE_BRACK, ']');
-  }
-  if (valid_symbols[CLOSE_BRACE] && lexer->lookahead == '}' && can_pop_frame(scanner)) {
-    return close_group(scanner, lexer, CLOSE_BRACE, '}');
-  }
-
   // Recover newline_count from the outdent reset
   bool is_eof = lexer->eof(lexer);
   if (current_indent == latest_indent || is_eof) {
@@ -509,6 +485,28 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     LOG("\n");
 
     return true;
+  }
+
+  // Handle opening tokens: '(', '[', '{'
+  if (valid_symbols[OPEN_PAREN] && lexer->lookahead == '(') {
+    return open_group(scanner, lexer, OPEN_PAREN, '(');
+  }
+  if (valid_symbols[OPEN_BRACK] && lexer->lookahead == '[') {
+    return open_group(scanner, lexer, OPEN_BRACK, '[');
+  }
+  if (valid_symbols[OPEN_BRACE] && lexer->lookahead == '{') {
+    return open_group(scanner, lexer, OPEN_BRACE, '{');
+  }
+
+  // Handle closing tokens: ')', ']', '}'
+  if (valid_symbols[CLOSE_PAREN] && lexer->lookahead == ')' && can_pop_frame(scanner)) {
+    return close_group(scanner, lexer, CLOSE_PAREN, ')');
+  }
+  if (valid_symbols[CLOSE_BRACK] && lexer->lookahead == ']' && can_pop_frame(scanner)) {
+    return close_group(scanner, lexer, CLOSE_BRACK, ']');
+  }
+  if (valid_symbols[CLOSE_BRACE] && lexer->lookahead == '}' && can_pop_frame(scanner)) {
+    return close_group(scanner, lexer, CLOSE_BRACE, '}');
   }
 
   while (iswspace(lexer->lookahead)) {

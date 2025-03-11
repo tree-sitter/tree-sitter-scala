@@ -78,14 +78,14 @@
      74. ✓ [32mPrefix expressions[0m
      75. ✓ [32mPostfix expressions[0m
      76. ✓ [32mAscription Expression[0m
-     77. ✗ [31mLambda Expression[0m
+     77. ✓ [32mLambda Expression[0m
      78. ✓ [32mLambda Expression (Scala 3 syntax)[0m
      79. ✓ [32mUnit expressions[0m
      80. ✓ [32mReturn expressions[0m
      81. ✓ [32mWhile loops[0m
      82. ✓ [32mWhile loops (Scala 3 syntax)[0m
      83. ✓ [32mDo-while loops[0m
-     84. ✗ [31mFor comprehensions[0m
+     84. ✓ [32mFor comprehensions[0m
      85. ✓ [32mFor comprehensions (Scala 3 syntax)[0m
      86. ✓ [32mChained expressions[0m
      87. ✓ [32mMacros (Scala 2 syntax)[0m
@@ -143,214 +143,11 @@
     136. ✓ [32mType Lambdas (Scala 3)[0m
     137. ✓ [32mUnion and Intersection Types (Scala 3)[0m
 
-3 failures:
+1 failure:
 
 correct / [32mexpected[0m / [31munexpected[0m
 
-  1. Lambda Expression:
-
-    (compilation_unit
-      (object_definition
-        (identifier)
-        (template_body
-          (val_definition
-            (identifier)
-            (lambda_expression
-              (identifier)
-              (infix_expression
-                (identifier)
-                (operator_identifier)
-                (integer_literal))))
-          (val_definition
-            (identifier)
-            (lambda_expression
-              (bindings
-                (binding
-                  (identifier)
-                  (type_identifier))
-                (binding
-                  (identifier)
-                  (type_identifier)))
-              (block
-                (infix_expression
-                  (identifier)
-                  (operator_identifier)
-                  (identifier)))))
-          (val_definition
-            (identifier)
-            (lambda_expression
-              (wildcard)
-              (integer_literal)))
-          (call_expression
-[31m            (call_expression
-[0m[31m              (call_expression
-[0m[31m                (call_expression
-[0m[31m                  (call_expression
-[0m[32m            (identifier)
-[0m[32m            (block
-[0m[32m              (lambda_expression
-[0m[32m                (identifier)
-[0m[32m                (indented_block
-[0m[32m                  (val_definition
-[0m                    (identifier)
-[31m                    (block
-[0m[31m                      (lambda_expression
-[0m[31m                        (identifier)
-[0m[31m                        (indented_block
-[0m[31m                          (val_definition
-[0m[31m                            (identifier)
-[0m[31m                            (infix_expression
-[0m[31m                              (integer_literal)
-[0m[31m                              (operator_identifier)
-[0m[31m                              (identifier)))
-[0m[31m                          (identifier)))))
-[0m[31m                  (block
-[0m[31m                    (lambda_expression
-[0m[31m                      (identifier)
-[0m[31m                      (indented_block
-[0m[31m                        (val_definition
-[0m[31m                          (identifier)
-[0m[31m                          (infix_expression
-[0m[31m                            (integer_literal)
-[0m[31m                            (operator_identifier)
-[0m[31m                            (identifier)))
-[0m[31m                        (infix_expression
-[0m[31m                          (identifier)
-[0m[31m                          (operator_identifier)
-[0m[31m                          (identifier))))))
-[0m[31m                (block
-[0m[31m                  (lambda_expression
-[0m[31m                    (identifier)
-[0m[31m                    (indented_block
-[0m[31m                      (if_expression
-[0m[31m                        (parenthesized_expression
-[0m[31m                          (identifier))
-[0m[31m                        (field_expression
-[0m[31m                          (identifier)
-[0m[31m                          (identifier)))))))
-[0m[31m              (block
-[0m[31m                (lambda_expression
-[0m[32m                    (infix_expression
-[0m[32m                      (integer_literal)
-[0m[32m                      (operator_identifier)
-[0m[32m                      (identifier)))
-[0m[32m                  (identifier)))))
-[0m[32m          (block
-[0m[32m            (lambda_expression
-[0m[32m              (identifier)
-[0m[32m              (indented_block
-[0m[32m                (val_definition
-[0m[32m                  (identifier)
-[0m[32m                  (infix_expression
-[0m[32m                    (integer_literal)
-[0m[32m                    (operator_identifier)
-[0m[32m                    (identifier)))
-[0m[32m                (infix_expression
-[0m                  (identifier)
-[31m                  (lambda_expression
-[0m[32m                  (operator_identifier)
-[0m[32m                  (identifier)))))
-[0m[32m          (block
-[0m[32m            (lambda_expression
-[0m[32m              (identifier)
-[0m[32m              (indented_block
-[0m[32m                (if_expression
-[0m[32m                  (parenthesized_expression
-[0m[32m                    (identifier))
-[0m[32m                  (field_expression
-[0m                    (identifier)
-[31m                    (identifier)))))
-[0m[31m            (block
-[0m[32m                    (identifier))))))
-[0m[32m          (block
-[0m[32m            (lambda_expression
-[0m[32m              (identifier)
-[0m              (lambda_expression
-[31m                (bindings
-[0m[31m                  (binding
-[0m[31m                    (wildcard))
-[0m[31m                  (binding
-[0m[31m                    (identifier)))
-[0m[31m                (identifier)))))))[0m
-[32m                (identifier)
-[0m[32m                (identifier))))
-[0m[32m          (block
-[0m[32m            (lambda_expression
-[0m[32m              (bindings
-[0m[32m                (binding
-[0m[32m                  (wildcard))
-[0m[32m                (binding
-[0m[32m                  (identifier)))
-[0m[32m              (identifier))))))[0m
-
-
-  2. For comprehensions:
-
-    (compilation_unit
-      (function_definition
-        (identifier)
-        (parameters)
-        (block
-          (for_expression
-            (enumerators
-              (enumerator
-                (identifier)
-                (identifier)))
-            (infix_expression
-              (identifier)
-              (operator_identifier)
-              (integer_literal)))
-          (for_expression
-            (enumerators
-              (enumerator
-                (identifier)
-                (identifier))
-              (enumerator
-                (identifier)
-                (identifier)))
-            (call_expression
-              (identifier)
-              (arguments
-                (identifier)
-                (identifier))))
-          (for_expression
-            (enumerators
-              (enumerator
-                (identifier)
-                (identifier))
-              (enumerator
-                (identifier)
-                (infix_expression
-                  (identifier)
-                  (operator_identifier)
-                  (identifier)))
-              (enumerator
-                (identifier)
-                (call_expression
-                  (identifier)
-                  (arguments))
-                (guard
-[31m                  (call_expression
-[0m[31m                    (identifier)
-[0m[31m                    (arguments
-[0m[31m                      (identifier)
-[0m[31m                      (identifier))))))
-[0m[31m            (ERROR)
-[0m[32m                  (identifier)))
-[0m[32m              (enumerator
-[0m[32m                (tuple_pattern
-[0m[32m                  (identifier)
-[0m[32m                  (identifier))
-[0m[32m                (identifier)))
-[0m            (block
-              (call_expression
-                (identifier)
-                (arguments
-                  (identifier)
-                  (identifier))))))))
-
-
-  3. Case class patterns:
+  1. Case class patterns:
 
     (compilation_unit
       (function_definition
