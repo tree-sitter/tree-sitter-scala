@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -28,7 +28,6 @@ enum TokenType {
   CLOSE_BRACK,
   OPEN_BRACE,
   CLOSE_BRACE,
-  END,
   ELSE,
   CATCH,
   FINALLY,
@@ -105,7 +104,6 @@ static void debug_valid_symbols(const bool *valid_symbols) {
   if (valid_symbols[CLOSE_BRACE]) LOG("CLOSE_BRACE ");
   if (valid_symbols[SIMPLE_MULTILINE_STRING]) LOG("SIMPLE_MULTILINE_STRING ");
   if (valid_symbols[SIMPLE_STRING]) LOG("SIMPLE_STRING ");
-  if (valid_symbols[END]) LOG("END ");
   if (valid_symbols[ELSE]) LOG("ELSE ");
   if (valid_symbols[CATCH]) LOG("CATCH ");
   if (valid_symbols[FINALLY]) LOG("FINALLY ");
@@ -496,8 +494,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
       }
     }
 
-    if (valid_symbols[END] && scan_word(lexer, "end")) return false;
-    if (valid_symbols[ELSE] && scan_word(lexer, "else")) return false;
+    if (valid_symbols[ELSE]) return !scan_word(lexer, "else");
     if (valid_symbols[CATCH] && scan_word(lexer, "catch")) return false;
     if (valid_symbols[FINALLY] && scan_word(lexer, "finally")) return false;
     if (valid_symbols[EXTENDS] && scan_word(lexer, "extends")) return false;

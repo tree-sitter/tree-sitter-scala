@@ -1,0 +1,267 @@
+41a42,47
+>     $._open_paren,
+>     $._close_paren,
+>     $._open_brack,
+>     $._close_brack,
+>     $._open_brace,
+>     $._close_brace,
+63a70
+>     ["extension", "soft_id"],
+163c170
+<           sep1(
+---
+>           trailingSep1(
+167d173
+<           optional($._semicolon),
+175c181
+<           "{",
+---
+>           $._open_brace,
+178c184
+<           "}",
+---
+>           $._close_brace,
+255c261
+<         "{",
+---
+>         $._open_brace,
+265c271
+<         "}",
+---
+>         $._close_brace,
+355c361,365
+<       seq("[", trailingCommaSep1($._variant_type_parameter), "]"),
+---
+>       seq(
+>         $._open_brack,
+>         trailingCommaSep1($._variant_type_parameter),
+>         $._close_brack,
+>       ),
+391c401,406
+<         seq(":", "{", trailingCommaSep1($.context_bound), "}"),
+---
+>         seq(
+>           ":",
+>           $._open_brace,
+>           trailingCommaSep1($.context_bound),
+>           $._close_brace,
+>         ),
+409c424,431
+<         seq(":", $._indent, optional($.self_type), $._block, $._outdent),
+---
+>         seq(
+>           ":",
+>           $._indent,
+>           optional($.self_type),
+>           $._block,
+>           $._outdent,
+>           optional($._end_marker),
+>         ),
+416c438
+<           "{",
+---
+>           $._open_brace,
+418c440
+<           "}",
+---
+>           $._close_brace,
+439c461,467
+<         seq($._indent, optional($.self_type), $._block, $._outdent),
+---
+>         seq(
+>           $._indent,
+>           optional($.self_type),
+>           $._block,
+>           $._outdent,
+>           optional($._end_marker),
+>         ),
+444,445c472,476
+<         prec.left(PREC.control, seq($._indent, $._block, $._outdent)),
+<         seq("{", optional($._block), "}"),
+---
+>         prec.left(
+>           PREC.control,
+>           seq($._indent, $._block, $._outdent, optional($._end_marker)),
+>         ),
+>         seq($._open_brace, optional($._block), $._close_brace),
+596a628
+>         "extension",
+721c753
+<     access_qualifier: $ => seq("[", $._identifier, "]"),
+---
+>     access_qualifier: $ => seq($._open_brack, $._identifier, $._close_brack),
+755c787
+<           "(",
+---
+>           $._open_paren,
+758c790
+<           ")",
+---
+>           $._close_paren,
+769c801,806
+<         seq("(", optional("implicit"), trailingCommaSep($.parameter), ")"),
+---
+>         seq(
+>           $._open_paren,
+>           optional("implicit"),
+>           trailingCommaSep($.parameter),
+>           $._close_paren,
+>         ),
+780c817
+<         "(",
+---
+>         $._open_paren,
+786c823
+<         ")",
+---
+>         $._close_paren,
+828c865
+<           sep1(
+---
+>           trailingSep1(
+830c867
+<             choice($.expression, $._definition, $._end_marker, ";"),
+---
+>             choice($._definition, $.expression, $._end_marker, ";"),
+832d868
+<           optional($._semicolon),
+839c875
+<     block: $ => seq("{", optional($._block), "}"),
+---
+>     block: $ => seq($._open_brace, optional($._block), $._close_brace),
+939c975,976
+<     tuple_type: $ => seq("(", trailingCommaSep1($._type), ")"),
+---
+>     tuple_type: $ =>
+>       seq($._open_paren, trailingCommaSep1($._type), $._close_paren),
+941c978,979
+<     named_tuple_type: $ => seq("(", trailingCommaSep1($.name_and_type), ")"),
+---
+>     named_tuple_type: $ =>
+>       seq($._open_paren, trailingCommaSep1($.name_and_type), $._close_paren),
+1005c1043,1046
+<           prec.dynamic(1, seq("(", trailingCommaSep($._param_type), ")")),
+---
+>           prec.dynamic(
+>             1,
+>             seq($._open_paren, trailingCommaSep($._param_type), $._close_paren),
+>           ),
+1023c1064
+<         "[",
+---
+>         $._open_brack,
+1025c1066
+<         "]",
+---
+>         $._close_brack,
+1055c1096
+<         "(",
+---
+>         $._open_paren,
+1060c1101
+<         ")",
+---
+>         $._close_paren,
+1096c1137,1138
+<     tuple_pattern: $ => seq("(", trailingCommaSep1($._pattern), ")"),
+---
+>     tuple_pattern: $ =>
+>       seq($._open_paren, trailingCommaSep1($._pattern), $._close_paren),
+1100c1142,1143
+<     named_tuple_pattern: $ => seq("(", trailingCommaSep1($.named_pattern), ")"),
+---
+>     named_tuple_pattern: $ =>
+>       seq($._open_paren, trailingCommaSep1($.named_pattern), $._close_paren),
+1243c1286,1288
+<       prec.left(seq("case", $._case_pattern, field("body", $.expression))),
+---
+>       prec.left(
+>         seq("case", $._case_pattern, field("body", $._indentable_expression)),
+>       ),
+1259c1304,1305
+<     bindings: $ => seq("(", trailingCommaSep($.binding), ")"),
+---
+>     bindings: $ =>
+>       seq($._open_paren, trailingCommaSep($.binding), $._close_paren),
+1262c1308,1311
+<       choice(prec(-1, seq("{", "}")), seq("{", repeat1($.case_clause), "}")),
+---
+>       choice(
+>         prec(-1, seq($._open_brace, $._close_brace)),
+>         seq($._open_brace, repeat1($.case_clause), $._close_brace),
+>       ),
+1288c1337
+<           field("right", $.expression),
+---
+>           field("right", $._indentable_expression),
+1441c1490
+<         "(",
+---
+>         $._open_paren,
+1445c1494
+<         ")",
+---
+>         $._close_paren,
+1448c1497,1498
+<     parenthesized_expression: $ => seq("(", $.expression, ")"),
+---
+>     parenthesized_expression: $ =>
+>       seq($._open_paren, $.expression, $._close_paren),
+1450c1500,1501
+<     type_arguments: $ => seq("[", trailingCommaSep1($._type), "]"),
+---
+>     type_arguments: $ =>
+>       seq($._open_brack, trailingCommaSep1($._type), $._close_brack),
+1454c1505
+<         "(",
+---
+>         $._open_paren,
+1456c1507
+<         ")",
+---
+>         $._close_paren,
+1468,1469c1519,1520
+<             seq("{", $._block, "}"),
+<             seq("[", $._type, "]"),
+---
+>             seq($._open_brace, $._block, $._close_brace),
+>             seq($._open_brack, $._type, $._close_brack),
+1481c1532,1536
+<           choice(seq("{", $._block, "}"), seq("[", $._type, "]"), $.identifier),
+---
+>           choice(
+>             seq($._open_brace, $._block, $._close_brace),
+>             seq($._open_brack, $._type, $._close_brack),
+>             $.identifier,
+>           ),
+1498c1553,1561
+<         choice("infix", "inline", "opaque", "open", "transparent", "end"),
+---
+>         choice(
+>           "infix",
+>           "inline",
+>           "opaque",
+>           "open",
+>           "extension",
+>           "transparent",
+>           "end",
+>         ),
+1673c1736
+<     unit: $ => prec(PREC.unit, seq("(", ")")),
+---
+>     unit: $ => prec(PREC.unit, seq($._open_paren, $._close_paren)),
+1675c1738,1739
+<     return_expression: $ => prec.left(seq("return", optional($.expression))),
+---
+>     return_expression: $ =>
+>       prec.left(seq("return", optional($._indentable_expression))),
+1677c1741
+<     throw_expression: $ => prec.left(seq("throw", $.expression)),
+---
+>     throw_expression: $ => prec.left(seq("throw", $._indentable_expression)),
+1728,1729c1792,1793
+<                 seq("(", $.enumerators, ")"),
+<                 seq("{", $.enumerators, "}"),
+---
+>                 seq($._open_paren, $.enumerators, $._close_paren),
+>                 seq($._open_brace, $.enumerators, $._close_brace),

@@ -1217,20 +1217,68 @@
     "named": true,
     "fields": {
       "body": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
+          {
+            "type": ";",
+            "named": false
+          },
+          {
+            "type": "_definition",
+            "named": true
+          },
+          {
+            "type": "_end_ident",
+            "named": false
+          },
+          {
+            "type": "end",
+            "named": false
+          },
           {
             "type": "expression",
             "named": true
           },
           {
-            "type": "indented_block",
-            "named": true
+            "type": "extension",
+            "named": false
           },
           {
-            "type": "indented_cases",
-            "named": true
+            "type": "for",
+            "named": false
+          },
+          {
+            "type": "given",
+            "named": false
+          },
+          {
+            "type": "if",
+            "named": false
+          },
+          {
+            "type": "match",
+            "named": false
+          },
+          {
+            "type": "new",
+            "named": false
+          },
+          {
+            "type": "this",
+            "named": false
+          },
+          {
+            "type": "try",
+            "named": false
+          },
+          {
+            "type": "val",
+            "named": false
+          },
+          {
+            "type": "while",
+            "named": false
           }
         ]
       },
