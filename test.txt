@@ -109,7 +109,7 @@
     103. ✓ [32mTyped patterns[0m
     104. ✓ [32mTuple patterns[0m
     105. ✓ [32mName tuple patterns (Scala 3 syntax)[0m
-    106. ✗ [31mCase class patterns[0m
+    106. ✓ [32mCase class patterns[0m
     107. ✓ [32mCase class patterns (Scala 3 syntax)[0m
     108. ✓ [32mInfix patterns[0m
     109. ✓ [32mCapture patterns[0m
@@ -143,7 +143,7 @@
     136. ✓ [32mType Lambdas (Scala 3)[0m
     137. ✓ [32mUnion and Intersection Types (Scala 3)[0m
 
-8 failures:
+7 failures:
 
 correct / [32mexpected[0m / [31munexpected[0m
 
@@ -721,81 +721,4 @@ correct / [32mexpected[0m / [31munexpected[0m
       (call_expression
         (identifier)
         (arguments)))
-
-
-  8. Case class patterns:
-
-    (compilation_unit
-      (function_definition
-        (identifier)
-        (parameters
-          (parameter
-            (identifier)
-            (type_identifier)))
-        (type_identifier)
-        (block
-          (match_expression
-            (identifier)
-            (case_block
-              (case_clause
-                (case_class_pattern
-                  (type_identifier)
-                  (identifier)
-                  (identifier)
-                  (wildcard))
-[31m                (indented_block
-[0m[31m                  (interpolated_string_expression
-[0m[31m                    (identifier)
-[0m[31m                    (interpolated_string
-[0m[31m                      (interpolation
-[0m[31m                        (identifier))
-[0m[31m                      (interpolation
-[0m[31m                        (identifier))))))
-[0m[32m                (interpolated_string_expression
-[0m[32m                  (identifier)
-[0m[32m                  (interpolated_string
-[0m[32m                    (interpolation
-[0m[32m                      (identifier))
-[0m[32m                    (interpolation
-[0m[32m                      (identifier)))))
-[0m              (case_clause
-                (case_class_pattern
-                  (type_identifier)
-                  (identifier)
-                  (identifier))
-[31m                (indented_block
-[0m[31m                  (interpolated_string_expression
-[0m[31m                    (identifier)
-[0m[31m                    (interpolated_string
-[0m[31m                      (interpolation
-[0m[31m                        (identifier))
-[0m[31m                      (interpolation
-[0m[31m                        (identifier))))))
-[0m[32m                (interpolated_string_expression
-[0m[32m                  (identifier)
-[0m[32m                  (interpolated_string
-[0m[32m                    (interpolation
-[0m[32m                      (identifier))
-[0m[32m                    (interpolation
-[0m[32m                      (identifier)))))
-[0m              (case_clause
-                (case_class_pattern
-                  (type_identifier)
-                  (identifier)
-                  (identifier))
-[31m                (indented_block
-[0m[31m                  (interpolated_string_expression
-[0m[31m                    (identifier)
-[0m[31m                    (interpolated_string
-[0m[31m                      (interpolation
-[0m[31m                        (identifier))
-[0m[31m                      (interpolation
-[0m[31m                        (identifier)))))))))))[0m
-[32m                (interpolated_string_expression
-[0m[32m                  (identifier)
-[0m[32m                  (interpolated_string
-[0m[32m                    (interpolation
-[0m[32m                      (identifier))
-[0m[32m                    (interpolation
-[0m[32m                      (identifier))))))))))[0m
 
