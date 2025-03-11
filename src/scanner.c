@@ -333,6 +333,8 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     lexer->result_symbol = INDENT;
     lexer->mark_end(lexer);
 
+    scanner->saved_should_auto_semicolon = false;
+
     return true;
   }
 
@@ -355,11 +357,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
-  // Recover newline_count from the outdent reset
-  bool is_eof = lexer->eof(lexer);
-  if (current_indent == latest_indent || is_eof) {
-    should_auto_semicolon |= scanner->saved_should_auto_semicolon;
-  }
+  should_auto_semicolon |= scanner->saved_should_auto_semicolon;
   scanner->saved_should_auto_semicolon = false;
   
   if (valid_symbols[AUTOMATIC_SEMICOLON] && should_auto_semicolon) {
@@ -410,13 +408,14 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
       }
     }
 
-    if (valid_symbols[ELSE]) return !scan_word(lexer, "else");
+    if (valid_symbols[ELSE] && scan_word(lexer, "else")) return false;
     if (valid_symbols[CATCH] && scan_word(lexer, "catch")) return false;
     if (valid_symbols[FINALLY] && scan_word(lexer, "finally")) return false;
     if (valid_symbols[EXTENDS] && scan_word(lexer, "extends")) return false;
     if (valid_symbols[WITH] && scan_word(lexer, "with")) return false;
     if (valid_symbols[DERIVES] && scan_word(lexer, "derives")) return false;
 
+    LOG("    AUTOMATIC SEMICOLON\n");
     return true;
   }
 
