@@ -2741,7 +2741,7 @@
     },
     "extension_definition": {
       "type": "PREC_LEFT",
-      "value": "extension",
+      "value": 0,
       "content": {
         "type": "SEQ",
         "members": [
@@ -7096,10 +7096,6 @@
           },
           {
             "type": "STRING",
-            "value": "extension"
-          },
-          {
-            "type": "STRING",
             "value": "transparent"
           },
           {
@@ -8488,16 +8484,6 @@
       {
         "type": "STRING",
         "value": "end"
-      },
-      {
-        "type": "STRING",
-        "value": "soft_id"
-      }
-    ],
-    [
-      {
-        "type": "STRING",
-        "value": "extension"
       },
       {
         "type": "STRING",

@@ -87,32 +87,6 @@ static int16_t get_latest_indent(Scanner *scanner) {
   return *array_back(&frame->indents);
 }
 
-static void debug_valid_symbols(const bool *valid_symbols) {
-  LOG("Valid symbols: ");
-  if (valid_symbols[AUTOMATIC_SEMICOLON]) LOG("AUTOMATIC_SEMICOLON ");
-  if (valid_symbols[INDENT]) LOG("INDENT ");
-  if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) LOG("INTERPOLATED_STRING_MIDDLE ");
-  if (valid_symbols[INTERPOLATED_STRING_END]) LOG("INTERPOLATED_STRING_END ");
-  if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) LOG("INTERPOLATED_MULTILINE_STRING_MIDDLE ");
-  if (valid_symbols[INTERPOLATED_MULTILINE_STRING_END]) LOG("INTERPOLATED_MULTILINE_STRING_END ");
-  if (valid_symbols[OUTDENT]) LOG("OUTDENT ");
-  if (valid_symbols[OPEN_PAREN]) LOG("OPEN_PAREN ");
-  if (valid_symbols[CLOSE_PAREN]) LOG("CLOSE_PAREN ");
-  if (valid_symbols[OPEN_BRACK]) LOG("OPEN_BRACK ");
-  if (valid_symbols[CLOSE_BRACK]) LOG("CLOSE_BRACK ");
-  if (valid_symbols[OPEN_BRACE]) LOG("OPEN_BRACE ");
-  if (valid_symbols[CLOSE_BRACE]) LOG("CLOSE_BRACE ");
-  if (valid_symbols[SIMPLE_MULTILINE_STRING]) LOG("SIMPLE_MULTILINE_STRING ");
-  if (valid_symbols[SIMPLE_STRING]) LOG("SIMPLE_STRING ");
-  if (valid_symbols[ELSE]) LOG("ELSE ");
-  if (valid_symbols[CATCH]) LOG("CATCH ");
-  if (valid_symbols[FINALLY]) LOG("FINALLY ");
-  if (valid_symbols[EXTENDS]) LOG("EXTENDS ");
-  if (valid_symbols[DERIVES]) LOG("DERIVES ");
-  if (valid_symbols[WITH]) LOG("WITH ");
-  LOG("\n");
-}
-
 void *tree_sitter_scala_external_scanner_create() {
   Scanner *scanner = ts_calloc(1, sizeof(Scanner));
   array_init(&scanner->frames);
@@ -301,14 +275,9 @@ static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c)
     skip(lexer);
   }
   int16_t current_indent = lexer->get_column(lexer);
-  LOG("    OPEN_GROUP '%c'\n", c);
   int16_t starting_indent = newline_count > 0 ? current_indent : get_latest_indent(scanner);
-  debug_indents(scanner);
   push_indent_group(scanner);
   push_indent_level(scanner, starting_indent);
-  debug_indents(scanner);
-  LOG("\n");
-
   lexer->result_symbol = symbol;
   lexer->mark_end(lexer);
   return true;
@@ -317,11 +286,7 @@ static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c)
 // --- Helper function to handle closing an indentation group ---
 static bool close_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
   advance(lexer);
-  LOG("    CLOSE_GROUP '%c'\n", c);
-  debug_indents(scanner);
   pop_indent_group(scanner);
-  debug_indents(scanner);
-  LOG("\n");
 
   lexer->result_symbol = symbol;
   lexer->mark_end(lexer);
@@ -357,24 +322,13 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
 
   int16_t current_indent = lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
 
-  LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
-
-  debug_valid_symbols(valid_symbols);
-
   if (valid_symbols[INDENT] && newline_count > 0 && current_indent > latest_indent) {
     if (detect_comment_start(lexer)) {
       return false;
     }
 
-    LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
     LOG("    INDENT\n");
-    LOG("newline_count = %d\n", newline_count);
-    LOG("latest_indent = %d\n", latest_indent);
-    LOG("current_indent = %d\n", current_indent);
-    debug_indents(scanner);
     push_indent_level(scanner, current_indent);
-    debug_indents(scanner);
-    LOG("\n");
 
     lexer->result_symbol = INDENT;
     lexer->mark_end(lexer);
@@ -388,15 +342,8 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
       return false;
     }
 
-    LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
     LOG("    OUTDENT\n");
-    LOG("newline_count = %d\n", newline_count);
-    LOG("latest_indent = %d\n", latest_indent);
-    LOG("current_indent = %d\n", current_indent);
-    debug_indents(scanner);
     pop_indent_level(scanner);
-    debug_indents(scanner);
-    LOG("\n");
 
     lexer->result_symbol = OUTDENT;
     lexer->mark_end(lexer);
@@ -459,13 +406,6 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
         // we should still produce AUTOMATIC_SEMICOLON, e.g. in
         // val a = 1
         // /* comment */ val b = 2
-        LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
-        LOG("    AUTOMATIC SEMICOLON\n");
-        LOG("newline_count = %d\n", newline_count);
-        LOG("latest_indent = %d\n", latest_indent);
-        LOG("current_indent = %d\n", current_indent);
-        LOG("\n");
-
         return true;
       }
     }
@@ -476,13 +416,6 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     if (valid_symbols[EXTENDS] && scan_word(lexer, "extends")) return false;
     if (valid_symbols[WITH] && scan_word(lexer, "with")) return false;
     if (valid_symbols[DERIVES] && scan_word(lexer, "derives")) return false;
-
-    LOG("lexer->lookahead = %d ('%c')\n", lexer->lookahead, lexer->lookahead);
-    LOG("    AUTOMATIC SEMICOLON\n");
-    LOG("newline_count = %d\n", newline_count);
-    LOG("latest_indent = %d\n", latest_indent);
-    LOG("current_indent = %d\n", current_indent);
-    LOG("\n");
 
     return true;
   }

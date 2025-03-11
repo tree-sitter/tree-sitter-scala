@@ -67,7 +67,6 @@ module.exports = grammar({
   precedences: $ => [
     ["mod", "soft_id"],
     ["end", "soft_id"],
-    ["extension", "soft_id"],
     ["new", "structural_type"],
   ],
 
@@ -625,7 +624,6 @@ module.exports = grammar({
      */
     extension_definition: $ =>
       prec.left(
-        "extension",
         seq(
           "extension",
           field("type_parameters", optional($.type_parameters)),
@@ -1550,15 +1548,7 @@ module.exports = grammar({
     _soft_identifier: $ =>
       prec(
         "soft_id",
-        choice(
-          "infix",
-          "inline",
-          "opaque",
-          "open",
-          "extension",
-          "transparent",
-          "end",
-        ),
+        choice("infix", "inline", "opaque", "open", "transparent", "end"),
       ),
 
     /**
