@@ -6174,8 +6174,17 @@
               "type": "CHOICE",
               "members": [
                 {
-                  "type": "SYMBOL",
-                  "name": "_block"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_block"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "indented_block"
+                    }
+                  ]
                 },
                 {
                   "type": "BLANK"

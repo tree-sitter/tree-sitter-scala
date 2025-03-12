@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -319,8 +319,15 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     skip(lexer);
   }
   bool should_auto_semicolon = newline_count > 0;
-
   int16_t current_indent = lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
+
+  LOG("lexer->lookahead: '%c'\n", lexer->lookahead);
+  LOG("valid_symbols[AUTOMATIC_SEMICOLON]: '%d'\n", valid_symbols[AUTOMATIC_SEMICOLON]);
+  LOG("latest_indent: '%d'\n", latest_indent);
+  LOG("current_indent: '%d'\n", current_indent);
+  LOG("should_auto_semicolon: '%d'\n", should_auto_semicolon);
+  LOG("scanner->saved_should_auto_semicolon: '%d'\n", scanner->saved_should_auto_semicolon);
+  debug_indents(scanner);
 
   if (valid_symbols[INDENT] && newline_count > 0 && current_indent > latest_indent) {
     if (detect_comment_start(lexer)) {
@@ -357,7 +364,10 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
-  should_auto_semicolon |= scanner->saved_should_auto_semicolon;
+  bool is_eof = lexer->eof(lexer);  
+  if (current_indent == latest_indent || is_eof) {
+    should_auto_semicolon |= scanner->saved_should_auto_semicolon;
+  }
   scanner->saved_should_auto_semicolon = false;
   
   if (valid_symbols[AUTOMATIC_SEMICOLON] && should_auto_semicolon) {

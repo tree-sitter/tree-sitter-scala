@@ -1310,7 +1310,11 @@ module.exports = grammar({
 
     case_clause: $ =>
       prec.left(
-        seq("case", $._case_pattern, field("body", optional($._block))),
+        seq(
+          "case",
+          $._case_pattern,
+          field("body", optional(choice($._block, $.indented_block))),
+        ),
       ),
 
     // This is created to capture guard from the right

@@ -1257,6 +1257,10 @@
             "named": false
           },
           {
+            "type": "indented_block",
+            "named": true
+          },
+          {
             "type": "match",
             "named": false
           },
