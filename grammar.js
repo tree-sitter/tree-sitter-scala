@@ -90,8 +90,6 @@ module.exports = grammar({
     [$._class_definition],
     // 'class'  operator_identifier  •  _automatic_semicolon  …
     [$._class_constructor],
-    // 'enum'  _class_constructor  '{'  'case'  operator_identifier  _full_enum_def_repeat1  •  _automatic_semicolon  …
-    [$._full_enum_def],
     // _start_val  identifier  ','  identifier  •  ':'  …
     [$.identifiers, $.val_declaration],
     // 'enum'  operator_identifier  _automatic_semicolon  '('  ')'  •  ':'  …
@@ -202,10 +200,12 @@ module.exports = grammar({
     full_enum_case: $ => seq(field("name", $._identifier), $._full_enum_def),
 
     _full_enum_def: $ =>
-      seq(
-        field("type_parameters", optional($.type_parameters)),
-        field("class_parameters", repeat1($.class_parameters)),
-        field("extend", optional($.extends_clause)),
+      prec.left(
+        seq(
+          field("type_parameters", optional($.type_parameters)),
+          field("class_parameters", repeat1($.class_parameters)),
+          field("extend", optional($.extends_clause)),
+        ),
       ),
 
     package_clause: $ =>
@@ -1370,7 +1370,7 @@ module.exports = grammar({
 
     /**
      *   ColonArgument     ::=  colon [LambdaStart]
-     *                          (CaseClauses | Block)
+     *.                         indent (CaseClauses | Block) outdent
      */
     colon_argument: $ =>
       prec.left(
@@ -1379,7 +1379,10 @@ module.exports = grammar({
           optional(
             field(
               "lambda_start",
-              seq(choice($.bindings, $._identifier, $.wildcard), "=>"),
+              seq(
+                choice($.bindings, $._identifier, $.wildcard),
+                choice("=>", "?=>"),
+              ),
             ),
           ),
           choice($.indented_block, $.indented_cases),

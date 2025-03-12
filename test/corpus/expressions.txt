@@ -730,7 +730,8 @@ def matchTest(x: Int): String = x match {
           (block
             (string)))
         (case_clause
-          (integer_literal))
+          (integer_literal)
+          (indented_block))
         (case_clause
           (identifier)
           (guard
@@ -760,16 +761,18 @@ def matchTest(x: Int): String = x match {
                 (identifier))
               (interpolation
                 (identifier))))
-          (infix_expression
-            (identifier)
-            (operator_identifier)
-            (identifier)))
+          (indented_block
+            (infix_expression
+              (identifier)
+              (operator_identifier)
+              (identifier))))
         (case_clause
           (wildcard)
-          (val_definition
-            (identifier)
-            (string))
-          (string))
+          (indented_block
+            (val_definition
+              (identifier)
+              (string))
+            (string)))
         (case_clause
           (identifier)
           (guard
@@ -823,10 +826,11 @@ def matchTest(x: Int): String =
                 (identifier)
                 (operator_identifier)
                 (integer_literal)))
-            (val_definition
-              (identifier)
-              (string))
-            (identifier))
+            (indented_block
+              (val_definition
+                (identifier)
+                (string))
+              (identifier)))
           (case_clause
             (tuple_pattern
               (tuple_pattern
@@ -835,10 +839,11 @@ def matchTest(x: Int): String =
             (identifier))
           (case_clause
             (wildcard)
-            (val_definition
-              (identifier)
-              (string))
-            (string)))))))
+            (indented_block
+              (val_definition
+                (identifier)
+                (string))
+              (string))))))))
 
 ================================================================================
 Field expressions

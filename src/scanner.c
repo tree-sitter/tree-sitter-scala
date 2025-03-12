@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -312,6 +312,8 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
   int16_t latest_indent = get_latest_indent(scanner);
   int16_t newline_count = 0;
 
+  LOG("initial lexer->lookahead: '%c'\n", lexer->lookahead);
+
   while (iswspace(lexer->lookahead)) {
     if (lexer->lookahead == '\n') {
       newline_count++;
@@ -325,6 +327,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
   LOG("valid_symbols[AUTOMATIC_SEMICOLON]: '%d'\n", valid_symbols[AUTOMATIC_SEMICOLON]);
   LOG("latest_indent: '%d'\n", latest_indent);
   LOG("current_indent: '%d'\n", current_indent);
+  LOG("newline_count: '%d'\n", newline_count);
   LOG("should_auto_semicolon: '%d'\n", should_auto_semicolon);
   LOG("scanner->saved_should_auto_semicolon: '%d'\n", scanner->saved_should_auto_semicolon);
   debug_indents(scanner);

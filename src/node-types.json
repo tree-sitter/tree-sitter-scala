@@ -1602,6 +1602,10 @@
             "named": false
           },
           {
+            "type": "?=>",
+            "named": false
+          },
+          {
             "type": "bindings",
             "named": true
           },
