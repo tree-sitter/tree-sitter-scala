@@ -107,10 +107,16 @@ module.exports = grammar({
     [$._if_condition, $._simple_expression],
     [$.block, $._braced_template_body1],
     [$._simple_expression, $.self_type, $._type_identifier],
+
     [$._simple_expression, $._type_identifier],
     [$.lambda_expression, $.self_type, $._type_identifier],
     [$.lambda_expression, $._type_identifier],
     [$.binding, $._simple_expression, $._type_identifier],
+
+    [$._simple_type, $._simple_expression],
+    [$.binding, $._simple_expression, $._simple_type],
+    [$.binding, $._simple_type],
+    [$.lambda_expression, $._simple_type],
   ],
 
   word: $ => $._alpha_identifier,
@@ -906,7 +912,7 @@ module.exports = grammar({
     annotated_type: $ => prec.right(seq($._simple_type, repeat1($.annotation))),
 
     _simple_type: $ =>
-      prec.left(
+      prec.dynamic(
         PREC.type,
         choice(
           $.generic_type,
@@ -973,7 +979,10 @@ module.exports = grammar({
       ),
 
     tuple_type: $ =>
-      seq($._open_paren, trailingSep1(",", $._type), $._close_paren),
+      prec.dynamic(
+        PREC.type,
+        seq($._open_paren, trailingSep1(",", $._type), $._close_paren),
+      ),
 
     named_tuple_type: $ =>
       seq($._open_paren, trailingSep1(",", $.name_and_type), $._close_paren),
@@ -1302,11 +1311,7 @@ module.exports = grammar({
       ),
 
     bindings: $ =>
-      choice(
-        seq($._open_paren, $._close_paren),
-        seq($._open_paren, $.binding, optional(","), $._close_paren),
-        seq($._open_paren, trailingSep1(",", $.binding), $._close_paren),
-      ),
+      seq($._open_paren, trailingSep(",", $.binding), $._close_paren),
 
     case_block: $ =>
       choice(
