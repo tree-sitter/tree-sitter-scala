@@ -4435,7 +4435,7 @@
     },
     "tuple_type": {
       "type": "PREC_DYNAMIC",
-      "value": 2,
+      "value": -5,
       "content": {
         "type": "SEQ",
         "members": [
@@ -4804,7 +4804,7 @@
     },
     "parameter_types": {
       "type": "PREC",
-      "value": -5,
+      "value": -1,
       "content": {
         "type": "CHOICE",
         "members": [
@@ -8099,7 +8099,7 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "_automatic_semicolon"
+                  "name": "_semicolon"
                 },
                 {
                   "type": "BLANK"
@@ -8119,36 +8119,41 @@
               "type": "SEQ",
               "members": [
                 {
-                  "type": "SYMBOL",
-                  "name": "enumerator"
-                },
-                {
-                  "type": "REPEAT",
-                  "content": {
-                    "type": "SEQ",
-                    "members": [
-                      {
-                        "type": "SYMBOL",
-                        "name": "_semicolon"
-                      },
-                      {
-                        "type": "SYMBOL",
-                        "name": "enumerator"
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "enumerator"
+                    },
+                    {
+                      "type": "REPEAT",
+                      "content": {
+                        "type": "SEQ",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "_semicolon"
+                          },
+                          {
+                            "type": "SYMBOL",
+                            "name": "enumerator"
+                          }
+                        ]
                       }
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "_automatic_semicolon"
+                    }
+                  ]
                 },
                 {
-                  "type": "BLANK"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_semicolon"
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
                 }
               ]
             },

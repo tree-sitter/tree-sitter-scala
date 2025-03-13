@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)

@@ -980,7 +980,7 @@ module.exports = grammar({
 
     tuple_type: $ =>
       prec.dynamic(
-        PREC.type,
+        -5,
         seq($._open_paren, trailingSep1(",", $._type), $._close_paren),
       ),
 
@@ -1822,13 +1822,8 @@ module.exports = grammar({
 
     enumerators: $ =>
       choice(
-        seq(sep1($._semicolon, $.enumerator), optional($._automatic_semicolon)),
-        seq(
-          $._indent,
-          sep1($._semicolon, $.enumerator),
-          optional($._automatic_semicolon),
-          $._outdent,
-        ),
+        trailingSep1($._semicolon, $.enumerator),
+        seq($._indent, trailingSep1($._semicolon, $.enumerator), $._outdent),
       ),
 
     /**
