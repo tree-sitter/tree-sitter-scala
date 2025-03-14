@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -28,6 +28,7 @@ enum TokenType {
   CLOSE_BRACK,
   OPEN_BRACE,
   CLOSE_BRACE,
+  COMMENT_START,
   ELSE,
   CATCH,
   FINALLY,
@@ -55,6 +56,31 @@ static inline void debug_indents(Scanner *scanner) {
     }
     LOG("\n");
   }
+}
+
+static void debug_valid_symbols(const bool *valid_symbols) {
+  LOG("Valid symbols: ");
+  if (valid_symbols[AUTOMATIC_SEMICOLON]) LOG("AUTOMATIC_SEMICOLON ");
+  if (valid_symbols[INDENT]) LOG("INDENT ");
+  if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) LOG("INTERPOLATED_STRING_MIDDLE ");
+  if (valid_symbols[INTERPOLATED_STRING_END]) LOG("INTERPOLATED_STRING_END ");
+  if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) LOG("INTERPOLATED_MULTILINE_STRING_MIDDLE ");
+  if (valid_symbols[INTERPOLATED_MULTILINE_STRING_END]) LOG("INTERPOLATED_MULTILINE_STRING_END ");
+  if (valid_symbols[OUTDENT]) LOG("OUTDENT ");
+  if (valid_symbols[SIMPLE_MULTILINE_STRING]) LOG("SIMPLE_MULTILINE_STRING ");
+  if (valid_symbols[SIMPLE_STRING]) LOG("SIMPLE_STRING ");
+  if (valid_symbols[OPEN_PAREN]) LOG("OPEN_PAREN ");
+  if (valid_symbols[CLOSE_PAREN]) LOG("CLOSE_PAREN ");
+  if (valid_symbols[OPEN_BRACK]) LOG("OPEN_BRACK ");
+  if (valid_symbols[CLOSE_BRACK]) LOG("CLOSE_BRACK ");
+  if (valid_symbols[OPEN_BRACE]) LOG("OPEN_BRACE ");
+  if (valid_symbols[CLOSE_BRACE]) LOG("CLOSE_BRACE ");
+  if (valid_symbols[ELSE]) LOG("ELSE ");
+  if (valid_symbols[CATCH]) LOG("CATCH ");
+  if (valid_symbols[FINALLY]) LOG("FINALLY ");
+  if (valid_symbols[EXTENDS]) LOG("EXTENDS ");
+  if (valid_symbols[DERIVES]) LOG("DERIVES ");
+  if (valid_symbols[WITH]) LOG("WITH ");
   LOG("\n");
 }
 
@@ -87,6 +113,11 @@ static int16_t get_latest_indent(Scanner *scanner) {
   return *array_back(&frame->indents);
 }
 
+static void set_latest_indent(Scanner *scanner, int16_t indent) {
+  IndentationFrame *frame = *array_back(&scanner->frames);
+  *array_back(&frame->indents) = indent;
+}
+
 void *tree_sitter_scala_external_scanner_create() {
   Scanner *scanner = ts_calloc(1, sizeof(Scanner));
   array_init(&scanner->frames);
@@ -94,10 +125,8 @@ void *tree_sitter_scala_external_scanner_create() {
   // Allocate and initialize the first indentation group
   IndentationFrame *frame = ts_malloc(sizeof(IndentationFrame));
   array_init(&frame->indents);
-  array_push(&frame->indents, 0);  // Ensure initial indent
-
-  array_push(&scanner->frames, frame);  // Push pointer
-
+  array_push(&frame->indents, 0);
+  array_push(&scanner->frames, frame);
   scanner->saved_should_auto_semicolon = false;
   return scanner;
 }
@@ -242,6 +271,16 @@ static bool scan_string_content(TSLexer *lexer, bool is_multiline, bool has_inte
   }
 }
 
+static bool scan_word(TSLexer *lexer, const char* const word) {
+  for (uint8_t i = 0; word[i] != '\0'; i++) {
+    if (lexer->lookahead != word[i]) {
+      return false;
+    }
+    advance(lexer);
+  }
+  return !iswalnum(lexer->lookahead);
+}
+
 static bool detect_comment_start(TSLexer *lexer) {
   lexer->mark_end(lexer);
   // Comments should not affect indentation
@@ -254,30 +293,93 @@ static bool detect_comment_start(TSLexer *lexer) {
   return false;
 }
 
-static bool scan_word(TSLexer *lexer, const char* const word) {
-  for (uint8_t i = 0; word[i] != '\0'; i++) {
-    if (lexer->lookahead != word[i]) {
-      return false;
-    }
-    advance(lexer);
+static bool detect_continuation(TSLexer *lexer, const bool *valid_symbols) {
+  // Check for obvious multi-line continuation symbols
+  if (lexer->lookahead == '.' || lexer->lookahead == ')' || lexer->lookahead == ']' || lexer->lookahead == ',' || lexer->lookahead == ':') {
+    return true;
   }
-  return !iswalnum(lexer->lookahead);
+
+  // Check for keywords that indicate continuation
+  return 
+    (valid_symbols[ELSE] && scan_word(lexer, "else")) ||
+    (valid_symbols[CATCH] && scan_word(lexer, "catch")) ||
+    (valid_symbols[FINALLY] && scan_word(lexer, "finally")) ||
+    (valid_symbols[EXTENDS] && scan_word(lexer, "extends")) ||
+    (valid_symbols[WITH] && scan_word(lexer, "with")) ||
+    (valid_symbols[DERIVES] && scan_word(lexer, "derives"));
 }
 
-// --- Helper function to handle opening a new indentation group ---
-static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
-  advance(lexer);
-  int16_t newline_count = 0;
+static int skip_whitespace(TSLexer *lexer) {
+  int newline_count = 0;
+  // Skip all whitespace characters, counting newlines
   while (iswspace(lexer->lookahead)) {
     if (lexer->lookahead == '\n') {
       newline_count++;
     }
     skip(lexer);
   }
-  int16_t current_indent = lexer->get_column(lexer);
-  int16_t starting_indent = newline_count > 0 ? current_indent : get_latest_indent(scanner);
+  return newline_count;
+}
+
+static int skip_comment_and_whitespace(TSLexer *lexer) {
+  int newline_count = 0;
+
+  while (true) {
+    // Skip all whitespace characters, counting newlines
+    newline_count += skip_whitespace(lexer);
+
+    // Handle single-line comments: `// ...`
+    if (lexer->lookahead == '/') {
+      advance(lexer);
+      if (lexer->lookahead == '/') {
+        // Consume characters until the end of the line or EOF
+        while (lexer->lookahead != '\n' && lexer->lookahead != 0) {
+          advance(lexer);
+        }
+        continue; // Go back to checking for whitespace/comments
+      }
+
+      // Handle multi-line (possibly nested) comments: `/* ... */`
+      if (lexer->lookahead == '*') {
+        advance(lexer);
+        int depth = 1; // Track nested depth
+
+        while (depth > 0 && !lexer->eof(lexer)) {
+          if (lexer->lookahead == '/') {
+            advance(lexer);
+            if (lexer->lookahead == '*') { // Found `/*`
+              advance(lexer);
+              depth++; // Increase nesting depth
+            }
+          } else if (lexer->lookahead == '*') {
+            advance(lexer);
+            if (lexer->lookahead == '/') { // Found `*/`
+              advance(lexer);
+              depth--; // Decrease nesting depth
+            }
+          } else {
+            if (lexer->lookahead == '\n') {
+              newline_count++;
+            }
+            advance(lexer);
+          }
+        }
+        continue; // Go back to checking for whitespace/comments
+      }
+    }
+    // If no more whitespace or comments, break out
+    break;
+  }
+
+  return newline_count;
+}
+
+// --- Helper function to handle opening a new indentation group ---
+static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
+  advance(lexer);
+  skip_comment_and_whitespace(lexer);
   push_indent_group(scanner);
-  push_indent_level(scanner, starting_indent);
+  push_indent_level(scanner, lexer->get_column(lexer));
   lexer->result_symbol = symbol;
   lexer->mark_end(lexer);
   return true;
@@ -287,7 +389,6 @@ static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c)
 static bool close_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
   advance(lexer);
   pop_indent_group(scanner);
-
   lexer->result_symbol = symbol;
   lexer->mark_end(lexer);
   return true;
@@ -310,33 +411,25 @@ static bool can_pop_frame(Scanner *scanner) {
 bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
   Scanner *scanner = (Scanner *)payload;
   int16_t latest_indent = get_latest_indent(scanner);
-  int16_t newline_count = 0;
 
+  LOG("\n");
   LOG("initial lexer->lookahead: '%c'\n", lexer->lookahead);
-
-  while (iswspace(lexer->lookahead)) {
-    if (lexer->lookahead == '\n') {
-      newline_count++;
-    }
-    skip(lexer);
-  }
+  int16_t newline_count = skip_comment_and_whitespace(lexer);
   bool should_auto_semicolon = newline_count > 0;
   int16_t current_indent = lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
 
   LOG("lexer->lookahead: '%c'\n", lexer->lookahead);
-  LOG("valid_symbols[AUTOMATIC_SEMICOLON]: '%d'\n", valid_symbols[AUTOMATIC_SEMICOLON]);
   LOG("latest_indent: '%d'\n", latest_indent);
   LOG("current_indent: '%d'\n", current_indent);
   LOG("newline_count: '%d'\n", newline_count);
   LOG("should_auto_semicolon: '%d'\n", should_auto_semicolon);
   LOG("scanner->saved_should_auto_semicolon: '%d'\n", scanner->saved_should_auto_semicolon);
   debug_indents(scanner);
+  debug_valid_symbols(valid_symbols);
+  LOG("\n");
 
   if (valid_symbols[INDENT] && newline_count > 0 && current_indent > latest_indent) {
-    if (detect_comment_start(lexer)) {
-      return false;
-    }
-
+    // if (detect_comment_start(lexer)) return false;
     LOG("    INDENT\n");
     push_indent_level(scanner, current_indent);
 
@@ -348,12 +441,8 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
-  bool force_outdent = lexer->lookahead == ')' || lexer->lookahead == ']' || lexer->lookahead == '}'  || lexer->lookahead == ',';
-  if (valid_symbols[OUTDENT] && (current_indent < latest_indent || force_outdent) && can_pop_indent(scanner)) {
-    if (detect_comment_start(lexer)) {
-      return false;
-    }
-
+  if (valid_symbols[OUTDENT] && (current_indent < latest_indent) && can_pop_indent(scanner)) {
+    // if (detect_comment_start(lexer)) return false;
     LOG("    OUTDENT\n");
     pop_indent_level(scanner);
 
@@ -362,7 +451,6 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
 
     // Set should_auto_semicolon if we have seen new lines as part of this OUTDENT
     scanner->saved_should_auto_semicolon |= should_auto_semicolon;
-    scanner->saved_should_auto_semicolon &= !force_outdent;
 
     return true;
   }
@@ -374,73 +462,18 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
   scanner->saved_should_auto_semicolon = false;
   
   if (valid_symbols[AUTOMATIC_SEMICOLON] && should_auto_semicolon) {
+    // skip_comment_and_whitespace(lexer);
+    current_indent = lexer->get_column(lexer);
     // AUTOMATIC_SEMICOLON should not be issued in the middle of expressions
     // Thus, we exit this branch when encountering comments, else/catch clauses, etc.
+    if (detect_continuation(lexer, valid_symbols)) return false;
+
+    LOG("    AUTOMATIC SEMICOLON\n");
+    set_latest_indent(scanner, current_indent);
 
     lexer->mark_end(lexer);
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
 
-    // Probably, a multi-line field expression, e.g.
-    // a
-    //  .b
-    //  .c
-    if (lexer->lookahead == '.') {
-      return false;
-    }
-
-    if (lexer->lookahead == ')') {
-      return false;
-    }
-
-    if (lexer->lookahead == ']') {
-      return false;
-    }
-
-    if (lexer->lookahead == ',') {
-      return false;
-    }
-
-    // Single-line and multi-line comments
-    if (lexer->lookahead == '/') {
-      advance(lexer);
-      if (lexer->lookahead == '/') {
-        return false;
-      }
-      if (lexer->lookahead == '*') {
-        advance(lexer);
-        while (!lexer->eof(lexer)) {
-          if (lexer->lookahead == '*') {
-            advance(lexer);
-            if (lexer->lookahead == '/') {
-              advance(lexer);
-              break;
-            }
-          } else {
-            advance(lexer);
-          }
-        }
-        while (iswspace(lexer->lookahead)) {
-          if (lexer->lookahead == '\n' || lexer->lookahead == '\r') {
-            return false;
-          }
-          skip(lexer);
-        }
-        // If some code is present at the same line after comment end,
-        // we should still produce AUTOMATIC_SEMICOLON, e.g. in
-        // val a = 1
-        // /* comment */ val b = 2
-        return true;
-      }
-    }
-
-    if (valid_symbols[ELSE] && scan_word(lexer, "else")) return false;
-    if (valid_symbols[CATCH] && scan_word(lexer, "catch")) return false;
-    if (valid_symbols[FINALLY] && scan_word(lexer, "finally")) return false;
-    if (valid_symbols[EXTENDS] && scan_word(lexer, "extends")) return false;
-    if (valid_symbols[WITH] && scan_word(lexer, "with")) return false;
-    if (valid_symbols[DERIVES] && scan_word(lexer, "derives")) return false;
-
-    LOG("    AUTOMATIC SEMICOLON\n");
     return true;
   }
 

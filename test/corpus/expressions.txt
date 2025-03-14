@@ -4,18 +4,8 @@ Call expressions
 
 class C {
   def main() {
-    a()
-    a(
-      123,
-      234,
-    )
-    ::(123)
-    a(b, c)
-    a.map(x => x + 1)
-    a { 123 }
-    a { b }
     a.map{ x => x + 1 }
-    /* comment */ a.exists { case ((i, _)) => i }
+    /* comment */ b.exists { case ((i, _)) => i }
   }
 }
 

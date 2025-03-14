@@ -61,12 +61,11 @@ module.exports = grammar({
     $._identifier,
     $.literal,
   ],
-
   // Doc: https://tree-sitter.github.io/tree-sitter/creating-parsers, search "precedences"
   // These names can be used in the prec functions to define precedence relative only to other names in the array, rather than globally.
   precedences: $ => [
-    ["mod", "soft_id"],
-    ["end", "soft_id"],
+    ["mod", "soft_keyword"],
+    ["end", "soft_keyword"],
     ["new", "structural_type"],
   ],
 
@@ -179,7 +178,16 @@ module.exports = grammar({
 
     enum_body: $ =>
       choice(
-        prec.left(PREC.control, seq(":", $._indent, $._enum_block, $._outdent)),
+        prec.left(
+          PREC.control,
+          seq(
+            ":",
+            $._indent,
+            $._enum_block,
+            $._outdent,
+            optional($._semicolon),
+          ),
+        ),
         seq(
           $._open_brace,
           // TODO: self type
@@ -681,7 +689,6 @@ module.exports = grammar({
             "parameters",
             repeat(seq(optional($._automatic_semicolon), $.parameters)),
           ),
-          optional($._automatic_semicolon),
           ":",
         ),
       ),
@@ -1557,15 +1564,61 @@ module.exports = grammar({
      * id               ::=  plainid
      *                       |  ‘`’ { charNoBackQuoteOrNewline | UnicodeEscape | charEscapeSeq
      */
+    // identifier: $ =>
+    //   prec.left(choice($._alpha_identifier, $._backquoted_id, $._soft_keyword)),
+
     identifier: $ =>
-      prec.left(
-        choice($._alpha_identifier, $._backquoted_id, $._soft_identifier),
+      prec.left(choice($._alpha_identifier, $._backquoted_id, $._soft_keyword)),
+
+    _hard_keyword: $ =>
+      choice(
+        "abstract",
+        "case",
+        "catch",
+        "class",
+        "def",
+        "do",
+        "else",
+        "enum",
+        "export",
+        "extends",
+        "false",
+        "final",
+        "finally",
+        "for",
+        "given",
+        "if",
+        "implicit",
+        "import",
+        "lazy",
+        "match",
+        "new",
+        "null",
+        "object",
+        "override",
+        "package",
+        "private",
+        "protected",
+        "return",
+        "sealed",
+        "super",
+        "then",
+        "throw",
+        "trait",
+        "true",
+        "try",
+        "type",
+        "val",
+        "var",
+        "while",
+        "with",
+        "yield",
       ),
 
     // https://docs.scala-lang.org/scala3/reference/soft-modifier.html
-    _soft_identifier: $ =>
+    _soft_keyword: $ =>
       prec(
-        "soft_id",
+        "soft_keyword",
         choice("infix", "inline", "opaque", "open", "transparent", "end"),
       ),
 

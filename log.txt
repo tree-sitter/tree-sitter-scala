@@ -1,41 +1,19 @@
-initial lexer->lookahead: 'p'
-lexer->lookahead: 'p'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '0'
-current_indent: '0'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (1): 0 
 
 initial lexer->lookahead: '
 '
 lexer->lookahead: 'c'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
 latest_indent: '0'
 current_indent: '0'
-newline_count: '2'
+newline_count: '1'
 should_auto_semicolon: '1'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(1):
       Frame[0] (1): 0 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
 
-    AUTOMATIC SEMICOLON
-initial lexer->lookahead: 'c'
-lexer->lookahead: 'c'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '0'
-current_indent: '0'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (1): 0 
 
-initial lexer->lookahead: '('
-lexer->lookahead: '('
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
+initial lexer->lookahead: ' '
+lexer->lookahead: '{'
 latest_indent: '0'
 current_indent: '8'
 newline_count: '0'
@@ -43,335 +21,450 @@ should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(1):
       Frame[0] (1): 0 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_PAREN OPEN_BRACK OPEN_BRACE FINALLY EXTENDS WITH 
 
-initial lexer->lookahead: ')'
-lexer->lookahead: ')'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '0'
-current_indent: '9'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (1): 0 
-      Frame[1] (1): 0 
 
-initial lexer->lookahead: ':'
-lexer->lookahead: ':'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
-latest_indent: '0'
-current_indent: '10'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (1): 0 
-
-initial lexer->lookahead: '
-'
-lexer->lookahead: 'd'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '0'
-current_indent: '2'
-newline_count: '1'
-should_auto_semicolon: '1'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (1): 0 
-
-    INDENT
 initial lexer->lookahead: 'd'
 lexer->lookahead: 'd'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
 latest_indent: '2'
 current_indent: '2'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (2): 0 2 
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: INDENT SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE 
+
 
 initial lexer->lookahead: '('
 lexer->lookahead: '('
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
 latest_indent: '2'
 current_indent: '7'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (2): 0 2 
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE WITH 
 
-initial lexer->lookahead: ')'
-lexer->lookahead: ')'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
+
+initial lexer->lookahead: 'c'
+lexer->lookahead: 'c'
+latest_indent: '8'
 current_indent: '8'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
       Frame[1] (1): 2 
+      Frame[2] (1): 8 
+Valid symbols: CLOSE_PAREN 
 
-initial lexer->lookahead: ':'
-lexer->lookahead: ':'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
-latest_indent: '2'
-current_indent: '9'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (2): 0 2 
 
 initial lexer->lookahead: ' '
-lexer->lookahead: 'U'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
+lexer->lookahead: 'D'
+latest_indent: '8'
 current_indent: '11'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (2): 0 2 
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 8 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
+
+
+initial lexer->lookahead: ')'
+lexer->lookahead: ')'
+latest_indent: '8'
+current_indent: '12'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 8 
+Valid symbols: CLOSE_PAREN OPEN_BRACK OPEN_BRACE DERIVES 
+
 
 initial lexer->lookahead: ' '
-lexer->lookahead: '='
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
+lexer->lookahead: ':'
+latest_indent: '2'
+current_indent: '14'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE WITH 
+
+
+initial lexer->lookahead: ' '
+lexer->lookahead: 'E'
 latest_indent: '2'
 current_indent: '16'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (2): 0 2 
-
-initial lexer->lookahead: ' '
-lexer->lookahead: '{'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '18'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(1):
-      Frame[0] (2): 0 2 
-
-initial lexer->lookahead: 'v'
-lexer->lookahead: 'v'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '20'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(2):
-      Frame[0] (2): 0 2 
+      Frame[0] (1): 0 
       Frame[1] (1): 2 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
 
-initial lexer->lookahead: ' '
-lexer->lookahead: 'x'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '24'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
-
-initial lexer->lookahead: ' '
-lexer->lookahead: '='
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '26'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
-
-initial lexer->lookahead: ' '
-lexer->lookahead: '4'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '28'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
 
 initial lexer->lookahead: '
 '
-lexer->lookahead: 'v'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
+lexer->lookahead: 'd'
 latest_indent: '2'
-current_indent: '4'
+current_indent: '2'
 newline_count: '1'
 should_auto_semicolon: '1'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(2):
-      Frame[0] (2): 0 2 
+      Frame[0] (1): 0 
       Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_BRACK OPEN_BRACE CLOSE_BRACE DERIVES WITH 
 
     AUTOMATIC SEMICOLON
-initial lexer->lookahead: 'v'
-lexer->lookahead: 'v'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
+
+initial lexer->lookahead: 'f'
+lexer->lookahead: 'f'
 latest_indent: '2'
 current_indent: '4'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(2):
-      Frame[0] (2): 0 2 
+      Frame[0] (1): 0 
       Frame[1] (1): 2 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE 
+
 
 initial lexer->lookahead: ' '
-lexer->lookahead: 'y'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '8'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
-
-initial lexer->lookahead: ' '
-lexer->lookahead: '='
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '10'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
-
-initial lexer->lookahead: ' '
-lexer->lookahead: '8'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '12'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
-
-initial lexer->lookahead: '
-'
-lexer->lookahead: 'y'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
-latest_indent: '2'
-current_indent: '4'
-newline_count: '1'
-should_auto_semicolon: '1'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
-
-    AUTOMATIC SEMICOLON
-initial lexer->lookahead: 'y'
-lexer->lookahead: 'y'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '4'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '0'
-    Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
-
-initial lexer->lookahead: ' '
-lexer->lookahead: '+'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
+lexer->lookahead: '<'
 latest_indent: '2'
 current_indent: '6'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(2):
-      Frame[0] (2): 0 2 
+      Frame[0] (1): 0 
       Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE WITH 
 
-initial lexer->lookahead: ' '
-lexer->lookahead: 'y'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
+
+initial lexer->lookahead: '['
+lexer->lookahead: '['
 latest_indent: '2'
 current_indent: '8'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(2):
-      Frame[0] (2): 0 2 
+      Frame[0] (1): 0 
       Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE WITH 
+
+
+initial lexer->lookahead: 'B'
+lexer->lookahead: 'B'
+latest_indent: '9'
+current_indent: '9'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 9 
+Valid symbols: OPEN_BRACK 
+
+
+initial lexer->lookahead: ']'
+lexer->lookahead: ']'
+latest_indent: '9'
+current_indent: '10'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 9 
+Valid symbols: OPEN_BRACK CLOSE_BRACK 
+
+
+initial lexer->lookahead: '('
+lexer->lookahead: '('
+latest_indent: '2'
+current_indent: '11'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON INDENT INTERPOLATED_STRING_MIDDLE INTERPOLATED_STRING_END INTERPOLATED_MULTILINE_STRING_MIDDLE INTERPOLATED_MULTILINE_STRING_END OUTDENT SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN CLOSE_PAREN OPEN_BRACK CLOSE_BRACK OPEN_BRACE CLOSE_BRACE ELSE CATCH FINALLY EXTENDS DERIVES 
+
+
+initial lexer->lookahead: '('
+lexer->lookahead: '('
+latest_indent: '2'
+current_indent: '11'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE WITH 
+
+
+initial lexer->lookahead: 't'
+lexer->lookahead: 't'
+latest_indent: '12'
+current_indent: '12'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN CLOSE_PAREN OPEN_BRACK OPEN_BRACE WITH 
+
+
+initial lexer->lookahead: ':'
+lexer->lookahead: ':'
+latest_indent: '12'
+current_indent: '16'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+Valid symbols: OPEN_PAREN CLOSE_PAREN OPEN_BRACK OPEN_BRACE WITH 
+
+
+initial lexer->lookahead: ':'
+lexer->lookahead: ':'
+latest_indent: '12'
+current_indent: '16'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+Valid symbols: OPEN_PAREN CLOSE_PAREN OPEN_BRACK OPEN_BRACE WITH 
+
+
+initial lexer->lookahead: ' '
+lexer->lookahead: 'I'
+latest_indent: '12'
+current_indent: '18'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
+
+
+initial lexer->lookahead: ' '
+lexer->lookahead: 'I'
+latest_indent: '12'
+current_indent: '18'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+Valid symbols: INDENT SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
+
+
+initial lexer->lookahead: '['
+lexer->lookahead: '['
+latest_indent: '12'
+current_indent: '20'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+Valid symbols: CLOSE_PAREN OPEN_BRACK OPEN_BRACE DERIVES 
+
+
+initial lexer->lookahead: 'B'
+lexer->lookahead: 'B'
+latest_indent: '21'
+current_indent: '21'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(4):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+      Frame[3] (1): 21 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
+
+
+initial lexer->lookahead: ']'
+lexer->lookahead: ']'
+latest_indent: '21'
+current_indent: '22'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(4):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+      Frame[3] (1): 21 
+Valid symbols: OPEN_BRACK CLOSE_BRACK OPEN_BRACE DERIVES 
+
+
+initial lexer->lookahead: ')'
+lexer->lookahead: ')'
+latest_indent: '12'
+current_indent: '23'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 12 
+Valid symbols: CLOSE_PAREN OPEN_BRACK OPEN_BRACE DERIVES 
+
+
+initial lexer->lookahead: ':'
+lexer->lookahead: ':'
+latest_indent: '2'
+current_indent: '24'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE WITH 
+
+
+initial lexer->lookahead: ' '
+lexer->lookahead: 'I'
+latest_indent: '2'
+current_indent: '26'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: INDENT SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
+
+
+initial lexer->lookahead: '['
+lexer->lookahead: '['
+latest_indent: '2'
+current_indent: '28'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(2):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_BRACK OPEN_BRACE CLOSE_BRACE DERIVES WITH 
+
+
+initial lexer->lookahead: 'A'
+lexer->lookahead: 'A'
+latest_indent: '29'
+current_indent: '29'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 29 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
+
+
+initial lexer->lookahead: ']'
+lexer->lookahead: ']'
+latest_indent: '29'
+current_indent: '30'
+newline_count: '0'
+should_auto_semicolon: '0'
+scanner->saved_should_auto_semicolon: '0'
+    Indentaion Frames(3):
+      Frame[0] (1): 0 
+      Frame[1] (1): 2 
+      Frame[2] (1): 29 
+Valid symbols: OPEN_BRACK CLOSE_BRACK OPEN_BRACE DERIVES 
+
 
 initial lexer->lookahead: '
 '
 lexer->lookahead: '}'
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
 latest_indent: '2'
-current_indent: '2'
+current_indent: '0'
 newline_count: '1'
 should_auto_semicolon: '1'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(2):
-      Frame[0] (2): 0 2 
+      Frame[0] (1): 0 
       Frame[1] (1): 2 
+Valid symbols: AUTOMATIC_SEMICOLON OPEN_BRACK OPEN_BRACE CLOSE_BRACE DERIVES WITH 
 
     AUTOMATIC SEMICOLON
+
 initial lexer->lookahead: '}'
 lexer->lookahead: '}'
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
-latest_indent: '2'
-current_indent: '2'
+latest_indent: '0'
+current_indent: '0'
 newline_count: '0'
 should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(2):
-      Frame[0] (2): 0 2 
-      Frame[1] (1): 2 
+      Frame[0] (1): 0 
+      Frame[1] (1): 0 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE CLOSE_BRACE 
+
 
 initial lexer->lookahead: '
 '
 lexer->lookahead: ' '
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
-latest_indent: '2'
+latest_indent: '0'
 current_indent: '0'
-newline_count: '3'
+newline_count: '1'
 should_auto_semicolon: '1'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(1):
-      Frame[0] (2): 0 2 
-
-    OUTDENT
-initial lexer->lookahead: ' '
-lexer->lookahead: ' '
-valid_symbols[AUTOMATIC_SEMICOLON]: '1'
-latest_indent: '0'
-current_indent: '0'
-newline_count: '0'
-should_auto_semicolon: '0'
-scanner->saved_should_auto_semicolon: '1'
-    Indentaion Frames(1):
       Frame[0] (1): 0 
+Valid symbols: AUTOMATIC_SEMICOLON 
 
     AUTOMATIC SEMICOLON
+
 initial lexer->lookahead: ' '
 lexer->lookahead: ' '
-valid_symbols[AUTOMATIC_SEMICOLON]: '0'
 latest_indent: '0'
 current_indent: '0'
 newline_count: '0'
@@ -379,4 +472,5 @@ should_auto_semicolon: '0'
 scanner->saved_should_auto_semicolon: '0'
     Indentaion Frames(1):
       Frame[0] (1): 0 
+Valid symbols: SIMPLE_MULTILINE_STRING SIMPLE_STRING OPEN_PAREN OPEN_BRACK OPEN_BRACE 
 

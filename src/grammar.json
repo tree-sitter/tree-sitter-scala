@@ -321,6 +321,18 @@
               {
                 "type": "SYMBOL",
                 "name": "_outdent"
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_semicolon"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
               }
             ]
           }
@@ -2993,18 +3005,6 @@
                 ]
               }
             }
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "_automatic_semicolon"
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
           },
           {
             "type": "STRING",
@@ -7093,14 +7093,191 @@
           },
           {
             "type": "SYMBOL",
-            "name": "_soft_identifier"
+            "name": "_hard_keyword"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_soft_keyword"
           }
         ]
       }
     },
-    "_soft_identifier": {
+    "_hard_keyword": {
+      "type": "PREC_LEFT",
+      "value": "hard_keyword",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "abstract"
+          },
+          {
+            "type": "STRING",
+            "value": "case"
+          },
+          {
+            "type": "STRING",
+            "value": "catch"
+          },
+          {
+            "type": "STRING",
+            "value": "class"
+          },
+          {
+            "type": "STRING",
+            "value": "def"
+          },
+          {
+            "type": "STRING",
+            "value": "do"
+          },
+          {
+            "type": "STRING",
+            "value": "else"
+          },
+          {
+            "type": "STRING",
+            "value": "enum"
+          },
+          {
+            "type": "STRING",
+            "value": "export"
+          },
+          {
+            "type": "STRING",
+            "value": "extends"
+          },
+          {
+            "type": "STRING",
+            "value": "false"
+          },
+          {
+            "type": "STRING",
+            "value": "final"
+          },
+          {
+            "type": "STRING",
+            "value": "finally"
+          },
+          {
+            "type": "STRING",
+            "value": "for"
+          },
+          {
+            "type": "STRING",
+            "value": "given"
+          },
+          {
+            "type": "STRING",
+            "value": "if"
+          },
+          {
+            "type": "STRING",
+            "value": "implicit"
+          },
+          {
+            "type": "STRING",
+            "value": "import"
+          },
+          {
+            "type": "STRING",
+            "value": "lazy"
+          },
+          {
+            "type": "STRING",
+            "value": "match"
+          },
+          {
+            "type": "STRING",
+            "value": "new"
+          },
+          {
+            "type": "STRING",
+            "value": "null"
+          },
+          {
+            "type": "STRING",
+            "value": "object"
+          },
+          {
+            "type": "STRING",
+            "value": "override"
+          },
+          {
+            "type": "STRING",
+            "value": "package"
+          },
+          {
+            "type": "STRING",
+            "value": "private"
+          },
+          {
+            "type": "STRING",
+            "value": "protected"
+          },
+          {
+            "type": "STRING",
+            "value": "return"
+          },
+          {
+            "type": "STRING",
+            "value": "sealed"
+          },
+          {
+            "type": "STRING",
+            "value": "super"
+          },
+          {
+            "type": "STRING",
+            "value": "then"
+          },
+          {
+            "type": "STRING",
+            "value": "throw"
+          },
+          {
+            "type": "STRING",
+            "value": "trait"
+          },
+          {
+            "type": "STRING",
+            "value": "true"
+          },
+          {
+            "type": "STRING",
+            "value": "try"
+          },
+          {
+            "type": "STRING",
+            "value": "type"
+          },
+          {
+            "type": "STRING",
+            "value": "val"
+          },
+          {
+            "type": "STRING",
+            "value": "var"
+          },
+          {
+            "type": "STRING",
+            "value": "while"
+          },
+          {
+            "type": "STRING",
+            "value": "with"
+          },
+          {
+            "type": "STRING",
+            "value": "yield"
+          }
+        ]
+      }
+    },
+    "_soft_keyword": {
       "type": "PREC",
-      "value": "soft_id",
+      "value": "soft_keyword",
       "content": {
         "type": "CHOICE",
         "members": [
@@ -8512,6 +8689,22 @@
     [
       "lambda_expression",
       "_simple_type"
+    ],
+    [
+      "_hard_keyword",
+      "_start_val"
+    ],
+    [
+      "_start_val",
+      "_hard_keyword"
+    ],
+    [
+      "_hard_keyword",
+      "_start_var"
+    ],
+    [
+      "_start_var",
+      "_hard_keyword"
     ]
   ],
   "precedences": [
@@ -8522,7 +8715,7 @@
       },
       {
         "type": "STRING",
-        "value": "soft_id"
+        "value": "soft_keyword"
       }
     ],
     [
@@ -8532,7 +8725,17 @@
       },
       {
         "type": "STRING",
-        "value": "soft_id"
+        "value": "soft_keyword"
+      }
+    ],
+    [
+      {
+        "type": "STRING",
+        "value": "def"
+      },
+      {
+        "type": "STRING",
+        "value": "hard_keyword"
       }
     ],
     [
