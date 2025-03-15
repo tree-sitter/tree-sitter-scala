@@ -128,7 +128,10 @@ val x = y
       (operator_identifier)))
   (val_definition
     (identifier)
-    (identifier)))
+    (identifier))
+  (comment)
+  (comment)
+  (comment))
 
 ================================================================================
 Package
@@ -653,6 +656,7 @@ class A @Inject()(x: Int, y: Int)
       (class_parameter
         (identifier)
         (type_identifier))))
+  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -697,6 +701,7 @@ class A @ann(1)(1) (x: Int, y: Int)
       (class_parameter
         (identifier)
         (type_identifier))))
+  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -708,6 +713,7 @@ class A @ann(1)(1) (x: Int, y: Int)
         (ascription_expression
           (identifier)
           (type_identifier)))))
+  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -721,6 +727,7 @@ class A @ann(1)(1) (x: Int, y: Int)
         (ascription_expression
           (identifier)
           (type_identifier)))))
+  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -869,6 +876,8 @@ class A:
   (class_definition
     (identifier)
     (template_body
+      (comment)
+      (comment)
       (val_declaration
         (identifier)
         (identifier)
@@ -1044,6 +1053,8 @@ Function declarations
 class A {
   def b(c: D) : E
   def <*[B](that: IO[B]): IO[A]
+  def c
+    (a: A): B
 }
 
 --------------------------------------------------------------------------------
@@ -1189,7 +1200,7 @@ class A:
             (identifier)
             (operator_identifier)
             (identifier))
-            (comment)))
+          (comment)))
       (function_declaration
         (identifier)
         (parameters

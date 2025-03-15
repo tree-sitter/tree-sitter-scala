@@ -171,40 +171,37 @@ def showNotification(notification: Notification): String = {
               (identifier)
               (identifier)
               (wildcard))
-            (indented_block
-              (interpolated_string_expression
-                (identifier)
-                (interpolated_string
-                  (interpolation
-                    (identifier))
-                  (interpolation
-                    (identifier))))))
+            (interpolated_string_expression
+              (identifier)
+              (interpolated_string
+                (interpolation
+                  (identifier))
+                (interpolation
+                  (identifier)))))
           (case_clause
             (case_class_pattern
               (type_identifier)
               (identifier)
               (identifier))
-            (indented_block
-              (interpolated_string_expression
-                (identifier)
-                (interpolated_string
-                  (interpolation
-                    (identifier))
-                  (interpolation
-                    (identifier))))))
+            (interpolated_string_expression
+              (identifier)
+              (interpolated_string
+                (interpolation
+                  (identifier))
+                (interpolation
+                  (identifier)))))
           (case_clause
             (case_class_pattern
               (type_identifier)
               (identifier)
               (identifier))
-            (indented_block
-              (interpolated_string_expression
-                (identifier)
-                (interpolated_string
-                  (interpolation
-                    (identifier))
-                  (interpolation
-                    (identifier)))))))))))
+            (interpolated_string_expression
+              (identifier)
+              (interpolated_string
+                (interpolation
+                  (identifier))
+                (interpolation
+                  (identifier))))))))))
 
 ================================================================================
 Case class patterns (Scala 3 syntax)

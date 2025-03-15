@@ -4,8 +4,18 @@ Call expressions
 
 class C {
   def main() {
+    a()
+    a(
+      123,
+      234,
+    )
+    ::(123)
+    a(b, c)
+    a.map(x => x + 1)
+    a { 123 }
+    a { b }
     a.map{ x => x + 1 }
-    /* comment */ b.exists { case ((i, _)) => i }
+    /* comment */ a.exists { case ((i, _)) => i }
   }
 }
 
@@ -666,8 +676,7 @@ def main(): Unit =
           (typed_pattern
             (identifier)
             (type_identifier))
-          (indented_block 
-            (identifier)))))))
+          (identifier))))))
 
 ================================================================================
 Match expressions
@@ -720,8 +729,7 @@ def matchTest(x: Int): String = x match {
           (block
             (string)))
         (case_clause
-          (integer_literal)
-          (indented_block))
+          (integer_literal))
         (case_clause
           (identifier)
           (guard
@@ -751,18 +759,16 @@ def matchTest(x: Int): String = x match {
                 (identifier))
               (interpolation
                 (identifier))))
-          (indented_block
-            (infix_expression
-              (identifier)
-              (operator_identifier)
-              (identifier))))
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (identifier)))
         (case_clause
           (wildcard)
-          (indented_block
-            (val_definition
-              (identifier)
-              (string))
-            (string)))
+          (val_definition
+            (identifier)
+            (string))
+          (string))
         (case_clause
           (identifier)
           (guard
@@ -816,11 +822,10 @@ def matchTest(x: Int): String =
                 (identifier)
                 (operator_identifier)
                 (integer_literal)))
-            (indented_block
-              (val_definition
-                (identifier)
-                (string))
-              (identifier)))
+            (val_definition
+              (identifier)
+              (string))
+            (identifier))
           (case_clause
             (tuple_pattern
               (tuple_pattern
@@ -829,11 +834,10 @@ def matchTest(x: Int): String =
             (identifier))
           (case_clause
             (wildcard)
-            (indented_block
-              (val_definition
-                (identifier)
-                (string))
-              (string))))))))
+            (val_definition
+              (identifier)
+              (string))
+            (string)))))))
 
 ================================================================================
 Field expressions

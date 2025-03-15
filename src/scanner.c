@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -28,7 +28,7 @@ enum TokenType {
   CLOSE_BRACK,
   OPEN_BRACE,
   CLOSE_BRACE,
-  COMMENT_START,
+  SAVE_SEEN_NEWLINE,
   ELSE,
   CATCH,
   FINALLY,
@@ -43,7 +43,8 @@ typedef struct {
 
 typedef struct {
   Array(IndentationFrame *) frames;  // Array of pointers to indentation frames
-  bool saved_should_auto_semicolon;
+  bool saved_seen_newline;
+  bool just_saved_seen_newline;
 } Scanner;
 
 static inline void debug_indents(Scanner *scanner) {
@@ -127,7 +128,8 @@ void *tree_sitter_scala_external_scanner_create() {
   array_init(&frame->indents);
   array_push(&frame->indents, 0);
   array_push(&scanner->frames, frame);
-  scanner->saved_should_auto_semicolon = false;
+  scanner->saved_seen_newline = false;
+  scanner->just_saved_seen_newline = false;
   return scanner;
 }
 
@@ -153,7 +155,10 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
     return 0;
   }
 
-  memcpy(buffer + size, &scanner->saved_should_auto_semicolon, sizeof(bool));
+  memcpy(buffer + size, &scanner->saved_seen_newline, sizeof(bool));
+  size += sizeof(bool);
+
+  memcpy(buffer + size, &scanner->just_saved_seen_newline, sizeof(bool));
   size += sizeof(bool);
 
   memcpy(buffer + size, &scanner->frames.size, sizeof(uint32_t));
@@ -177,7 +182,7 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
 void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
   Scanner *scanner = (Scanner *)payload;
   array_clear(&scanner->frames);  // Clear any existing state
-  scanner->saved_should_auto_semicolon = false;
+  scanner->saved_seen_newline = false;
 
   if (length == 0) {
       // Reinitialize with base indentation group
@@ -188,8 +193,10 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
 
   size_t size = 0;
 
-  // Deserialize saved_should_auto_semicolon
-  scanner->saved_should_auto_semicolon = *(bool *)&buffer[size];
+  scanner->saved_seen_newline = *(bool *)&buffer[size];
+  size += sizeof(bool);
+
+  scanner->just_saved_seen_newline = *(bool *)&buffer[size];
   size += sizeof(bool);
 
   // Deserialize number of indentation stacks
@@ -282,7 +289,6 @@ static bool scan_word(TSLexer *lexer, const char* const word) {
 }
 
 static bool detect_comment_start(TSLexer *lexer) {
-  lexer->mark_end(lexer);
   // Comments should not affect indentation
   if (lexer->lookahead == '/') {
     advance(lexer);
@@ -377,7 +383,7 @@ static int skip_comment_and_whitespace(TSLexer *lexer) {
 // --- Helper function to handle opening a new indentation group ---
 static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
   advance(lexer);
-  skip_comment_and_whitespace(lexer);
+  skip_whitespace(lexer);
   push_indent_group(scanner);
   push_indent_level(scanner, lexer->get_column(lexer));
   lexer->result_symbol = symbol;
@@ -414,68 +420,85 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
 
   LOG("\n");
   LOG("initial lexer->lookahead: '%c'\n", lexer->lookahead);
-  int16_t newline_count = skip_comment_and_whitespace(lexer);
-  bool should_auto_semicolon = newline_count > 0;
+  int16_t newline_count = skip_whitespace(lexer);
+  bool seen_newline = newline_count > 0 || scanner->saved_seen_newline;
   int16_t current_indent = lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
 
   LOG("lexer->lookahead: '%c'\n", lexer->lookahead);
   LOG("latest_indent: '%d'\n", latest_indent);
   LOG("current_indent: '%d'\n", current_indent);
   LOG("newline_count: '%d'\n", newline_count);
-  LOG("should_auto_semicolon: '%d'\n", should_auto_semicolon);
-  LOG("scanner->saved_should_auto_semicolon: '%d'\n", scanner->saved_should_auto_semicolon);
+  LOG("scanner->saved_seen_newline: '%d'\n", scanner->saved_seen_newline);
+  LOG("seen_newline: '%d'\n", seen_newline);
   debug_indents(scanner);
   debug_valid_symbols(valid_symbols);
   LOG("\n");
 
-  if (valid_symbols[INDENT] && newline_count > 0 && current_indent > latest_indent) {
-    // if (detect_comment_start(lexer)) return false;
+  if (valid_symbols[INDENT] && seen_newline && current_indent > latest_indent) {
+    lexer->mark_end(lexer);
+    if (detect_comment_start(lexer)) {
+      if (scanner->just_saved_seen_newline) return false;
+      LOG("    SAVE SEEN NEWLINE\n");
+      lexer->result_symbol = SAVE_SEEN_NEWLINE;
+      scanner->saved_seen_newline = true;
+      scanner->just_saved_seen_newline = true;
+      return true;
+    }
+    
     LOG("    INDENT\n");
     push_indent_level(scanner, current_indent);
-
     lexer->result_symbol = INDENT;
-    lexer->mark_end(lexer);
-
-    scanner->saved_should_auto_semicolon = false;
-
+    scanner->saved_seen_newline = false;
+    scanner->just_saved_seen_newline = false;
     return true;
   }
 
-  if (valid_symbols[OUTDENT] && (current_indent < latest_indent) && can_pop_indent(scanner)) {
-    // if (detect_comment_start(lexer)) return false;
+  if (valid_symbols[OUTDENT] && seen_newline && (current_indent < latest_indent) && can_pop_indent(scanner)) {
+    lexer->mark_end(lexer);
+    
+    if (detect_comment_start(lexer)) {
+      if (scanner->just_saved_seen_newline) return false;
+      LOG("    SAVE SEEN NEWLINE\n");
+      lexer->result_symbol = SAVE_SEEN_NEWLINE;
+      scanner->saved_seen_newline = true;
+      scanner->just_saved_seen_newline = true;
+      return true;
+    }
+
     LOG("    OUTDENT\n");
     pop_indent_level(scanner);
-
     lexer->result_symbol = OUTDENT;
-    lexer->mark_end(lexer);
-
-    // Set should_auto_semicolon if we have seen new lines as part of this OUTDENT
-    scanner->saved_should_auto_semicolon |= should_auto_semicolon;
-
+    // Set saved_seen_newline if we have seen new lines as part of this OUTDENT
+    scanner->saved_seen_newline = true;
+    scanner->just_saved_seen_newline = false;
     return true;
   }
 
-  bool is_eof = lexer->eof(lexer);  
-  if (current_indent == latest_indent || is_eof) {
-    should_auto_semicolon |= scanner->saved_should_auto_semicolon;
-  }
-  scanner->saved_should_auto_semicolon = false;
-  
-  if (valid_symbols[AUTOMATIC_SEMICOLON] && should_auto_semicolon) {
-    // skip_comment_and_whitespace(lexer);
-    current_indent = lexer->get_column(lexer);
+  if (valid_symbols[AUTOMATIC_SEMICOLON] && seen_newline) {
+    lexer->mark_end(lexer);
+    if (detect_comment_start(lexer)) {
+      if (scanner->just_saved_seen_newline) return false;
+      LOG("    SAVE SEEN NEWLINE\n");
+      lexer->result_symbol = SAVE_SEEN_NEWLINE;
+      scanner->saved_seen_newline = true;
+      scanner->just_saved_seen_newline = true;
+      return true;
+    }
+
     // AUTOMATIC_SEMICOLON should not be issued in the middle of expressions
     // Thus, we exit this branch when encountering comments, else/catch clauses, etc.
     if (detect_continuation(lexer, valid_symbols)) return false;
 
     LOG("    AUTOMATIC SEMICOLON\n");
     set_latest_indent(scanner, current_indent);
-
-    lexer->mark_end(lexer);
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
-
+    scanner->saved_seen_newline = false;
+    scanner->just_saved_seen_newline = false;
     return true;
   }
+
+  scanner->saved_seen_newline = false;
+  scanner->just_saved_seen_newline = false;
 
   // Handle opening tokens: '(', '[', '{'
   if (valid_symbols[OPEN_PAREN] && lexer->lookahead == '(') {

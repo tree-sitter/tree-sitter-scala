@@ -27,16 +27,16 @@
      24. ✓ [32mImports: Rename[0m
      25. ✓ [32mObject definitions[0m
      26. ✓ [32mObject definitions[0m
-     27. ✓ [32mClass definitions[0m
+     27. ✗ [31mClass definitions[0m
      28. ✓ [32mClass definitions (Scala 3)[0m
      29. ✓ [32mSubclass definitions[0m
      30. ✓ [32mSubclass definitions (Scala 3 syntax)[0m
-     31. ✗ [31mClass definitions with parameters[0m
-     32. ✗ [31mClass definitions with parameters (Scala 3 syntax)[0m
+     31. ✓ [32mClass definitions with parameters[0m
+     32. ✓ [32mClass definitions with parameters (Scala 3 syntax)[0m
      33. ✓ [32mModifiers[0m
      34. ✓ [32mTrait definitions[0m
      35. ✓ [32mValue declarations[0m
-     36. ✗ [31mValue declarations (Scala 3 syntax)[0m
+     36. ✓ [32mValue declarations (Scala 3 syntax)[0m
      37. ✓ [32mValue definitions[0m
      38. ✓ [32mVariable declarations[0m
      39. ✓ [32mVariable definitions[0m
@@ -44,10 +44,10 @@
      41. ✓ [32mType definitions[0m
      42. ✓ [32mType definitions (Scala 3 syntax)[0m
      43. ✗ [31mFunction declarations[0m
-     44. ✓ [32mFunction definitions[0m
-     45. ✗ [31mFunction definitions (Scala 3 syntax)[0m
+     44. ✗ [31mFunction definitions[0m
+     45. ✓ [32mFunction definitions (Scala 3 syntax)[0m
      46. ✓ [32mExtension methods (Scala 3 syntax)[0m
-     47. ✓ [32mGiven instance definitions (Scala 3 syntax)[0m
+     47. ✗ [31mGiven instance definitions (Scala 3 syntax)[0m
      48. ✓ [32mTop-level Definitions (Scala 3 syntax)[0m
      49. ✓ [32mInitialization expressions[0m
      50. ✓ [32mOptional parameters[0m
@@ -56,24 +56,24 @@
      53. ✓ [32mInline methods and parameters (Scala 3)[0m
      54. ✓ [32mInline val (Scala 3)[0m
      55. ✓ [32mInline given (Scala 3)[0m
-     56. ✓ [32mInfix methods (Scala 3)[0m
+     56. ✗ [31mInfix methods (Scala 3)[0m
      57. ✓ [32mOpen classes (Scala 3)[0m
      58. ✓ [32mTraits (Scala 3)[0m
      59. ✓ [32mExports (Scala 3)[0m
   expressions:
      60. ✗ [31mCall expressions[0m
      61. ✗ [31mCall expressions (Scala 3 syntax)[0m
-     62. ✗ [31mSIP-44 Fewer braces (Scala 3 syntax)[0m
+     62. ✓ [32mSIP-44 Fewer braces (Scala 3 syntax)[0m
      63. ✓ [32mGeneric functions[0m
      64. ✓ [32mAssignments[0m
      65. ✓ [32mIf expressions[0m
      66. ✗ [31mIf expressions (Scala 3 syntax)[0m
-     67. ✗ [31mTry expressions[0m
+     67. ✓ [32mTry expressions[0m
      68. ✗ [31mTry expressions (Scala 3 syntax)[0m
-     69. ✓ [32mMatch expressions[0m
-     70. ✓ [32mMatch expressions (Scala 3 syntax)[0m
+     69. ✗ [31mMatch expressions[0m
+     70. ✗ [31mMatch expressions (Scala 3 syntax)[0m
      71. ✓ [32mField expressions[0m
-     72. ✓ [32mInstance expressions[0m
+     72. ✗ [31mInstance expressions[0m
      73. ✓ [32mInfix expressions[0m
      74. ✓ [32mPrefix expressions[0m
      75. ✓ [32mPostfix expressions[0m
@@ -82,11 +82,11 @@
      78. ✓ [32mLambda Expression (Scala 3 syntax)[0m
      79. ✓ [32mUnit expressions[0m
      80. ✓ [32mReturn expressions[0m
-     81. ✗ [31mWhile loops[0m
+     81. ✓ [32mWhile loops[0m
      82. ✓ [32mWhile loops (Scala 3 syntax)[0m
      83. ✓ [32mDo-while loops[0m
      84. ✓ [32mFor comprehensions[0m
-     85. ✓ [32mFor comprehensions (Scala 3 syntax)[0m
+     85. ✗ [31mFor comprehensions (Scala 3 syntax)[0m
      86. ✓ [32mChained expressions[0m
      87. ✓ [32mMacros (Scala 2 syntax)[0m
      88. ✓ [32mMacros (Scala 3 syntax)[0m
@@ -109,19 +109,19 @@
     103. ✓ [32mTyped patterns[0m
     104. ✓ [32mTuple patterns[0m
     105. ✓ [32mName tuple patterns (Scala 3 syntax)[0m
-    106. ✓ [32mCase class patterns[0m
+    106. ✗ [31mCase class patterns[0m
     107. ✓ [32mCase class patterns (Scala 3 syntax)[0m
     108. ✓ [32mInfix patterns[0m
     109. ✓ [32mCapture patterns[0m
     110. ✓ [32mQuoted patterns (Scala 3 syntax)[0m
-    111. ✓ [32mGiven pattern (Scala 3 syntax)[0m
+    111. ✗ [31mGiven pattern (Scala 3 syntax)[0m
   types:
     112. ✓ [32mStable type identifiers[0m
     113. ✓ [32mGeneric types[0m
     114. ✓ [32mTuple types[0m
     115. ✓ [32mNamed tuple types (Scala 3 syntax)[0m
-    116. ✓ [32mFunction types[0m
-    117. ✓ [32mPolymorphic function types (Scala 3 syntax)[0m
+    116. ✗ [31mFunction types[0m
+    117. ✗ [31mPolymorphic function types (Scala 3 syntax)[0m
     118. ✓ [32mContext function types (Scala 3 syntax)[0m
     119. ✓ [32mMatch types (Scala 3 syntax)[0m
     120. ✗ [31mCompound types[0m
@@ -143,119 +143,43 @@
     136. ✓ [32mType Lambdas (Scala 3)[0m
     137. ✓ [32mUnion and Intersection Types (Scala 3)[0m
 
-14 failures:
+19 failures:
 
 correct / [32mexpected[0m / [31munexpected[0m
 
-  1. Class definitions with parameters:
+  1. Class definitions:
 
     (compilation_unit
       (class_definition
         (identifier)
+        (type_parameters
+          (identifier)
+          (identifier))
         (class_parameters
+          (class_parameter
+            (identifier)
+            (lazy_parameter_type
+              (type_identifier)))
           (class_parameter
             (identifier)
             (type_identifier))
           (class_parameter
             (identifier)
-            (type_identifier)))
-        (class_parameters
-          (class_parameter
-            (identifier)
-            (type_identifier))))
-[32m      (comment)
-[0m      (class_definition
-        (identifier)
-        (annotation
-          (type_identifier)
-          (arguments)
-          (arguments
-            (ascription_expression
-              (identifier)
-              (type_identifier))
-            (ascription_expression
-              (identifier)
-              (type_identifier))))))
-
-
-  2. Class definitions with parameters (Scala 3 syntax):
-
-    (compilation_unit
+            (repeated_parameter_type
+              (type_identifier))))
+        (template_body))
       (class_definition
-        (identifier)
-        (class_parameters
-          (class_parameter
-            (identifier)
-            (type_identifier))
-          (class_parameter
-            (identifier)
-            (type_identifier)))
-        (class_parameters
-          (class_parameter
-            (identifier)
-            (type_identifier))))
-[32m      (comment)
-[0m      (class_definition
-        (identifier)
-        (annotation
-          (type_identifier)
-          (arguments
-            (ascription_expression
-              (identifier)
-              (type_identifier))
-            (ascription_expression
-              (identifier)
-              (type_identifier)))))
-[32m      (comment)
-[0m      (class_definition
-        (identifier)
-        (annotation
-          (type_identifier)
-          (arguments
-            (integer_literal))
-          (arguments
-            (ascription_expression
-              (identifier)
-              (type_identifier))
-            (ascription_expression
-              (identifier)
-              (type_identifier)))))
-[32m      (comment)
-[0m      (class_definition
-        (identifier)
-        (annotation
-          (type_identifier)
-          (arguments
-            (integer_literal))
-          (arguments
-            (integer_literal))
-          (arguments
-            (ascription_expression
-              (identifier)
-              (type_identifier))
-            (ascription_expression
-              (identifier)
-              (type_identifier))))))
+[31m        (identifier))
+[0m[31m      (unit)
+[0m[31m      (unit)
+[0m[31m      (block))[0m
+[32m        (identifier)
+[0m[32m        (class_parameters)
+[0m[32m        (class_parameters)
+[0m[32m        (template_body)))[0m
 
 
-  3. Value declarations (Scala 3 syntax):
-
-    (compilation_unit
-      (class_definition
-        (identifier)
-        (template_body
-[32m          (comment)
-[0m[32m          (comment)
-[0m          (val_declaration
-            (identifier)
-            (identifier)
-            (type_identifier))
-          (val_declaration
-            (identifier)
-            (type_identifier)))))
-
-
-  4. Function declarations:
+  2. Function declarations:
 
     (compilation_unit
       (class_definition
@@ -268,42 +192,27 @@ correct / [32mexpected[0m / [31munexpected[0m
                 (identifier)
                 (type_identifier)))
             (type_identifier))
-[31m          (ascription_expression
-[0m[31m            (infix_expression
-[0m[31m              (identifier)
-[0m[31m              (operator_identifier)
-[0m[31m              (ERROR
-[0m[31m                (type_parameters
-[0m[31m                  (identifier)))
-[0m[31m              (parenthesized_expression
-[0m[31m                (ascription_expression
-[0m[31m                  (identifier)
-[0m[31m                  (generic_type
-[0m[31m                    (type_identifier)
-[0m[31m                    (type_arguments
-[0m[31m                      (type_identifier))))))
-[0m[32m          (function_declaration
-[0m[32m            (operator_identifier)
-[0m[32m            (type_parameters
-[0m[32m              (identifier))
-[0m[32m            (parameters
-[0m[32m              (parameter
-[0m[32m                (identifier)
-[0m[32m                (generic_type
-[0m[32m                  (type_identifier)
-[0m[32m                  (type_arguments
-[0m[32m                    (type_identifier)))))
-[0m            (generic_type
+          (function_declaration
+            (operator_identifier)
+            (type_parameters
+              (identifier))
+            (parameters
+              (parameter
+                (identifier)
+                (generic_type
+                  (type_identifier)
+                  (type_arguments
+                    (type_identifier)))))
+            (generic_type
               (type_identifier)
               (type_arguments
                 (type_identifier))))
-[31m          (postfix_expression
-[0m[32m          (function_declaration
-[0m            (identifier)
+          (function_declaration
 [31m            (identifier))
 [0m[31m          (ascription_expression
 [0m[31m            (parenthesized_expression
 [0m[31m              (ascription_expression
+[0m[32m            (identifier)
 [0m[32m            (parameters
 [0m[32m              (parameter
 [0m                (identifier)
@@ -311,7 +220,7 @@ correct / [32mexpected[0m / [31munexpected[0m
             (type_identifier)))))
 
 
-  5. Function definitions (Scala 3 syntax):
+  3. Function definitions:
 
     (compilation_unit
       (class_definition
@@ -322,105 +231,365 @@ correct / [32mexpected[0m / [31munexpected[0m
             (parameters
               (parameter
                 (identifier)
+                (type_identifier))
+              (parameter
+                (identifier)
                 (type_identifier)))
+            (integer_literal))
+          (function_definition
+            (identifier)
             (type_identifier)
             (indented_block
-              (val_definition
-                (identifier)
-                (integer_literal))
-              (val_definition
-                (identifier)
-                (integer_literal))
-              (infix_expression
-                (identifier)
-                (operator_identifier)
-[31m                (identifier))))
-[0m[32m                (identifier))
-[0m[32m              (comment)))
-[0m          (function_declaration
+              (integer_literal)))
+          (function_definition
             (identifier)
+            (unit))
+[31m          (function_declaration
+[0m[32m          (function_definition
+[0m            (identifier)
             (parameters
               (parameter
                 (identifier)
+[31m                (type_identifier))))
+[0m[31m          (assignment_expression
+[0m[31m            (tuple_expression
+[0m[31m              (postfix_expression
+[0m[31m                (infix_expression
+[0m[31m                  (identifier)
+[0m[31m                  (identifier)
+[0m[31m                  (operator_identifier))
+[0m[31m                (identifier))
+[0m[31m              (infix_expression
+[0m[31m                (identifier)
+[0m[32m                (type_identifier)))
+[0m[32m            (parameters
+[0m[32m              (infix_type
+[0m[32m                (type_identifier)
+[0m                (operator_identifier)
+[31m                (identifier)))
+[0m[32m                (type_identifier))
+[0m[32m              (infix_type
+[0m[32m                (type_identifier)
+[0m[32m                (operator_identifier)
+[0m[32m                (type_identifier)))
+[0m            (unit))
+          (function_definition
+            (identifier)
+            (parameters)
+            (type_identifier)
+            (integer_literal)))))
+
+
+  4. Given instance definitions (Scala 3 syntax):
+
+    (compilation_unit
+      (object_definition
+        (identifier)
+        (template_body
+          (given_definition
+            (identifier)
+            (type_identifier)
+            (identifier))
+          (given_definition
+            (identifier)
+            (generic_type
+              (type_identifier)
+              (type_arguments
                 (type_identifier)))
-            (type_parameters
-              (identifier)
-              (lower_bound
-                (stable_type_identifier
-                  (identifier)
-                  (type_identifier))))
-            (parameters
-              (parameter
+            (with_template_body
+              (function_definition
                 (identifier)
-                (type_identifier)))
-            (type_identifier))
-[31m          (ascription_expression
+                (parameters
+                  (parameter
+                    (identifier)
+                    (type_identifier)))
+                (type_identifier)
+                (integer_literal))))
+          (given_definition
+            (identifier)
+[31m            (ERROR
+[0m[31m              (compound_type
+[0m[31m                (generic_type
+[0m[31m                  (type_identifier)
+[0m[31m                  (type_arguments
+[0m[31m                    (type_identifier)))
+[0m[31m                (refinement
+[0m[31m                  (function_definition
+[0m[31m                    (identifier)
+[0m[31m                    (parameters
+[0m[31m                      (parameter
+[0m[31m                        (identifier)
+[0m[31m                        (type_identifier)))
+[0m[31m                    (type_identifier)
+[0m[31m                    (integer_literal)))))
+[0m[31m            (type_identifier))
+[0m[31m          (postfix_expression
 [0m[31m            (generic_function
-[0m[31m              (call_expression
-[0m[31m                (generic_function
-[0m[31m                  (infix_expression
-[0m[31m                    (identifier)
-[0m[31m                    (identifier)
-[0m[31m                    (ERROR
-[0m[31m                      (type_parameters
-[0m[31m                        (identifier)))
-[0m[31m                    (call_expression
-[0m[31m                      (parenthesized_expression
-[0m[31m                        (postfix_expression
-[0m[31m                          (identifier)
-[0m[31m                          (identifier))
-[0m[31m                        (ERROR))
-[0m[31m                      (arguments
-[0m[31m                        (ascription_expression
-[0m[31m                          (identifier)
-[0m[31m                          (generic_type
-[0m[31m                            (type_identifier)
-[0m[31m                            (type_arguments
-[0m[31m                              (type_identifier)))))))
-[0m[32m          (function_declaration
-[0m[32m            (identifier)
-[0m[32m            (type_parameters
+[0m[31m              (identifier)
+[0m[31m              (type_arguments
+[0m[31m                (type_identifier)))
+[0m[31m            (identifier))))
+[0m[31m      (function_definition
+[0m[31m        (identifier)
+[0m[31m        (parameters
+[0m[31m          (parameter
+[0m[31m            (identifier)
+[0m[31m            (type_identifier)))
+[0m[31m        (type_identifier)
+[0m[31m        (integer_literal))
+[0m[31m      (given_definition
+[0m[31m        (modifiers
+[0m[31m          (access_modifier))
+[0m[31m        (identifier)
+[0m[31m        (type_parameters
+[0m[31m          (identifier))
+[0m[31m        (parameters
+[0m[31m          (parameter
+[0m[31m            (identifier)
+[0m            (generic_type
+              (type_identifier)
+              (type_arguments
+[31m                (type_identifier)))))
+[0m[31m        (generic_type
+[0m[31m          (type_identifier)
+[0m[31m          (type_arguments
+[0m[32m                (type_identifier)))
+[0m[32m            (with_template_body
+[0m[32m              (function_definition
+[0m[32m                (identifier)
+[0m[32m                (parameters
+[0m[32m                  (parameter
+[0m[32m                    (identifier)
+[0m[32m                    (type_identifier)))
+[0m[32m                (type_identifier)
+[0m[32m                (integer_literal))))
+[0m[32m          (given_definition
+[0m            (generic_type
+              (type_identifier)
+              (type_arguments
+[31m                (type_identifier)))))
+[0m[31m        (with_template_body
+[0m[31m          (function_definition
+[0m[32m                (type_identifier)))
+[0m[32m            (with_template_body
+[0m[32m              (function_definition
+[0m[32m                (identifier)
+[0m[32m                (parameters
+[0m[32m                  (parameter
+[0m[32m                    (identifier)
+[0m[32m                    (type_identifier)))
+[0m[32m                (type_identifier)
+[0m[32m                (integer_literal))))
+[0m[32m          (given_definition
+[0m[32m            (modifiers
+[0m[32m              (access_modifier))
+[0m            (identifier)
+[32m            (type_parameters
 [0m[32m              (identifier))
+[0m            (parameters
+              (parameter
+                (identifier)
+                (generic_type
+                  (type_identifier)
+                  (type_arguments
+                    (type_identifier)))))
+[31m            (type_identifier)
+[0m[31m            (integer_literal))))
+[0m[31m      (given_definition
+[0m[31m        (identifier)
+[0m[31m        (parameters
+[0m[31m          (parameter
+[0m[31m            (identifier)
+[0m[31m            (type_identifier)))
+[0m[31m        (type_identifier)
+[0m[31m        (identifier))
+[0m[31m      (given_definition
+[0m[31m        (type_identifier)
+[0m[31m        (identifier))
+[0m[31m      (given_definition
+[0m[31m        (generic_type
+[0m[31m          (type_identifier)
+[0m[31m          (type_arguments
+[0m[31m            (type_identifier)))
+[0m[31m        (identifier))
+[0m[31m      (given_definition
+[0m[31m        (generic_type
+[0m[31m          (type_identifier)
+[0m[31m          (type_arguments
+[0m[31m            (type_identifier)))
+[0m[31m        (indented_cases
+[0m[31m          (case_clause
+[0m[31m            (identifier)
+[0m[31m            (string))))
+[0m[31m      (given_definition
+[0m[31m        (parameters
+[0m[31m          (parameter
+[0m[31m            (identifier)
+[0m[31m            (type_identifier)))
+[0m[31m        (type_identifier)
+[0m[31m        (identifier))
+[0m[31m      (given_definition
+[0m[31m        (type_parameters
+[0m[31m          (identifier)
+[0m[31m          (context_bound
+[0m[31m            (type_identifier)))
+[0m[31m        (generic_type
+[0m[31m          (type_identifier)
+[0m[31m          (type_arguments
+[0m            (generic_type
+              (type_identifier)
+              (type_arguments
+[31m                (type_identifier)))))
+[0m[31m        (with_template_body
+[0m[31m          (function_definition
+[0m[32m                (generic_type
+[0m[32m                  (type_identifier)
+[0m[32m                  (type_arguments
+[0m[32m                    (type_identifier)))))
+[0m[32m            (with_template_body
+[0m[32m              (function_definition
+[0m[32m                (identifier)
+[0m[32m                (parameters
+[0m[32m                  (parameter
+[0m[32m                    (identifier)
+[0m[32m                    (generic_type
+[0m[32m                      (type_identifier)
+[0m[32m                      (type_arguments
+[0m[32m                        (type_identifier)))))
+[0m[32m                (type_identifier)
+[0m[32m                (integer_literal))))
+[0m[32m          (given_definition
+[0m            (identifier)
+[31m            (unit))))
+[0m[31m      (given_definition
+[0m[31m        (type_parameters
+[0m[31m          (identifier))
+[0m[31m        (parameters
+[0m[31m          (generic_type
 [0m[32m            (parameters
 [0m[32m              (parameter
 [0m[32m                (identifier)
 [0m[32m                (type_identifier)))
+[0m            (type_identifier)
+[31m            (type_arguments
+[0m[31m              (type_identifier))))
+[0m[31m        (generic_type
+[0m[31m          (type_identifier)
+[0m[31m          (type_arguments
+[0m[32m            (identifier))
+[0m[32m          (given_definition
+[0m[32m            (type_identifier)
+[0m[32m            (identifier))
+[0m[32m          (given_definition
+[0m            (generic_type
+              (type_identifier)
+              (type_arguments
+[31m                (type_identifier)))))
+[0m[31m        (with_template_body
+[0m[31m          (function_definition
+[0m[31m            (identifier)
+[0m[31m            (unit))))
+[0m[31m      (trait_definition
+[0m[31m        (identifier)
+[0m[31m        (template_body
+[0m[32m                (type_identifier)))
+[0m[32m            (identifier))
+[0m          (given_definition
+[31m            (identifier)
+[0m            (generic_type
+              (type_identifier)
+              (type_arguments
+[31m                (type_identifier))))))
+[0m[31m      (given_definition
+[0m[31m        (given_conditional
+[0m[31m          (parameter
+[0m[32m                (type_identifier)))
+[0m[32m            (indented_cases
+[0m[32m              (case_clause
+[0m[32m                (identifier)
+[0m[32m                (string))))
+[0m[32m          (given_definition
 [0m[32m            (parameters
 [0m[32m              (parameter
+[0m[32m                (identifier)
+[0m[32m                (type_identifier)))
+[0m[32m            (type_identifier)
+[0m[32m            (identifier))
+[0m[32m          (given_definition
+[0m[32m            (type_parameters
+[0m[32m              (identifier)
+[0m[32m              (context_bound
+[0m[32m                (type_identifier)))
+[0m[32m            (generic_type
+[0m[32m              (type_identifier)
+[0m[32m              (type_arguments
+[0m[32m                (generic_type
+[0m[32m                  (type_identifier)
+[0m[32m                  (type_arguments
+[0m[32m                    (type_identifier)))))
+[0m[32m            (with_template_body
+[0m[32m              (function_definition
+[0m[32m                (identifier)
+[0m[32m                (unit))))
+[0m[32m          (given_definition
+[0m[32m            (type_parameters
+[0m[32m              (identifier))
+[0m[32m            (parameters
+[0m[32m              (generic_type
+[0m[32m                (type_identifier)
+[0m[32m                (type_arguments
+[0m[32m                  (type_identifier))))
+[0m[32m            (generic_type
+[0m[32m              (type_identifier)
+[0m[32m              (type_arguments
+[0m[32m                (generic_type
+[0m[32m                  (type_identifier)
+[0m[32m                  (type_arguments
+[0m[32m                    (type_identifier)))))
+[0m[32m            (with_template_body
+[0m[32m              (function_definition
+[0m[32m                (identifier)
+[0m[32m                (unit))))
+[0m[32m          (trait_definition
+[0m            (identifier)
+[31m            (type_identifier)))
+[0m[31m        (type_identifier)
+[0m[31m        (call_expression
+[0m[31m          (identifier)
+[0m[31m          (arguments))))[0m
+[32m            (template_body
+[0m[32m              (given_definition
 [0m[32m                (identifier)
 [0m[32m                (generic_type
 [0m[32m                  (type_identifier)
-[0m                  (type_arguments
-[31m                    (infix_type
-[0m[31m                      (type_identifier)
-[0m[31m                      (operator_identifier)
-[0m[31m                      (singleton_type
-[0m[31m                        (identifier)))
-[0m[31m                    (type_identifier)))
-[0m[31m                (arguments
-[0m[31m                  (ascription_expression
-[0m[31m                    (identifier)
-[0m[31m                    (tuple_type
-[0m[31m                      (type_identifier)
-[0m[31m                      (type_identifier)))))
-[0m[31m              (type_arguments
-[0m[31m                (type_identifier)))
-[0m[32m                    (type_identifier)))))
-[0m[32m            (type_parameters
-[0m[32m              (identifier)
-[0m[32m              (upper_bound
-[0m[32m                (singleton_type
-[0m[32m                  (identifier)))
-[0m[32m              (identifier))
-[0m[32m            (parameters
+[0m[32m                  (type_arguments
+[0m[32m                    (type_identifier))))))
+[0m[32m          (given_definition
+[0m[32m            (given_conditional
 [0m[32m              (parameter
 [0m[32m                (identifier)
-[0m[32m                (tuple_type
-[0m[32m                  (type_identifier)
-[0m[32m                  (type_identifier))))
-[0m[32m            (type_parameters
-[0m[32m              (identifier))
-[0m            (type_identifier)))))
+[0m[32m                (type_identifier)))
+[0m[32m            (type_identifier)
+[0m[32m            (call_expression
+[0m[32m              (identifier)
+[0m[32m              (arguments))))))[0m
+
+
+  5. Infix methods (Scala 3):
+
+    (compilation_unit
+      (object_definition
+        (identifier)
+        (template_body
+          (function_definition
+            (modifiers
+              (inline_modifier)
+              (infix_modifier)
+              (access_modifier))
+            (identifier)
+[31m            (integer_literal))
+[0m[31m          (MISSING _outdent))))[0m
+[32m            (integer_literal)))))[0m
 
 
   6. Call expressions:
@@ -434,54 +603,61 @@ correct / [32mexpected[0m / [31munexpected[0m
             (parameters)
             (block
               (call_expression
-[32m                (identifier)
-[0m[32m                (arguments))
+                (identifier)
+                (arguments))
+[31m              (infix_expression
+[0m[31m                (call_expression
+[0m[31m                  (identifier)
+[0m[31m                  (arguments
+[0m[31m                    (integer_literal)
+[0m[31m                    (integer_literal)))
 [0m[32m              (call_expression
 [0m[32m                (identifier)
 [0m[32m                (arguments
 [0m[32m                  (integer_literal)
 [0m[32m                  (integer_literal)))
 [0m[32m              (call_expression
-[0m[32m                (operator_identifier)
+[0m                (operator_identifier)
+[31m                (parenthesized_expression
 [0m[32m                (arguments
-[0m[32m                  (integer_literal)))
-[0m[32m              (call_expression
-[0m[32m                (identifier)
-[0m[32m                (arguments
-[0m[32m                  (identifier)
-[0m[32m                  (identifier)))
-[0m[32m              (call_expression
-[0m                (field_expression
+[0m                  (integer_literal)))
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)
+                  (identifier)))
+              (call_expression
+                (field_expression
                   (identifier)
                   (identifier))
-[32m                (arguments
-[0m[32m                  (lambda_expression
-[0m[32m                    (identifier)
-[0m[32m                    (infix_expression
-[0m[32m                      (identifier)
-[0m[32m                      (operator_identifier)
-[0m[32m                      (integer_literal)))))
-[0m[32m              (call_expression
-[0m[32m                (identifier)
-[0m[32m                (block
-[0m[32m                  (integer_literal)))
-[0m[32m              (call_expression
-[0m[32m                (identifier)
-[0m                (block
-[32m                  (identifier)))
-[0m[32m              (call_expression
-[0m[32m                (field_expression
-[0m[32m                  (identifier)
-[0m[32m                  (identifier))
-[0m[32m                (block
-[0m                  (lambda_expression
+                (arguments
+                  (lambda_expression
                     (identifier)
                     (infix_expression
                       (identifier)
                       (operator_identifier)
                       (integer_literal)))))
-[32m              (block_comment)
-[0m              (call_expression
+              (call_expression
+                (identifier)
+                (block
+                  (integer_literal)))
+              (call_expression
+                (identifier)
+                (block
+                  (identifier)))
+              (call_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
+                (block
+                  (lambda_expression
+                    (identifier)
+                    (infix_expression
+                      (identifier)
+                      (operator_identifier)
+                      (integer_literal)))))
+              (block_comment)
+              (call_expression
                 (field_expression
                   (identifier)
                   (identifier))
@@ -535,139 +711,78 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                          (integer_literal))))))))))))[0m
 
 
-  8. SIP-44 Fewer braces (Scala 3 syntax):
+  8. If expressions (Scala 3 syntax):
 
     (compilation_unit
       (class_definition
         (identifier)
         (template_body
-          (call_expression
-            (field_expression
-              (identifier)
-              (identifier))
-            (colon_argument
-              (identifier)
-              (indented_block
-                (infix_expression
-                  (identifier)
-                  (operator_identifier)
-                  (integer_literal)))))
-          (call_expression
-            (field_expression
-              (identifier)
-              (identifier))
-            (colon_argument
-              (indented_block
-                (lambda_expression
-                  (identifier)
-                  (indented_block
-                    (infix_expression
-                      (identifier)
-                      (operator_identifier)
-                      (integer_literal)))))))
-          (call_expression
+          (function_definition
             (identifier)
-            (colon_argument
-              (indented_block
+            (parameters)
+            (indented_block
+              (if_expression
+                (identifier)
                 (call_expression
                   (identifier)
-                  (arguments
-                    (string))))))
-          (infix_expression
-            (identifier)
-            (identifier)
-            (colon_argument
-              (indented_block
-                (val_definition
-                  (identifier)
+                  (arguments)))
+              (if_expression
+                (indented_block
+                  (val_definition
+                    (identifier)
+                    (boolean_literal))
+                  (identifier))
+                (indented_block
+                  (call_expression
+                    (identifier)
+                    (arguments))
                   (integer_literal))
-                (call_expression
-                  (identifier)
-                  (arguments
-                    (identifier))))))
-          (call_expression
-            (field_expression
-              (identifier)
-              (identifier))
-            (colon_argument
-              (indented_cases
-                (case_clause
-                  (identifier)
-[31m                  (identifier)))))
-[0m[32m                  (identifier))
-[0m[32m                (comment))))
-[0m          (ascription_expression
-            (identifier)
-            (type_identifier))
-[32m          (comment)
-[0m          (call_expression
-            (identifier)
-            (colon_argument
-              (indented_block
-                (identifier)))))))
-
-
-  9. If expressions (Scala 3 syntax):
-
-    (compilation_unit
-[31m      (ERROR
-[0m[31m        (class_definition
-[0m[31m          (identifier)
-[0m[31m          (template_body
-[0m[31m            (function_definition
-[0m[31m              (identifier)
-[0m[31m              (parameters)
-[0m[31m              (ERROR
-[0m[32m      (class_definition
-[0m[32m        (identifier)
-[0m[32m        (template_body
-[0m[32m          (function_definition
-[0m[32m            (identifier)
-[0m[32m            (parameters)
-[0m[32m            (indented_block
-[0m[32m              (if_expression
-[0m[32m                (identifier)
-[0m[32m                (call_expression
-[0m[32m                  (identifier)
-[0m[32m                  (arguments)))
-[0m[32m              (if_expression
-[0m                (indented_block
-[31m                  (if_expression
-[0m[32m                  (val_definition
-[0m[32m                    (identifier)
-[0m[32m                    (boolean_literal))
-[0m[32m                  (identifier))
-[0m[32m                (indented_block
-[0m[32m                  (call_expression
-[0m                    (identifier)
-[32m                    (arguments))
-[0m[32m                  (integer_literal))
+[31m                (indented_block
+[0m[31m                  (if_expression
+[0m[31m                    (identifier)
 [0m[32m                (if_expression
 [0m[32m                  (identifier)
 [0m[32m                  (indented_block
+[0m[32m                    (call_expression
+[0m[32m                      (identifier)
+[0m[32m                      (arguments)))
+[0m[32m                  (indented_block
 [0m                    (call_expression
                       (identifier)
-                      (arguments)))
-[31m                  (if_expression
-[0m[31m                    (indented_block
-[0m[31m                      (val_definition
-[0m[31m                        (identifier)
-[0m[31m                        (boolean_literal))
-[0m[31m                      (identifier))
-[0m[31m                    (indented_block
-[0m[31m                      (call_expression
-[0m[31m                        (identifier)
-[0m[31m                        (arguments))
-[0m[31m                      (integer_literal)))
-[0m[31m                  (postfix_expression
-[0m[31m                    (infix_expression
-[0m[32m                  (indented_block
-[0m[32m                    (call_expression
-[0m                      (identifier)
-[31m                      (identifier)
-[0m[31m                      (identifier))
-[0m[32m                      (arguments)))))
-[0m[32m              (if_expression
+                      (arguments)))))
+[31m              (identifier)
+[0m[31m              (call_expression
+[0m[31m                (identifier)
+[0m[31m                (arguments))))
+[0m[31m          (if_expression
+[0m[31m            (boolean_literal)
+[0m[31m            (indented_block
+[0m[31m              (unit)
+[0m[31m              (comment))
+[0m[31m            (indented_block
+[0m[31m              (unit)))
+[0m[31m          (if_expression
+[0m[31m            (infix_expression
+[0m[31m              (parenthesized_expression
+[0m[31m                (identifier))
+[0m[31m              (operator_identifier)
+[0m[31m              (call_expression
+[0m[31m                (identifier)
+[0m[31m                (arguments
+[0m[31m                  (identifier))))
+[0m[31m            (return_expression
+[0m[31m              (boolean_literal)))
+[0m[31m          (if_expression
+[0m[31m            (infix_expression
+[0m[31m              (parenthesized_expression
+[0m[31m                (identifier))
+[0m[31m              (operator_identifier)
+[0m[31m              (field_expression
+[0m[31m                (identifier)
+[0m[31m                (identifier)))
+[0m[31m            (indented_block
+[0m[31m              (unit))))))[0m
+[32m              (if_expression
 [0m[32m                (boolean_literal)
 [0m[32m                (indented_block
 [0m[32m                  (unit)
@@ -677,43 +792,11 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m              (if_expression
 [0m[32m                (infix_expression
 [0m[32m                  (parenthesized_expression
-[0m                    (identifier))
-[32m                  (operator_identifier)
-[0m                  (call_expression
-                    (identifier)
-[31m                    (arguments))))
-[0m[31m              (identifier))
-[0m[31m            (call_expression
-[0m[31m              (identifier)
-[0m[31m              (arguments)))))
-[0m[31m      (postfix_expression
-[0m[31m        (boolean_literal)
-[0m[31m        (identifier))
-[0m[31m      (unit)
-[0m[31m      (identifier)
-[0m[31m      (unit)
-[0m[31m      (if_expression
-[0m[31m        (infix_expression
-[0m[31m          (parenthesized_expression
-[0m[31m            (identifier))
-[0m[31m          (operator_identifier)
-[0m[31m          (call_expression
-[0m[31m            (identifier)
-[0m[31m            (arguments
-[0m[31m              (identifier))))
-[0m[31m        (return_expression
-[0m[31m          (boolean_literal)))
-[0m[31m      (if_expression
-[0m[31m        (infix_expression
-[0m[31m          (parenthesized_expression
-[0m[31m            (identifier))
-[0m[31m          (operator_identifier)
-[0m[31m          (field_expression
-[0m[31m            (identifier)
-[0m[31m            (identifier)))
-[0m[31m        (indented_block
-[0m[31m          (unit))))[0m
-[32m                    (arguments
+[0m[32m                    (identifier))
+[0m[32m                  (operator_identifier)
+[0m[32m                  (call_expression
+[0m[32m                    (identifier)
+[0m[32m                    (arguments
 [0m[32m                      (identifier))))
 [0m[32m                (return_expression
 [0m[32m                  (boolean_literal)))
@@ -729,13 +812,14 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                  (unit))))))))[0m
 
 
-  10. Try expressions:
+  9. Try expressions (Scala 3 syntax):
 
     (compilation_unit
       (function_definition
         (identifier)
         (parameters)
-        (block
+        (type_identifier)
+        (indented_block
           (try_expression
             (call_expression
               (identifier)
@@ -746,12 +830,15 @@ correct / [32mexpected[0m / [31munexpected[0m
                 (operator_identifier)
                 (integer_literal))))
           (try_expression
-            (block
+            (indented_block
+              (call_expression
+                (identifier)
+                (arguments))
               (call_expression
                 (identifier)
                 (arguments)))
             (catch_clause
-              (case_block
+              (indented_cases
                 (case_clause
                   (typed_pattern
                     (identifier)
@@ -772,173 +859,242 @@ correct / [32mexpected[0m / [31munexpected[0m
                       (arguments
                         (identifier)))))))
             (finally_clause
-              (block
-                (call_expression
-                  (identifier)
-                  (arguments)))))
-          (try_expression
-            (call_expression
-              (identifier)
-              (arguments))
-            (catch_clause
-              (case_block
-                (case_clause
-                  (identifier)
-                  (call_expression
-                    (identifier)
-                    (arguments
-[31m                      (identifier)))))))
-[0m[31m          (infix_expression
-[0m[31m            (identifier)
-[0m[31m            (identifier)
-[0m[31m            (unit))
-[0m[32m                      (identifier))))))
-[0m[32m            (finally_clause
-[0m[32m              (call_expression
-[0m[32m                (identifier)
-[0m[32m                (arguments))))
-[0m          (try_expression
-            (call_expression
-              (identifier)
-[31m              (arguments)))
-[0m[31m          (infix_expression
-[0m[31m            (identifier)
-[0m[31m            (identifier)
-[0m[31m            (unit)))))[0m
-[32m              (arguments))
-[0m[32m            (finally_clause
-[0m[32m              (call_expression
-[0m[32m                (identifier)
-[0m[32m                (arguments)))))))[0m
-
-
-  11. Try expressions (Scala 3 syntax):
-
-    (compilation_unit
-      (function_definition
-        (identifier)
-        (parameters)
-        (type_identifier)
-[31m        (ERROR
-[0m[31m          (indented_block
-[0m[31m            (try_expression
-[0m[32m        (indented_block
-[0m[32m          (try_expression
-[0m[32m            (call_expression
-[0m[32m              (identifier)
-[0m[32m              (arguments))
-[0m[32m            (finally_clause
-[0m[32m              (infix_expression
-[0m[32m                (identifier)
-[0m[32m                (operator_identifier)
-[0m[32m                (integer_literal))))
-[0m[32m          (try_expression
-[0m[32m            (indented_block
-[0m              (call_expression
-                (identifier)
-                (arguments))
-[31m              (finally_clause
-[0m[31m                (infix_expression
-[0m[31m                  (identifier)
-[0m[31m                  (operator_identifier)
-[0m[31m                  (integer_literal))))
-[0m[31m            (try_expression
-[0m[32m              (call_expression
-[0m[32m                (identifier)
-[0m[32m                (arguments)))
-[0m[32m            (catch_clause
-[0m[32m              (indented_cases
-[0m[32m                (case_clause
-[0m[32m                  (typed_pattern
-[0m[32m                    (identifier)
-[0m[32m                    (type_identifier))
-[0m[32m                  (call_expression
-[0m[32m                    (identifier)
-[0m[32m                    (arguments
-[0m[32m                      (field_expression
-[0m[32m                        (identifier)
-[0m[32m                        (identifier)))))
-[0m[32m                (case_clause
-[0m[32m                  (case_class_pattern
-[0m[32m                    (type_identifier)
-[0m[32m                    (identifier))
-[0m[32m                  (throw_expression
-[0m[32m                    (instance_expression
-[0m[32m                      (type_identifier)
-[0m[32m                      (arguments
-[0m[32m                        (identifier)))))))
-[0m[32m            (finally_clause
-[0m              (indented_block
+              (indented_block
                 (call_expression
                   (identifier)
                   (arguments))
                 (call_expression
                   (identifier)
-[31m                  (arguments)))
-[0m[31m              (catch_clause
-[0m[31m                (indented_cases
-[0m[31m                  (case_clause
-[0m[31m                    (typed_pattern
-[0m[31m                      (identifier)
-[0m[31m                      (type_identifier))
-[0m[31m                    (call_expression
-[0m[31m                      (identifier)
-[0m[31m                      (arguments
-[0m[31m                        (field_expression
-[0m[31m                          (identifier)
-[0m[31m                          (identifier)))))
-[0m[31m                  (case_clause
-[0m[31m                    (case_class_pattern
-[0m[31m                      (type_identifier)
-[0m[31m                      (identifier))
-[0m[31m                    (throw_expression
-[0m[31m                      (instance_expression
-[0m[31m                        (type_identifier)
-[0m[31m                        (arguments
-[0m[31m                          (identifier))))))))
-[0m[32m                  (arguments)))))
-[0m[32m          (try_expression
-[0m            (identifier)
-[31m            (call_expression
-[0m[31m              (identifier)
-[0m[31m              (arguments))
-[0m[31m            (call_expression
-[0m[31m              (identifier)
-[0m[31m              (arguments))))
-[0m[31m        (try_expression
-[0m[31m          (identifier)
-[0m[31m          (catch_clause
-[0m[31m            (typed_pattern
-[0m[31m              (identifier)
-[0m[31m              (type_identifier))
-[0m[31m            (identifier))
-[0m[31m          (finally_clause
-[0m[31m            (identifier))))
-[0m[31m      (try_expression
-[0m[31m        (identifier)
-[0m[31m        (catch_clause
-[0m[31m          (typed_pattern
-[0m[32m            (catch_clause
-[0m[32m              (typed_pattern
-[0m[32m                (identifier)
-[0m[32m                (type_identifier))
-[0m[32m              (identifier))
-[0m[32m            (finally_clause
-[0m[32m              (identifier)))
-[0m[32m          (try_expression
-[0m            (identifier)
-[31m            (type_identifier))
-[0m[31m          (indented_block
-[0m[31m            (identifier)))))[0m
-[32m            (catch_clause
-[0m[32m              (typed_pattern
-[0m[32m                (identifier)
-[0m[32m                (type_identifier))
-[0m[32m              (indented_block
-[0m[32m                (identifier)))))))[0m
+                  (arguments)))))
+          (try_expression
+            (identifier)
+            (catch_clause
+              (typed_pattern
+                (identifier)
+                (type_identifier))
+              (identifier))
+            (finally_clause
+              (identifier)))
+          (try_expression
+            (identifier)
+            (catch_clause
+              (typed_pattern
+                (identifier)
+                (type_identifier))
+[31m              (indented_block
+[0m[31m                (identifier)))))))[0m
+[32m              (identifier))))))[0m
 
 
-  12. Lambda Expression:
+  10. Match expressions:
+
+    (compilation_unit
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier)
+        (match_expression
+          (identifier)
+          (case_block
+            (case_clause
+              (integer_literal))
+            (case_clause
+              (integer_literal)
+              (string)
+              (string))
+            (case_clause
+              (integer_literal)
+              (string))
+            (case_clause
+              (integer_literal)
+              (block
+                (string)))
+            (case_clause
+[31m              (integer_literal)
+[0m[31m              (indented_block))
+[0m[32m              (integer_literal))
+[0m            (case_clause
+              (identifier)
+              (guard
+                (infix_expression
+                  (identifier)
+                  (operator_identifier)
+                  (integer_literal))))
+            (case_clause
+              (identifier)
+              (guard
+                (infix_expression
+                  (identifier)
+                  (operator_identifier)
+                  (integer_literal)))
+[31m              (indented_block
+[0m[31m                (integer_literal)))
+[0m[32m              (integer_literal))
+[0m            (case_clause
+              (tuple_pattern
+                (tuple_pattern
+                  (identifier)
+                  (wildcard)))
+              (identifier))
+            (case_clause
+              (interpolated_string_expression
+                (identifier)
+                (interpolated_string
+                  (interpolation
+                    (identifier))
+                  (interpolation
+                    (identifier))))
+[31m              (indented_block
+[0m[31m                (infix_expression
+[0m[31m                  (identifier)
+[0m[31m                  (operator_identifier)
+[0m[31m                  (identifier))))
+[0m[32m              (infix_expression
+[0m[32m                (identifier)
+[0m[32m                (operator_identifier)
+[0m[32m                (identifier)))
+[0m            (case_clause
+              (wildcard)
+[31m              (indented_block
+[0m[31m                (val_definition
+[0m[31m                  (identifier)
+[0m[31m                  (string))
+[0m[31m                (string)))
+[0m[32m              (val_definition
+[0m[32m                (identifier)
+[0m[32m                (string))
+[0m[32m              (string))
+[0m            (case_clause
+              (identifier)
+              (guard
+                (identifier))
+[31m              (indented_block
+[0m[31m                (identifier)))))))[0m
+[32m              (identifier))))))[0m
+
+
+  11. Match expressions (Scala 3 syntax):
+
+    (compilation_unit
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier)
+        (indented_block
+          (match_expression
+            (identifier)
+            (indented_cases
+              (case_clause
+                (integer_literal))
+              (case_clause
+                (integer_literal)
+                (string)
+                (string))
+              (case_clause
+                (integer_literal)
+                (string))
+              (case_clause
+                (identifier)
+                (guard
+                  (infix_expression
+                    (identifier)
+                    (operator_identifier)
+                    (integer_literal)))
+[31m                (indented_block
+[0m[31m                  (val_definition
+[0m[31m                    (identifier)
+[0m[31m                    (string))
+[0m[31m                  (identifier)))
+[0m[32m                (val_definition
+[0m[32m                  (identifier)
+[0m[32m                  (string))
+[0m[32m                (identifier))
+[0m              (case_clause
+                (tuple_pattern
+                  (tuple_pattern
+                    (identifier)
+                    (wildcard)))
+                (identifier))
+              (case_clause
+                (wildcard)
+[31m                (indented_block
+[0m[31m                  (val_definition
+[0m[31m                    (identifier)
+[0m[31m                    (string))
+[0m[31m                  (string))))))))[0m
+[32m                (val_definition
+[0m[32m                  (identifier)
+[0m[32m                  (string))
+[0m[32m                (string)))))))[0m
+
+
+  12. Instance expressions:
+
+    (compilation_unit
+      (class_definition
+        (identifier)
+        (template_body
+          (function_definition
+            (identifier)
+            (parameters)
+            (block
+              (val_definition
+                (identifier)
+                (instance_expression
+                  (type_identifier)))
+              (val_definition
+                (identifier)
+                (instance_expression
+                  (type_identifier)
+                  (arguments
+                    (identifier)
+                    (identifier))))
+              (val_definition
+                (identifier)
+[31m                (call_expression
+[0m[31m                  (instance_expression
+[0m[31m                    (type_identifier))
+[0m[31m                  (colon_argument
+[0m[31m                    (indented_block
+[0m[31m                      (function_definition
+[0m[31m                        (identifier)
+[0m[31m                        (integer_literal))))))
+[0m[32m                (instance_expression
+[0m[32m                  (type_identifier)
+[0m[32m                  (template_body
+[0m[32m                    (function_definition
+[0m[32m                      (identifier)
+[0m[32m                      (integer_literal)))))
+[0m              (val_definition
+                (identifier)
+                (instance_expression
+                  (template_body
+                    (function_definition
+                      (identifier)
+                      (integer_literal)))))
+              (val_definition
+                (identifier)
+                (instance_expression
+                  (type_identifier)
+                  (template_body)))
+              (val_definition
+                (identifier)
+                (instance_expression
+                  (template_body
+                    (string))))
+              (ascription_expression
+                (instance_expression
+                  (type_identifier))
+                (type_identifier)))))))
+
+
+  13. Lambda Expression:
 
     (compilation_unit
       (object_definition
@@ -1047,37 +1203,246 @@ correct / [32mexpected[0m / [31munexpected[0m
               (identifier))))))
 
 
-  13. While loops:
+  14. For comprehensions (Scala 3 syntax):
+
+    (compilation_unit
+[31m      (function_declaration
+[0m[32m      (function_definition
+[0m        (identifier)
+        (parameters)
+[31m        (type_identifier))
+[0m[31m      (ERROR
+[0m[31m        (for_expression
+[0m[31m          (enumerators
+[0m[31m            (enumerator
+[0m[32m        (type_identifier)
+[0m[32m        (indented_block
+[0m[32m          (for_expression
+[0m[32m            (enumerators
+[0m[32m              (enumerator
+[0m[32m                (identifier)
+[0m[32m                (identifier)))
+[0m[32m            (infix_expression
+[0m              (identifier)
+[31m              (identifier)))
+[0m[31m          (infix_expression
+[0m[31m            (identifier)
+[0m[31m            (operator_identifier)
+[0m[31m            (integer_literal)))
+[0m[31m        (for_expression
+[0m[31m          (enumerators
+[0m[31m            (enumerator
+[0m[31m              (identifier)
+[0m[31m              (integer_literal))
+[0m[31m            (enumerator
+[0m[31m              (identifier)
+[0m[31m              (identifier))
+[0m[31m            (enumerator
+[0m[31m              (identifier)
+[0m[31m              (identifier)))
+[0m[31m          (indented_block
+[0m[31m            (call_expression
+[0m[31m              (identifier)
+[0m[31m              (arguments
+[0m[32m              (operator_identifier)
+[0m[32m              (integer_literal)))
+[0m[32m          (for_expression
+[0m[32m            (enumerators
+[0m[32m              (enumerator
+[0m[32m                (identifier)
+[0m[32m                (integer_literal))
+[0m[32m              (enumerator
+[0m[32m                (identifier)
+[0m[32m                (identifier))
+[0m[32m              (enumerator
+[0m                (identifier)
+[31m                (identifier)))))
+[0m[31m        (enumerators
+[0m[31m          (enumerator
+[0m[31m            (identifier)
+[0m[31m            (identifier))
+[0m[31m          (enumerator
+[0m[31m            (guard
+[0m[32m                (identifier)))
+[0m[32m            (indented_block
+[0m              (call_expression
+                (identifier)
+                (arguments
+[31m                  (identifier))))))
+[0m[31m        (unit)))[0m
+[32m                  (identifier)
+[0m[32m                  (identifier)))))
+[0m[32m          (for_expression
+[0m[32m            (enumerators
+[0m[32m              (enumerator
+[0m[32m                (identifier)
+[0m[32m                (identifier))
+[0m[32m              (enumerator
+[0m[32m                (guard
+[0m[32m                  (call_expression
+[0m[32m                    (identifier)
+[0m[32m                    (arguments
+[0m[32m                      (identifier))))))
+[0m[32m            (indented_block
+[0m[32m              (unit))))))[0m
+
+
+  15. Case class patterns:
 
     (compilation_unit
       (function_definition
         (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier)
         (block
-          (while_expression
-            (parenthesized_expression
-              (identifier))
+          (match_expression
+            (identifier)
+            (case_block
+              (case_clause
+                (case_class_pattern
+                  (type_identifier)
+                  (identifier)
+                  (identifier)
+                  (wildcard))
+[31m                (indented_block
+[0m[31m                  (interpolated_string_expression
+[0m[31m                    (identifier)
+[0m[31m                    (interpolated_string
+[0m[31m                      (interpolation
+[0m[31m                        (identifier))
+[0m[31m                      (interpolation
+[0m[31m                        (identifier))))))
+[0m[32m                (interpolated_string_expression
+[0m[32m                  (identifier)
+[0m[32m                  (interpolated_string
+[0m[32m                    (interpolation
+[0m[32m                      (identifier))
+[0m[32m                    (interpolation
+[0m[32m                      (identifier)))))
+[0m              (case_clause
+                (case_class_pattern
+                  (type_identifier)
+                  (identifier)
+                  (identifier))
+[31m                (indented_block
+[0m[31m                  (interpolated_string_expression
+[0m[31m                    (identifier)
+[0m[31m                    (interpolated_string
+[0m[31m                      (interpolation
+[0m[31m                        (identifier))
+[0m[31m                      (interpolation
+[0m[31m                        (identifier))))))
+[0m[32m                (interpolated_string_expression
+[0m[32m                  (identifier)
+[0m[32m                  (interpolated_string
+[0m[32m                    (interpolation
+[0m[32m                      (identifier))
+[0m[32m                    (interpolation
+[0m[32m                      (identifier)))))
+[0m              (case_clause
+                (case_class_pattern
+                  (type_identifier)
+                  (identifier)
+                  (identifier))
+[31m                (indented_block
+[0m[31m                  (interpolated_string_expression
+[0m[31m                    (identifier)
+[0m[31m                    (interpolated_string
+[0m[31m                      (interpolation
+[0m[31m                        (identifier))
+[0m[31m                      (interpolation
+[0m[31m                        (identifier)))))))))))[0m
+[32m                (interpolated_string_expression
+[0m[32m                  (identifier)
+[0m[32m                  (interpolated_string
+[0m[32m                    (interpolation
+[0m[32m                      (identifier))
+[0m[32m                    (interpolation
+[0m[32m                      (identifier))))))))))[0m
+
+
+  16. Given pattern (Scala 3 syntax):
+
+    (compilation_unit
+      (for_expression
+        (enumerators
+          (enumerator
+            (given_pattern
+              (type_identifier))
             (call_expression
               (identifier)
-              (arguments)))
-[31m          (call_expression
-[0m[31m            (call_expression
-[0m[31m              (identifier)
-[0m[31m              (arguments
-[0m[31m                (infix_expression
-[0m[31m                  (identifier)
-[0m[31m                  (operator_identifier)
-[0m[31m                  (identifier))))
-[0m[32m          (while_expression
-[0m[32m            (parenthesized_expression
-[0m[32m              (infix_expression
-[0m[32m                (identifier)
-[0m[32m                (operator_identifier)
-[0m[32m                (identifier)))
-[0m            (block
-              (identifier))))))
+              (arguments
+                (integer_literal)))))
+[31m        (indented_block
+[0m[31m          (unit))))[0m
+[32m        (unit)))[0m
 
 
-  14. Compound types:
+  17. Function types:
+
+    (compilation_unit
+      (object_definition
+        (identifier)
+        (template_body
+          (type_definition
+            (type_identifier)
+            (function_type
+              (parameter_types
+[31m                (tuple_type
+[0m[31m                  (type_identifier)
+[0m[31m                  (type_identifier)))
+[0m[32m                (type_identifier)
+[0m[32m                (type_identifier))
+[0m              (type_identifier)))
+          (type_definition
+            (type_identifier)
+            (function_type
+              (parameter_types
+[31m                (tuple_type
+[0m[31m                  (type_identifier)
+[0m[31m                  (type_identifier)))
+[0m[32m                (type_identifier)
+[0m[32m                (type_identifier))
+[0m              (tuple_type
+                (type_identifier)
+                (type_identifier))))
+          (type_definition
+            (type_identifier)
+            (function_type
+              (parameter_types
+                (type_identifier))
+              (tuple_type
+                (type_identifier)
+                (type_identifier)))))))
+
+
+  18. Polymorphic function types (Scala 3 syntax):
+
+    (compilation_unit
+      (class_definition
+        (identifier)
+        (template_body
+          (type_definition
+            (type_identifier)
+            (function_type
+              (type_parameters
+                (identifier)
+                (context_bound
+                  (type_identifier)))
+              (function_type
+                (parameter_types
+[31m                  (tuple_type
+[0m[31m                    (type_identifier)
+[0m[31m                    (type_identifier)))
+[0m[32m                  (type_identifier)
+[0m[32m                  (type_identifier))
+[0m                (type_identifier)))))))
+
+
+  19. Compound types:
 
     (compilation_unit
       (function_definition
@@ -1127,24 +1492,17 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[31m              (identifier)
 [0m[31m              (type_identifier))
 [0m[31m            (ERROR))))
-[0m[31m      (postfix_expression
 [0m[32m              (refinement
 [0m[32m                (function_declaration
 [0m[32m                  (identifier)
 [0m[32m                  (type_identifier)))))))
-[0m[32m      (function_definition
-[0m        (identifier)
-[31m        (identifier))
-[0m[31m      (ERROR
-[0m[31m        (assignment_expression
-[0m[31m          (block
-[0m[32m        (compound_type
-[0m[32m          (type_identifier)
-[0m[32m          (refinement
-[0m            (val_declaration
+[0m      (function_definition
+        (identifier)
+        (compound_type
+          (type_identifier)
+          (refinement
+            (val_declaration
               (identifier)
-[31m              (type_identifier)))
-[0m[31m          (operator_identifier))))[0m
-[32m              (type_identifier))))
-[0m[32m        (operator_identifier)))[0m
+              (type_identifier))))
+        (operator_identifier)))
 
