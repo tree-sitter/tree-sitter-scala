@@ -86,8 +86,16 @@ module.exports = grammar({
     [$.self_type, $._simple_expression],
     // 'package'  package_identifier  '{'  operator_identifier  '=>'  •  'enum'  …
     [$.self_type, $.lambda_expression],
+    // 'class'  _class_constructor  •  _automatic_semicolon  …
+    [$._class_definition],
+    // 'class'  operator_identifier  •  _automatic_semicolon  …
+    [$._class_constructor],
+    // 'enum'  _class_constructor  '{'  'case'  operator_identifier  _full_enum_def_repeat1  •  _automatic_semicolon  …
+    //[$._full_enum_def],
     // _start_val  identifier  ','  identifier  •  ':'  …
     [$.identifiers, $.val_declaration],
+    // 'enum'  operator_identifier  _automatic_semicolon  '('  ')'  •  ':'  …
+    [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
     [$._type, $.compound_type],
     // 'given'  '('  '['  _type_parameter  •  ','  …
@@ -99,13 +107,14 @@ module.exports = grammar({
     [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
+    //[$.block, $._braced_template_body1],
     [$._simple_expression, $.self_type, $._type_identifier],
-
     [$._simple_expression, $._type_identifier],
     [$.lambda_expression, $.self_type, $._type_identifier],
     [$.lambda_expression, $._type_identifier],
     [$.binding, $._simple_expression, $._type_identifier],
 
+    [$._definition_body],
     [$._block],
     [$.indented_block],
   ],
@@ -115,12 +124,9 @@ module.exports = grammar({
   rules: {
     // TopStats          ::=  TopStat {semi TopStat}
     compilation_unit: $ =>
-      prec.dynamic(
-        1,
-        seq(
-          optional($._shebang),
-          optional(trailingSep1($._semicolon, $._top_level_definition)),
-        ),
+      seq(
+        optional($._shebang),
+        optional(trailingSep1($._semicolon, $._top_level_definition)),
       ),
 
     _top_level_definition: $ =>
@@ -162,13 +168,10 @@ module.exports = grammar({
       ),
 
     _enum_block: $ =>
-      prec.dynamic(
-        1,
-        seq(
-          trailingSep1(
-            $._semicolon,
-            choice($.enum_case_definitions, $.expression, $._definition),
-          ),
+      seq(
+        trailingSep1(
+          $._semicolon,
+          choice($.enum_case_definitions, $.expression, $._definition),
         ),
       ),
 
@@ -304,7 +307,7 @@ module.exports = grammar({
           field("name", $._identifier),
           field("extend", optional($.extends_clause)),
           field("derive", optional($.derives_clause)),
-          field("body", optional($.template_body)),
+          field("body", optional($._definition_body)),
         ),
       ),
 
@@ -322,8 +325,12 @@ module.exports = grammar({
         $._class_constructor,
         field("extend", optional($.extends_clause)),
         field("derive", optional($.derives_clause)),
-        field("body", optional($.template_body)),
+        optional($._automatic_semicolon),
+        field("body", optional($._definition_body)),
       ),
+
+    _definition_body: $ =>
+      seq(optional($._automatic_semicolon), field("body", $.template_body)),
 
     /**
      * ClassConstr       ::=  [ClsTypeParamClause] [ConstrMods] ClsParamClauses
@@ -335,7 +342,7 @@ module.exports = grammar({
         field("type_parameters", optional($.type_parameters)),
         optional($.annotation),
         optional($.access_modifier),
-        field("class_parameters", repeat($.class_parameters)),
+        repeat(seq(optional($._automatic_semicolon), $.class_parameters)),
       ),
 
     trait_definition: $ =>
@@ -601,7 +608,16 @@ module.exports = grammar({
       prec.right(
         seq(
           field("name", $._identifier),
-          field("parameters", repeat(choice($.parameters, $.type_parameters))),
+          field(
+            "parameters",
+            repeat(
+              seq(
+                optional($._automatic_semicolon),
+                choice($.parameters, $.type_parameters),
+              ),
+            ),
+          ),
+          optional($._automatic_semicolon),
         ),
       ),
 
@@ -659,7 +675,11 @@ module.exports = grammar({
         seq(
           field("name", optional($._identifier)),
           field("type_parameters", optional($.type_parameters)),
-          field("parameters", repeat($.parameters)),
+          field(
+            "parameters",
+            repeat(seq(optional($._automatic_semicolon), $.parameters)),
+          ),
+          optional($._automatic_semicolon),
           ":",
         ),
       ),
@@ -767,6 +787,7 @@ module.exports = grammar({
       prec(
         1,
         seq(
+          optional($._automatic_semicolon),
           $._open_paren,
           optional(choice("implicit", "using")),
           trailingSep(",", $.class_parameter),
@@ -843,13 +864,10 @@ module.exports = grammar({
       ),
 
     _block: $ =>
-      prec.dynamic(
-        1,
-        seq(
-          trailingSep1(
-            $._semicolon,
-            choice($._definition, $.expression, $._end_marker, ";"),
-          ),
+      seq(
+        trailingSep1(
+          $._semicolon,
+          choice($._definition, $.expression, $._end_marker, ";"),
         ),
       ),
 
@@ -1842,10 +1860,10 @@ module.exports = grammar({
       ),
 
     enumerators: $ =>
-      prec.dynamic(
-        1,
-        choice(
-          trailingSep1($._semicolon, $.enumerator),
+      choice(
+        trailingSep1($._semicolon, $.enumerator),
+        prec.dynamic(
+          1,
           seq($._indent, trailingSep1($._semicolon, $.enumerator), $._outdent),
         ),
       ),

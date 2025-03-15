@@ -27,7 +27,7 @@
      24. ✓ [32mImports: Rename[0m
      25. ✓ [32mObject definitions[0m
      26. ✓ [32mObject definitions[0m
-     27. ✗ [31mClass definitions[0m
+     27. ✓ [32mClass definitions[0m
      28. ✓ [32mClass definitions (Scala 3)[0m
      29. ✓ [32mSubclass definitions[0m
      30. ✓ [32mSubclass definitions (Scala 3 syntax)[0m
@@ -43,8 +43,8 @@
      40. ✓ [32mVariable definitions (Scala 3 syntax)[0m
      41. ✓ [32mType definitions[0m
      42. ✓ [32mType definitions (Scala 3 syntax)[0m
-     43. ✗ [31mFunction declarations[0m
-     44. ✗ [31mFunction definitions[0m
+     43. ✓ [32mFunction declarations[0m
+     44. ✓ [32mFunction definitions[0m
      45. ✓ [32mFunction definitions (Scala 3 syntax)[0m
      46. ✓ [32mExtension methods (Scala 3 syntax)[0m
      47. ✗ [31mGiven instance definitions (Scala 3 syntax)[0m
@@ -143,144 +143,11 @@
     136. ✓ [32mType Lambdas (Scala 3)[0m
     137. ✓ [32mUnion and Intersection Types (Scala 3)[0m
 
-19 failures:
+16 failures:
 
 correct / [32mexpected[0m / [31munexpected[0m
 
-  1. Class definitions:
-
-    (compilation_unit
-      (class_definition
-        (identifier)
-        (type_parameters
-          (identifier)
-          (identifier))
-        (class_parameters
-          (class_parameter
-            (identifier)
-            (lazy_parameter_type
-              (type_identifier)))
-          (class_parameter
-            (identifier)
-            (type_identifier))
-          (class_parameter
-            (identifier)
-            (repeated_parameter_type
-              (type_identifier))))
-        (template_body))
-      (class_definition
-[31m        (identifier))
-[0m[31m      (unit)
-[0m[31m      (unit)
-[0m[31m      (block))[0m
-[32m        (identifier)
-[0m[32m        (class_parameters)
-[0m[32m        (class_parameters)
-[0m[32m        (template_body)))[0m
-
-
-  2. Function declarations:
-
-    (compilation_unit
-      (class_definition
-        (identifier)
-        (template_body
-          (function_declaration
-            (identifier)
-            (parameters
-              (parameter
-                (identifier)
-                (type_identifier)))
-            (type_identifier))
-          (function_declaration
-            (operator_identifier)
-            (type_parameters
-              (identifier))
-            (parameters
-              (parameter
-                (identifier)
-                (generic_type
-                  (type_identifier)
-                  (type_arguments
-                    (type_identifier)))))
-            (generic_type
-              (type_identifier)
-              (type_arguments
-                (type_identifier))))
-          (function_declaration
-[31m            (identifier))
-[0m[31m          (ascription_expression
-[0m[31m            (parenthesized_expression
-[0m[31m              (ascription_expression
-[0m[32m            (identifier)
-[0m[32m            (parameters
-[0m[32m              (parameter
-[0m                (identifier)
-                (type_identifier)))
-            (type_identifier)))))
-
-
-  3. Function definitions:
-
-    (compilation_unit
-      (class_definition
-        (identifier)
-        (template_body
-          (function_definition
-            (identifier)
-            (parameters
-              (parameter
-                (identifier)
-                (type_identifier))
-              (parameter
-                (identifier)
-                (type_identifier)))
-            (integer_literal))
-          (function_definition
-            (identifier)
-            (type_identifier)
-            (indented_block
-              (integer_literal)))
-          (function_definition
-            (identifier)
-            (unit))
-[31m          (function_declaration
-[0m[32m          (function_definition
-[0m            (identifier)
-            (parameters
-              (parameter
-                (identifier)
-[31m                (type_identifier))))
-[0m[31m          (assignment_expression
-[0m[31m            (tuple_expression
-[0m[31m              (postfix_expression
-[0m[31m                (infix_expression
-[0m[31m                  (identifier)
-[0m[31m                  (identifier)
-[0m[31m                  (operator_identifier))
-[0m[31m                (identifier))
-[0m[31m              (infix_expression
-[0m[31m                (identifier)
-[0m[32m                (type_identifier)))
-[0m[32m            (parameters
-[0m[32m              (infix_type
-[0m[32m                (type_identifier)
-[0m                (operator_identifier)
-[31m                (identifier)))
-[0m[32m                (type_identifier))
-[0m[32m              (infix_type
-[0m[32m                (type_identifier)
-[0m[32m                (operator_identifier)
-[0m[32m                (type_identifier)))
-[0m            (unit))
-          (function_definition
-            (identifier)
-            (parameters)
-            (type_identifier)
-            (integer_literal)))))
-
-
-  4. Given instance definitions (Scala 3 syntax):
+  1. Given instance definitions (Scala 3 syntax):
 
     (compilation_unit
       (object_definition
@@ -575,7 +442,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m              (arguments))))))[0m
 
 
-  5. Infix methods (Scala 3):
+  2. Infix methods (Scala 3):
 
     (compilation_unit
       (object_definition
@@ -592,7 +459,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [32m            (integer_literal)))))[0m
 
 
-  6. Call expressions:
+  3. Call expressions:
 
     (compilation_unit
       (class_definition
@@ -670,7 +537,7 @@ correct / [32mexpected[0m / [31munexpected[0m
                     (identifier)))))))))
 
 
-  7. Call expressions (Scala 3 syntax):
+  4. Call expressions (Scala 3 syntax):
 
     (compilation_unit
       (class_definition
@@ -711,7 +578,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                          (integer_literal))))))))))))[0m
 
 
-  8. If expressions (Scala 3 syntax):
+  5. If expressions (Scala 3 syntax):
 
     (compilation_unit
       (class_definition
@@ -812,7 +679,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                  (unit))))))))[0m
 
 
-  9. Try expressions (Scala 3 syntax):
+  6. Try expressions (Scala 3 syntax):
 
     (compilation_unit
       (function_definition
@@ -886,7 +753,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [32m              (identifier))))))[0m
 
 
-  10. Match expressions:
+  7. Match expressions:
 
     (compilation_unit
       (function_definition
@@ -976,7 +843,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [32m              (identifier))))))[0m
 
 
-  11. Match expressions (Scala 3 syntax):
+  8. Match expressions (Scala 3 syntax):
 
     (compilation_unit
       (function_definition
@@ -1034,7 +901,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                (string)))))))[0m
 
 
-  12. Instance expressions:
+  9. Instance expressions:
 
     (compilation_unit
       (class_definition
@@ -1094,7 +961,7 @@ correct / [32mexpected[0m / [31munexpected[0m
                 (type_identifier)))))))
 
 
-  13. Lambda Expression:
+  10. Lambda Expression:
 
     (compilation_unit
       (object_definition
@@ -1203,7 +1070,7 @@ correct / [32mexpected[0m / [31munexpected[0m
               (identifier))))))
 
 
-  14. For comprehensions (Scala 3 syntax):
+  11. For comprehensions (Scala 3 syntax):
 
     (compilation_unit
 [31m      (function_declaration
@@ -1287,7 +1154,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m              (unit))))))[0m
 
 
-  15. Case class patterns:
+  12. Case class patterns:
 
     (compilation_unit
       (function_definition
@@ -1364,7 +1231,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                      (identifier))))))))))[0m
 
 
-  16. Given pattern (Scala 3 syntax):
+  13. Given pattern (Scala 3 syntax):
 
     (compilation_unit
       (for_expression
@@ -1381,7 +1248,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [32m        (unit)))[0m
 
 
-  17. Function types:
+  14. Function types:
 
     (compilation_unit
       (object_definition
@@ -1419,7 +1286,7 @@ correct / [32mexpected[0m / [31munexpected[0m
                 (type_identifier)))))))
 
 
-  18. Polymorphic function types (Scala 3 syntax):
+  15. Polymorphic function types (Scala 3 syntax):
 
     (compilation_unit
       (class_definition
@@ -1442,7 +1309,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m                (type_identifier)))))))
 
 
-  19. Compound types:
+  16. Compound types:
 
     (compilation_unit
       (function_definition

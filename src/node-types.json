@@ -1369,21 +1369,11 @@
     "named": true,
     "fields": {
       "body": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "template_body",
-            "named": true
-          }
-        ]
-      },
-      "class_parameters": {
         "multiple": true,
         "required": false,
         "types": [
           {
-            "type": "class_parameters",
+            "type": "template_body",
             "named": true
           }
         ]
@@ -1443,6 +1433,10 @@
         },
         {
           "type": "annotation",
+          "named": true
+        },
+        {
+          "type": "class_parameters",
           "named": true
         },
         {
@@ -2110,16 +2104,6 @@
           }
         ]
       },
-      "class_parameters": {
-        "multiple": true,
-        "required": false,
-        "types": [
-          {
-            "type": "class_parameters",
-            "named": true
-          }
-        ]
-      },
       "derive": {
         "multiple": false,
         "required": false,
@@ -2175,6 +2159,10 @@
         },
         {
           "type": "annotation",
+          "named": true
+        },
+        {
+          "type": "class_parameters",
           "named": true
         }
       ]
@@ -4936,7 +4924,7 @@
     "named": true,
     "fields": {
       "body": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -5055,7 +5043,7 @@
     "named": true,
     "fields": {
       "body": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -6220,21 +6208,11 @@
     "named": true,
     "fields": {
       "body": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "template_body",
-            "named": true
-          }
-        ]
-      },
-      "class_parameters": {
         "multiple": true,
         "required": false,
         "types": [
           {
-            "type": "class_parameters",
+            "type": "template_body",
             "named": true
           }
         ]
@@ -6294,6 +6272,10 @@
         },
         {
           "type": "annotation",
+          "named": true
+        },
+        {
+          "type": "class_parameters",
           "named": true
         },
         {
