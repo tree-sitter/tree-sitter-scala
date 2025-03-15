@@ -107,7 +107,7 @@ module.exports = grammar({
     [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
-    //[$.block, $._braced_template_body1],
+    [$.block, $._braced_template_body1],
     [$._simple_expression, $.self_type, $._type_identifier],
     [$._simple_expression, $._type_identifier],
     [$.lambda_expression, $.self_type, $._type_identifier],
@@ -117,6 +117,7 @@ module.exports = grammar({
     [$._definition_body],
     [$._block],
     [$.indented_block],
+    [$._indented_template_body],
   ],
 
   word: $ => $._alpha_identifier,
@@ -421,7 +422,7 @@ module.exports = grammar({
       choice($._indented_template_body, $._braced_template_body),
 
     _indented_template_body: $ =>
-      prec.left(
+      prec.dynamic(
         PREC.control,
         seq(
           ":",
@@ -438,8 +439,22 @@ module.exports = grammar({
         PREC.control,
         seq(
           $._open_brace,
-          optional(seq(optional($.self_type), $._block)),
+          optional(choice($._braced_template_body1, $._braced_template_body2)),
           $._close_brace,
+        ),
+      ),
+
+    _braced_template_body1: $ => seq(optional($.self_type), $._block),
+    _braced_template_body2: $ =>
+      prec.dynamic(
+        PREC.control,
+        seq(
+          choice(
+            seq($._indent, optional($.self_type)),
+            seq(optional($.self_type), $._indent),
+          ),
+          optional($._block),
+          $._outdent,
         ),
       ),
 
@@ -504,7 +519,7 @@ module.exports = grammar({
     // Dynamic precedences added here to win over $.call_expression
     self_type: $ =>
       prec.dynamic(
-        1,
+        10,
         seq($._identifier, optional($._self_type_ascription), "=>"),
       ),
 
@@ -1203,6 +1218,7 @@ module.exports = grammar({
         $.field_expression,
         $.generic_function,
         $.call_expression,
+        alias($.colon_call_expression, $.call_expression),
       ),
 
     lambda_expression: $ =>
@@ -1354,21 +1370,21 @@ module.exports = grammar({
       ),
 
     call_expression: $ =>
-      choice(
-        prec.left(
-          PREC.call,
-          seq(
-            field("function", $._simple_expression),
-            field("arguments", choice($.arguments, $.case_block, $.block)),
-          ),
+      prec.left(
+        PREC.call,
+        seq(
+          field("function", $._simple_expression),
+          field("arguments", choice($.arguments, $.case_block, $.block)),
         ),
-        prec.right(
-          PREC.colon_call,
-          seq(
-            field("function", $._postfix_expression_choice),
-            ":",
-            field("arguments", $.colon_argument),
-          ),
+      ),
+
+    colon_call_expression: $ =>
+      prec.right(
+        PREC.colon_call,
+        seq(
+          field("function", $._simple_expression),
+          ":",
+          field("arguments", $.colon_argument),
         ),
       ),
 
@@ -1410,11 +1426,7 @@ module.exports = grammar({
      */
     instance_expression: $ =>
       choice(
-        // This is weakened so ascription wins for new Array: Array
-        prec.dynamic(
-          0,
-          seq("new", $._constructor_application, $.template_body),
-        ),
+        seq("new", $._constructor_application, $.template_body),
         prec("new", seq("new", $.template_body)),
         seq("new", $._constructor_application),
       ),

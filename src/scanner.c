@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-// #define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -301,7 +301,7 @@ static bool detect_comment_start(TSLexer *lexer) {
 
 static bool detect_continuation(TSLexer *lexer, const bool *valid_symbols) {
   // Check for obvious multi-line continuation symbols
-  if (lexer->lookahead == '.' || lexer->lookahead == ')' || lexer->lookahead == ']' || lexer->lookahead == ',' || lexer->lookahead == ':') {
+  if (lexer->lookahead == '.' || lexer->lookahead == ')' || lexer->lookahead == ']' || lexer->lookahead == ',') {
     return true;
   }
 
@@ -383,9 +383,12 @@ static int skip_comment_and_whitespace(TSLexer *lexer) {
 // --- Helper function to handle opening a new indentation group ---
 static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
   advance(lexer);
-  skip_whitespace(lexer);
+  int16_t latest_indent = lexer->get_column(lexer);
+  int16_t newline_count = skip_whitespace(lexer);
+  int16_t initial_indent = lexer->eof(lexer) ? 0 : newline_count > 0 ? lexer->get_column(lexer) : lexer->get_column(lexer) - latest_indent;
   push_indent_group(scanner);
-  push_indent_level(scanner, lexer->get_column(lexer));
+  push_indent_level(scanner, initial_indent);
+  debug_indents(scanner);
   lexer->result_symbol = symbol;
   lexer->mark_end(lexer);
   return true;
@@ -422,7 +425,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
   LOG("initial lexer->lookahead: '%c'\n", lexer->lookahead);
   int16_t newline_count = skip_whitespace(lexer);
   bool seen_newline = newline_count > 0 || scanner->saved_seen_newline;
-  int16_t current_indent = lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
+  int16_t current_indent = lexer->eof(lexer) ? 0 : seen_newline ? lexer->get_column(lexer) : lexer->get_column(lexer) - latest_indent;
 
   LOG("lexer->lookahead: '%c'\n", lexer->lookahead);
   LOG("latest_indent: '%d'\n", latest_indent);
@@ -453,7 +456,9 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
-  if (valid_symbols[OUTDENT] && seen_newline && (current_indent < latest_indent) && can_pop_indent(scanner)) {
+  // https://github.com/tree-sitter/tree-sitter-scala/commit/38137ff97ff3c7874e26ba8cd8a36ba58b5d957a
+  bool force_outdent = lexer->eof(lexer) || lexer->lookahead == ')'  || lexer->lookahead == '}';
+  if (valid_symbols[OUTDENT] && (force_outdent || seen_newline && current_indent < latest_indent) && can_pop_indent(scanner)) {
     lexer->mark_end(lexer);
     
     if (detect_comment_start(lexer)) {
