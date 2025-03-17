@@ -465,8 +465,7 @@ class C:
           (if_expression
             (boolean_literal)
             (indented_block
-              (unit)
-              (comment))
+              (unit))
             (indented_block
               (unit)))
           (if_expression

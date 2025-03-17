@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
   Array(IndentationFrame *) frames;  // Array of pointers to indentation frames
-  bool saved_seen_newline;
+  bool just_did_outdent;
 } Scanner;
 
 static inline void debug_indents(Scanner *scanner) {
@@ -126,7 +126,7 @@ void *tree_sitter_scala_external_scanner_create() {
   array_init(&frame->indents);
   array_push(&frame->indents, 0);
   array_push(&scanner->frames, frame);
-  scanner->saved_seen_newline = false;
+  scanner->just_did_outdent = false;
   return scanner;
 }
 
@@ -152,7 +152,7 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
     return 0;
   }
 
-  memcpy(buffer + size, &scanner->saved_seen_newline, sizeof(bool));
+  memcpy(buffer + size, &scanner->just_did_outdent, sizeof(bool));
   size += sizeof(bool);
 
   memcpy(buffer + size, &scanner->frames.size, sizeof(uint32_t));
@@ -176,7 +176,7 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
 void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
   Scanner *scanner = (Scanner *)payload;
   array_clear(&scanner->frames);  // Clear any existing state
-  scanner->saved_seen_newline = false;
+  scanner->just_did_outdent = false;
 
   if (length == 0) {
       // Reinitialize with base indentation group
@@ -187,7 +187,7 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
 
   size_t size = 0;
 
-  scanner->saved_seen_newline = *(bool *)&buffer[size];
+  scanner->just_did_outdent = *(bool *)&buffer[size];
   size += sizeof(bool);
 
   // Deserialize number of indentation stacks
@@ -415,44 +415,47 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
   LOG("\n");
   LOG("initial lexer->lookahead: '%c'\n", lexer->lookahead);
   int16_t newline_count = skip_comment_and_whitespace(lexer);
-  bool seen_newline = newline_count > 0 || scanner->saved_seen_newline;
-  int16_t current_indent = lexer->eof(lexer) ? 0 : seen_newline ? lexer->get_column(lexer) : lexer->get_column(lexer) - latest_indent;
+  int16_t current_indent = 
+    lexer->eof(lexer) 
+    ? 0
+    : newline_count > 0 || scanner->just_did_outdent
+      ? lexer->get_column(lexer)
+      : lexer->get_column(lexer) - latest_indent;
 
   LOG("lexer->lookahead: '%c'\n", lexer->lookahead);
   LOG("latest_indent: '%d'\n", latest_indent);
   LOG("current_indent: '%d'\n", current_indent);
   LOG("newline_count: '%d'\n", newline_count);
-  LOG("scanner->saved_seen_newline: '%d'\n", scanner->saved_seen_newline);
-  LOG("seen_newline: '%d'\n", seen_newline);
+  LOG("scanner->just_did_outdent: '%d'\n", scanner->just_did_outdent);
   
   debug_indents(scanner);
   debug_valid_symbols(valid_symbols);
   LOG("\n");
 
-  if (valid_symbols[INDENT] && seen_newline && current_indent > latest_indent) {
+  if (valid_symbols[INDENT] && newline_count > 0 && current_indent > latest_indent) {
     lexer->mark_end(lexer);
     
     LOG("    INDENT\n");
     push_indent_level(scanner, current_indent);
     lexer->result_symbol = INDENT;
-    scanner->saved_seen_newline = false;
+    scanner->just_did_outdent = false;
     return true;
   }
 
   // https://github.com/tree-sitter/tree-sitter-scala/commit/38137ff97ff3c7874e26ba8cd8a36ba58b5d957a
   bool force_outdent = lexer->eof(lexer) || lexer->lookahead == ')'  || lexer->lookahead == '}';
-  if (valid_symbols[OUTDENT] && (force_outdent || (seen_newline && current_indent < latest_indent)) && can_pop_indent(scanner)) {
+  if (valid_symbols[OUTDENT] && (force_outdent || ((newline_count > 0 || scanner->just_did_outdent) && current_indent < latest_indent)) && can_pop_indent(scanner)) {
     lexer->mark_end(lexer);
 
     LOG("    OUTDENT\n");
     pop_indent_level(scanner);
     lexer->result_symbol = OUTDENT;
     // Set saved_seen_newline if we have seen new lines as part of this OUTDENT
-    scanner->saved_seen_newline = true;
+    scanner->just_did_outdent = true;
     return true;
   }
 
-  if (valid_symbols[AUTOMATIC_SEMICOLON] && seen_newline) {
+  if (valid_symbols[AUTOMATIC_SEMICOLON] && (newline_count > 0 || scanner->just_did_outdent)) {
     lexer->mark_end(lexer);
 
     // AUTOMATIC_SEMICOLON should not be issued in the middle of expressions
@@ -466,11 +469,11 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     //   set_latest_indent(scanner, current_indent);
     // }
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
-    scanner->saved_seen_newline = false;
+    scanner->just_did_outdent = false;
     return true;
   }
 
-  scanner->saved_seen_newline = false;
+  scanner->just_did_outdent = false;
 
   // Handle opening tokens: '(', '[', '{'
   if (valid_symbols[OPEN_PAREN] && lexer->lookahead == '(') {
