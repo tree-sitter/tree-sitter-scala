@@ -70,8 +70,8 @@
      66. ✓ [32mIf expressions (Scala 3 syntax)[0m
      67. ✓ [32mTry expressions[0m
      68. ✓ [32mTry expressions (Scala 3 syntax)[0m
-     69. ✗ [31mMatch expressions[0m
-     70. ✗ [31mMatch expressions (Scala 3 syntax)[0m
+     69. ✓ [32mMatch expressions[0m
+     70. ✓ [32mMatch expressions (Scala 3 syntax)[0m
      71. ✓ [32mField expressions[0m
      72. ✓ [32mInstance expressions[0m
      73. ✓ [32mInfix expressions[0m
@@ -143,156 +143,11 @@
     136. ✓ [32mType Lambdas (Scala 3)[0m
     137. ✓ [32mUnion and Intersection Types (Scala 3)[0m
 
-6 failures:
+4 failures:
 
 correct / [32mexpected[0m / [31munexpected[0m
 
-  1. Match expressions:
-
-    (compilation_unit
-      (function_definition
-        (identifier)
-        (parameters
-          (parameter
-            (identifier)
-            (type_identifier)))
-        (type_identifier)
-        (match_expression
-          (identifier)
-          (case_block
-            (case_clause
-              (integer_literal))
-            (case_clause
-              (integer_literal)
-              (string)
-              (string))
-            (case_clause
-              (integer_literal)
-              (string))
-            (case_clause
-              (integer_literal)
-[31m              (block
-[0m[31m                (string)))
-[0m[32m              (indented_block))
-[0m            (case_clause
-[31m              (integer_literal)
-[0m[31m              (indented_block))
-[0m[32m              (integer_literal))
-[0m            (case_clause
-              (identifier)
-              (guard
-                (infix_expression
-                  (identifier)
-                  (operator_identifier)
-                  (integer_literal))))
-            (case_clause
-              (identifier)
-              (guard
-                (infix_expression
-                  (identifier)
-                  (operator_identifier)
-                  (integer_literal)))
-              (integer_literal))
-            (case_clause
-              (tuple_pattern
-                (tuple_pattern
-                  (identifier)
-                  (wildcard)))
-              (identifier))
-            (case_clause
-              (interpolated_string_expression
-                (identifier)
-                (interpolated_string
-                  (interpolation
-                    (identifier))
-                  (interpolation
-                    (identifier))))
-[31m              (indented_block
-[0m[31m                (infix_expression
-[0m[31m                  (identifier)
-[0m[31m                  (operator_identifier)
-[0m[31m                  (identifier))))
-[0m[32m              (infix_expression
-[0m[32m                (identifier)
-[0m[32m                (operator_identifier)
-[0m[32m                (identifier)))
-[0m            (case_clause
-              (wildcard)
-[31m              (indented_block
-[0m[31m                (val_definition
-[0m[31m                  (identifier)
-[0m[31m                  (string))
-[0m[31m                (string)))
-[0m[32m              (val_definition
-[0m[32m                (identifier)
-[0m[32m                (string))
-[0m[32m              (string))
-[0m            (case_clause
-              (identifier)
-              (guard
-                (identifier))
-              (identifier))))))
-
-
-  2. Match expressions (Scala 3 syntax):
-
-    (compilation_unit
-      (function_definition
-        (identifier)
-        (parameters
-          (parameter
-            (identifier)
-            (type_identifier)))
-        (type_identifier)
-        (indented_block
-          (match_expression
-            (identifier)
-            (indented_cases
-              (case_clause
-                (integer_literal))
-              (case_clause
-                (integer_literal)
-                (string)
-                (string))
-              (case_clause
-                (integer_literal)
-                (string))
-              (case_clause
-                (identifier)
-                (guard
-                  (infix_expression
-                    (identifier)
-                    (operator_identifier)
-                    (integer_literal)))
-[31m                (indented_block
-[0m[31m                  (val_definition
-[0m[31m                    (identifier)
-[0m[31m                    (string))
-[0m[31m                  (identifier)))
-[0m[32m                (val_definition
-[0m[32m                  (identifier)
-[0m[32m                  (string))
-[0m[32m                (identifier))
-[0m              (case_clause
-                (tuple_pattern
-                  (tuple_pattern
-                    (identifier)
-                    (wildcard)))
-                (identifier))
-              (case_clause
-                (wildcard)
-[31m                (indented_block
-[0m[31m                  (val_definition
-[0m[31m                    (identifier)
-[0m[31m                    (string))
-[0m[31m                  (string))))))))[0m
-[32m                (val_definition
-[0m[32m                  (identifier)
-[0m[32m                  (string))
-[0m[32m                (string)))))))[0m
-
-
-  3. Case class patterns:
+  1. Case class patterns:
 
     (compilation_unit
       (function_definition
@@ -369,7 +224,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                      (identifier))))))))))[0m
 
 
-  4. Function types:
+  2. Function types:
 
     (compilation_unit
       (object_definition
@@ -407,7 +262,7 @@ correct / [32mexpected[0m / [31munexpected[0m
                 (type_identifier)))))))
 
 
-  5. Polymorphic function types (Scala 3 syntax):
+  3. Polymorphic function types (Scala 3 syntax):
 
     (compilation_unit
       (class_definition
@@ -430,7 +285,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m                (type_identifier)))))))
 
 
-  6. Compound types:
+  4. Compound types:
 
     (compilation_unit
       (function_definition
