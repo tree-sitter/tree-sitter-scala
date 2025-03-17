@@ -69,7 +69,7 @@
      65. ✓ [32mIf expressions[0m
      66. ✓ [32mIf expressions (Scala 3 syntax)[0m
      67. ✓ [32mTry expressions[0m
-     68. ✗ [31mTry expressions (Scala 3 syntax)[0m
+     68. ✓ [32mTry expressions (Scala 3 syntax)[0m
      69. ✗ [31mMatch expressions[0m
      70. ✗ [31mMatch expressions (Scala 3 syntax)[0m
      71. ✓ [32mField expressions[0m
@@ -143,85 +143,11 @@
     136. ✓ [32mType Lambdas (Scala 3)[0m
     137. ✓ [32mUnion and Intersection Types (Scala 3)[0m
 
-7 failures:
+6 failures:
 
 correct / [32mexpected[0m / [31munexpected[0m
 
-  1. Try expressions (Scala 3 syntax):
-
-    (compilation_unit
-      (function_definition
-        (identifier)
-        (parameters)
-        (type_identifier)
-        (indented_block
-          (try_expression
-            (call_expression
-              (identifier)
-              (arguments))
-            (finally_clause
-              (infix_expression
-                (identifier)
-                (operator_identifier)
-                (integer_literal))))
-          (try_expression
-            (indented_block
-              (call_expression
-                (identifier)
-                (arguments))
-              (call_expression
-                (identifier)
-                (arguments)))
-            (catch_clause
-              (indented_cases
-                (case_clause
-                  (typed_pattern
-                    (identifier)
-                    (type_identifier))
-                  (call_expression
-                    (identifier)
-                    (arguments
-                      (field_expression
-                        (identifier)
-                        (identifier)))))
-                (case_clause
-                  (case_class_pattern
-                    (type_identifier)
-                    (identifier))
-                  (throw_expression
-                    (instance_expression
-                      (type_identifier)
-                      (arguments
-                        (identifier)))))))
-            (finally_clause
-              (indented_block
-                (call_expression
-                  (identifier)
-                  (arguments))
-                (call_expression
-                  (identifier)
-                  (arguments)))))
-          (try_expression
-            (identifier)
-            (catch_clause
-              (typed_pattern
-                (identifier)
-                (type_identifier))
-              (identifier))
-            (finally_clause
-              (identifier)))
-          (try_expression
-            (identifier)
-            (catch_clause
-              (typed_pattern
-                (identifier)
-                (type_identifier))
-[31m              (indented_block
-[0m[31m                (identifier)))))))[0m
-[32m              (identifier))))))[0m
-
-
-  2. Match expressions:
+  1. Match expressions:
 
     (compilation_unit
       (function_definition
@@ -307,7 +233,7 @@ correct / [32mexpected[0m / [31munexpected[0m
               (identifier))))))
 
 
-  3. Match expressions (Scala 3 syntax):
+  2. Match expressions (Scala 3 syntax):
 
     (compilation_unit
       (function_definition
@@ -365,7 +291,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                (string)))))))[0m
 
 
-  4. Case class patterns:
+  3. Case class patterns:
 
     (compilation_unit
       (function_definition
@@ -442,7 +368,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m[32m                      (identifier))))))))))[0m
 
 
-  5. Function types:
+  4. Function types:
 
     (compilation_unit
       (object_definition
@@ -480,7 +406,7 @@ correct / [32mexpected[0m / [31munexpected[0m
                 (type_identifier)))))))
 
 
-  6. Polymorphic function types (Scala 3 syntax):
+  5. Polymorphic function types (Scala 3 syntax):
 
     (compilation_unit
       (class_definition
@@ -503,7 +429,7 @@ correct / [32mexpected[0m / [31munexpected[0m
 [0m                (type_identifier)))))))
 
 
-  7. Compound types:
+  6. Compound types:
 
     (compilation_unit
       (function_definition
