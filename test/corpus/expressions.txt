@@ -822,10 +822,11 @@ def matchTest(x: Int): String =
                 (identifier)
                 (operator_identifier)
                 (integer_literal)))
-            (val_definition
-              (identifier)
-              (string))
-            (identifier))
+            (indented_block
+              (val_definition
+                (identifier)
+                (string))
+              (identifier)))
           (case_clause
             (tuple_pattern
               (tuple_pattern
@@ -834,10 +835,11 @@ def matchTest(x: Int): String =
             (identifier))
           (case_clause
             (wildcard)
-            (val_definition
-              (identifier)
-              (string))
-            (string)))))))
+            (indented_block
+              (val_definition
+                (identifier)
+                (string))
+              (string))))))))
 
 ================================================================================
 Field expressions
