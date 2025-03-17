@@ -25,7 +25,7 @@ const PREC = {
 module.exports = grammar({
   name: "scala",
 
-  extras: $ => [/\s/, $._save_seen_newline, $.comment, $.block_comment],
+  extras: $ => [/\s/, $.comment, $.block_comment],
 
   supertypes: $ => [$.expression, $._definition, $._pattern],
 
@@ -45,7 +45,6 @@ module.exports = grammar({
     $._close_brack,
     $._open_brace,
     $._close_brace,
-    $._save_seen_newline,
     "else",
     "catch",
     "finally",
@@ -1382,7 +1381,7 @@ module.exports = grammar({
       prec.right(
         PREC.colon_call,
         seq(
-          field("function", $._simple_expression),
+          field("function", $._postfix_expression_choice),
           ":",
           field("arguments", $.colon_argument),
         ),

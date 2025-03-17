@@ -6420,7 +6420,7 @@
             "name": "function",
             "content": {
               "type": "SYMBOL",
-              "name": "_simple_expression"
+              "name": "_postfix_expression_choice"
             }
           },
           {
@@ -8593,10 +8593,6 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_save_seen_newline"
-    },
-    {
-      "type": "SYMBOL",
       "name": "comment"
     },
     {
@@ -8820,10 +8816,6 @@
     {
       "type": "SYMBOL",
       "name": "_close_brace"
-    },
-    {
-      "type": "SYMBOL",
-      "name": "_save_seen_newline"
     },
     {
       "type": "STRING",

@@ -76,7 +76,6 @@ class C {
                   (identifier)
                   (operator_identifier)
                   (integer_literal)))))
-          (block_comment)
           (call_expression
             (field_expression
               (identifier)
@@ -218,12 +217,10 @@ class C:
           (indented_cases
             (case_clause
               (identifier)
-              (identifier))
-            (comment))))
+              (identifier)))))
       (ascription_expression
         (identifier)
         (type_identifier))
-      (comment)
       (call_expression
         (identifier)
         (colon_argument

@@ -128,10 +128,7 @@ val x = y
       (operator_identifier)))
   (val_definition
     (identifier)
-    (identifier))
-  (comment)
-  (comment)
-  (comment))
+    (identifier)))
 
 ================================================================================
 Package
@@ -656,7 +653,6 @@ class A @Inject()(x: Int, y: Int)
       (class_parameter
         (identifier)
         (type_identifier))))
-  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -701,7 +697,6 @@ class A @ann(1)(1) (x: Int, y: Int)
       (class_parameter
         (identifier)
         (type_identifier))))
-  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -713,7 +708,6 @@ class A @ann(1)(1) (x: Int, y: Int)
         (ascription_expression
           (identifier)
           (type_identifier)))))
-  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -727,7 +721,6 @@ class A @ann(1)(1) (x: Int, y: Int)
         (ascription_expression
           (identifier)
           (type_identifier)))))
-  (comment)
   (class_definition
     (identifier)
     (annotation
@@ -876,8 +869,6 @@ class A:
   (class_definition
     (identifier)
     (template_body
-      (comment)
-      (comment)
       (val_declaration
         (identifier)
         (identifier)
@@ -1199,8 +1190,7 @@ class A:
           (infix_expression
             (identifier)
             (operator_identifier)
-            (identifier))
-          (comment)))
+            (identifier))))
       (function_declaration
         (identifier)
         (parameters
