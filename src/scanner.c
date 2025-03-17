@@ -443,7 +443,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
   }
 
   // https://github.com/tree-sitter/tree-sitter-scala/commit/38137ff97ff3c7874e26ba8cd8a36ba58b5d957a
-  bool force_outdent = lexer->eof(lexer) || lexer->lookahead == ')'  || lexer->lookahead == '}';
+  bool force_outdent = lexer->eof(lexer) || lexer->lookahead == ')'  ||  lexer->lookahead == ']' || lexer->lookahead == '}';
   if (valid_symbols[OUTDENT] && (force_outdent || ((newline_count > 0 || scanner->just_did_outdent) && current_indent < latest_indent)) && can_pop_indent(scanner)) {
     lexer->mark_end(lexer);
 
