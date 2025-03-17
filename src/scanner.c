@@ -460,7 +460,11 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     if (detect_continuation(lexer, valid_symbols)) return false;
 
     LOG("    AUTOMATIC SEMICOLON\n");
-    set_latest_indent(scanner, current_indent);
+    // if (!can_pop_indent(scanner)) {
+    //   // We allow synthetic auto-semicolon before e.g. ':'  in some rules, so
+    //   // 
+    //   set_latest_indent(scanner, current_indent);
+    // }
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
     scanner->saved_seen_newline = false;
     return true;

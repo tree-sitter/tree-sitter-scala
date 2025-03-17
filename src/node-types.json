@@ -3227,6 +3227,10 @@
         "required": true,
         "types": [
           {
+            "type": ":",
+            "named": false
+          },
+          {
             "type": "annotated_type",
             "named": true
           },
