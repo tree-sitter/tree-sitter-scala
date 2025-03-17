@@ -171,9 +171,10 @@ correct / [32mexpected[0m / [31munexpected[0m
               (string))
             (case_clause
               (integer_literal)
-              (block
-                (string)))
-            (case_clause
+[31m              (block
+[0m[31m                (string)))
+[0m[32m              (indented_block))
+[0m            (case_clause
 [31m              (integer_literal)
 [0m[31m              (indented_block))
 [0m[32m              (integer_literal))
