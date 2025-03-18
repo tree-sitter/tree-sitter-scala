@@ -38,3 +38,11 @@ dist/
 *.tar.gz
 *.tgz
 *.zip
+
+# Scala tooling
+.metals
+.bsp
+.scala-build
+
+# AI assistants
+.aider*
