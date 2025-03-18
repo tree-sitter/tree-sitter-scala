@@ -4,7 +4,7 @@
 
 #include <wctype.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -15,6 +15,7 @@
 enum TokenType {
   AUTOMATIC_SEMICOLON,
   INDENT,
+  INDENT_ABORT,
   INTERPOLATED_STRING_MIDDLE,
   INTERPOLATED_STRING_END,
   INTERPOLATED_MULTILINE_STRING_MIDDLE,
@@ -61,6 +62,7 @@ static void debug_valid_symbols(const bool *valid_symbols) {
   LOG("Valid symbols: ");
   if (valid_symbols[AUTOMATIC_SEMICOLON]) LOG("AUTOMATIC_SEMICOLON ");
   if (valid_symbols[INDENT]) LOG("INDENT ");
+  if (valid_symbols[INDENT_ABORT]) LOG("INDENT_ABORT ");
   if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) LOG("INTERPOLATED_STRING_MIDDLE ");
   if (valid_symbols[INTERPOLATED_STRING_END]) LOG("INTERPOLATED_STRING_END ");
   if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) LOG("INTERPOLATED_MULTILINE_STRING_MIDDLE ");
@@ -306,6 +308,11 @@ static bool detect_continuation(TSLexer *lexer, const bool *valid_symbols) {
     (valid_symbols[DERIVES] && scan_word(lexer, "derives"));
 }
 
+// https://docs.scala-lang.org/scala3/reference/other-new-features/indentation.html
+static bool detect_should_outdent(TSLexer *lexer, const bool *valid_symbols) {
+  return lexer->eof(lexer) || lexer->lookahead == ')' || lexer->lookahead == ']'  || lexer->lookahead == '}';
+}
+
 static int skip_whitespace(TSLexer *lexer) {
   int newline_count = 0;
   // Skip all whitespace characters, counting newlines
@@ -373,10 +380,10 @@ static int skip_comment_and_whitespace(TSLexer *lexer) {
 
 // --- Helper function to handle opening a new indentation group ---
 static bool open_group(Scanner *scanner, TSLexer *lexer, int16_t symbol, char c) {
-  advance(lexer);
   int16_t latest_indent = lexer->get_column(lexer);
+  advance(lexer);
   int16_t newline_count = skip_comment_and_whitespace(lexer);
-  int16_t initial_indent = lexer->eof(lexer) ? 0 : newline_count > 0 ? lexer->get_column(lexer) : lexer->get_column(lexer) - latest_indent;
+  int16_t initial_indent = newline_count == 0 ? latest_indent : lexer->eof(lexer) ? 0 : lexer->get_column(lexer);
   push_indent_group(scanner);
   push_indent_level(scanner, initial_indent);
   debug_indents(scanner);
@@ -442,11 +449,10 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
+  
   // https://github.com/tree-sitter/tree-sitter-scala/commit/38137ff97ff3c7874e26ba8cd8a36ba58b5d957a
-  bool force_outdent = lexer->eof(lexer) || lexer->lookahead == ')'  ||  lexer->lookahead == ']' || lexer->lookahead == '}';
-  if (valid_symbols[OUTDENT] && (force_outdent || ((newline_count > 0 || scanner->just_did_outdent) && current_indent < latest_indent)) && can_pop_indent(scanner)) {
+  if (valid_symbols[OUTDENT] && (detect_should_outdent(lexer, valid_symbols) || ((newline_count > 0 || scanner->just_did_outdent) && current_indent < latest_indent)) && can_pop_indent(scanner)) {
     lexer->mark_end(lexer);
-
     LOG("    OUTDENT\n");
     pop_indent_level(scanner);
     lexer->result_symbol = OUTDENT;
@@ -455,7 +461,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
     return true;
   }
 
-  if (valid_symbols[AUTOMATIC_SEMICOLON] && (newline_count > 0 || scanner->just_did_outdent)) {
+  if (valid_symbols[AUTOMATIC_SEMICOLON] && (newline_count > 0 || scanner->just_did_outdent) && current_indent == latest_indent) {
     lexer->mark_end(lexer);
 
     // AUTOMATIC_SEMICOLON should not be issued in the middle of expressions
@@ -525,6 +531,15 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer, cons
 
   if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) {
     return scan_string_content(lexer, true, true);
+  }
+
+  if (valid_symbols[INDENT_ABORT] && (lexer->lookahead == ','  ||  lexer->lookahead == ';') && can_pop_indent(scanner)) {
+    lexer->mark_end(lexer);
+    LOG("    INDENT ABORT\n");
+    pop_indent_level(scanner);
+    lexer->result_symbol = INDENT_ABORT;
+    scanner->just_did_outdent = false;
+    return true;
   }
 
   return false;

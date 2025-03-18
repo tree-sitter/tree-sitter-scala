@@ -32,6 +32,7 @@ module.exports = grammar({
   externals: $ => [
     $._automatic_semicolon,
     $._indent,
+    $._indent_abort,
     $._interpolated_string_middle,
     $._interpolated_string_end,
     $._interpolated_multiline_string_middle,
@@ -117,6 +118,12 @@ module.exports = grammar({
     [$._block],
     [$.indented_block],
     [$._indented_template_body],
+    [$._type_identifier, $._lambda_start],
+    [$._simple_type, $._lambda_start],
+    [$._simple_type, $.binding],
+    [$._simple_type, $._simple_expression],
+    [$._simple_type, $.lambda_expression],
+    [$.binding, $._simple_expression, $._simple_type],
   ],
 
   word: $ => $._alpha_identifier,
@@ -177,7 +184,15 @@ module.exports = grammar({
 
     enum_body: $ =>
       choice(
-        prec.left(PREC.control, seq(":", $._indent, $._enum_block, $._outdent)),
+        prec.left(
+          PREC.control,
+          seq(
+            ":",
+            $._indent,
+            $._enum_block,
+            choice($._outdent, $._indent_abort),
+          ),
+        ),
         seq(
           $._open_brace,
           // TODO: self type
@@ -423,13 +438,16 @@ module.exports = grammar({
     _indented_template_body: $ =>
       prec.dynamic(
         PREC.control,
-        seq(
-          ":",
-          $._indent,
-          optional($.self_type),
-          $._block,
-          $._outdent,
-          optional($._end_marker),
+        choice(
+          seq(
+            ":",
+            $._indent,
+            optional($.self_type),
+            $._block,
+            $._outdent,
+            optional($._end_marker),
+          ),
+          seq(":", $._indent, optional($.self_type), $._block, $._indent_abort),
         ),
       ),
 
@@ -453,7 +471,7 @@ module.exports = grammar({
             seq(optional($.self_type), $._indent),
           ),
           optional($._block),
-          $._outdent,
+          choice($._outdent, $._indent_abort),
         ),
       ),
 
@@ -466,12 +484,15 @@ module.exports = grammar({
     _indented_with_template_body: $ =>
       prec.dynamic(
         1,
-        seq(
-          $._indent,
-          optional($.self_type),
-          $._block,
-          $._outdent,
-          optional($._end_marker),
+        choice(
+          seq(
+            $._indent,
+            optional($.self_type),
+            $._block,
+            $._outdent,
+            optional($._end_marker),
+          ),
+          seq($._indent, optional($.self_type), $._block, $._indent_abort),
         ),
       ),
 
@@ -489,7 +510,10 @@ module.exports = grammar({
       choice(
         prec.dynamic(
           1,
-          seq($._indent, $._block, $._outdent, optional($._end_marker)),
+          choice(
+            seq($._indent, $._block, $._outdent, optional($._end_marker)),
+            seq($._indent, $._block, $._indent_abort),
+          ),
         ),
         seq($._open_brace, optional($._block), $._close_brace),
       ),
@@ -893,14 +917,31 @@ module.exports = grammar({
     indented_block: $ =>
       prec.dynamic(
         1,
-        seq($._indent, $._block, $._outdent, optional($._end_marker)),
+        choice(
+          seq($._indent, $._block, $._outdent, optional($._end_marker)),
+          seq($._indent, $._block, $._indent_abort),
+        ),
       ),
 
     indented_cases: $ =>
-      prec.dynamic(1, seq($._indent, repeat1($.case_clause), $._outdent)),
+      prec.dynamic(
+        1,
+        seq(
+          $._indent,
+          repeat1($.case_clause),
+          choice($._outdent, $._indent_abort),
+        ),
+      ),
 
     _indented_type_cases: $ =>
-      prec.dynamic(1, seq($._indent, repeat1($.type_case_clause), $._outdent)),
+      prec.dynamic(
+        1,
+        seq(
+          $._indent,
+          repeat1($.type_case_clause),
+          choice($._outdent, $._indent_abort),
+        ),
+      ),
 
     // ---------------------------------------------------------------
     // Types
@@ -922,7 +963,7 @@ module.exports = grammar({
     annotated_type: $ => prec.right(seq($._simple_type, repeat1($.annotation))),
 
     _simple_type: $ =>
-      prec.left(
+      prec.dynamic(
         PREC.type,
         choice(
           $.generic_type,
@@ -1319,7 +1360,10 @@ module.exports = grammar({
       ),
 
     bindings: $ =>
-      seq($._open_paren, trailingSep(",", $.binding), $._close_paren),
+      prec.dynamic(
+        PREC.binding,
+        seq($._open_paren, trailingSep(",", $.binding), $._close_paren),
+      ),
 
     case_block: $ =>
       choice(
@@ -1378,7 +1422,7 @@ module.exports = grammar({
       ),
 
     colon_call_expression: $ =>
-      prec.right(
+      prec.dynamic(
         PREC.colon_call,
         seq(
           field("function", $._postfix_expression_choice),
@@ -1392,20 +1436,18 @@ module.exports = grammar({
      *.                         indent (CaseClauses | Block) outdent
      */
     colon_argument: $ =>
-      prec.left(
+      prec.dynamic(
         PREC.colon_call,
         seq(
-          optional(
-            field(
-              "lambda_start",
-              seq(
-                choice($.bindings, $._identifier, $.wildcard),
-                choice("=>", "?=>"),
-              ),
-            ),
-          ),
+          optional(field("lambda_start", $._lambda_start)),
           choice($.indented_block, $.indented_cases),
         ),
+      ),
+
+    _lambda_start: $ =>
+      prec.dynamic(
+        PREC.colon_call,
+        seq(choice($.bindings, $._identifier, $.wildcard), choice("=>", "?=>")),
       ),
 
     field_expression: $ =>
@@ -1434,7 +1476,7 @@ module.exports = grammar({
      * PostfixExpr [Ascription]
      */
     ascription_expression: $ =>
-      prec.right(
+      prec.dynamic(
         PREC.ascription,
         seq(
           $._postfix_expression_choice,
@@ -1875,7 +1917,11 @@ module.exports = grammar({
         trailingSep1($._semicolon, $.enumerator),
         prec.dynamic(
           1,
-          seq($._indent, trailingSep1($._semicolon, $.enumerator), $._outdent),
+          seq(
+            $._indent,
+            trailingSep1($._semicolon, $.enumerator),
+            choice($._outdent, $._indent_abort),
+          ),
         ),
       ),
 
