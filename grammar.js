@@ -32,19 +32,21 @@ module.exports = grammar({
   externals: $ => [
     $._automatic_semicolon,
     $._indent,
-    $._interpolated_string_middle,
-    $._interpolated_string_end,
-    $._interpolated_multiline_string_middle,
-    $._interpolated_multiline_string_end,
     $._outdent,
-    $._simple_multiline_string,
-    $._simple_string,
+    $._simple_string_start,
+    $._simple_string_middle,
+    $._simple_multiline_string_start,
+    $._interpolated_string_middle,
+    $._interpolated_multiline_string_middle,
+    $._single_line_string_end,
+    $._multiline_string_end,
     "else",
     "catch",
     "finally",
     "extends",
     "derives",
     "with",
+    $.error_sentinel,
   ],
 
   inline: $ => [
@@ -209,7 +211,7 @@ module.exports = grammar({
           "package",
           field("name", $.package_identifier),
           // This is slightly more permissive than the EBNF in that it allows any
-          // kind of delcaration inside of the package blocks. As we're more
+          // kind of declaration inside of the package blocks. As we're more
           // concerned with the structure rather than the validity of the program
           // we'll allow it.
           field("body", optional($.template_body)),
@@ -677,7 +679,7 @@ module.exports = grammar({
           // In theory structural_type should just be added to simple_type,
           // but doing so increases the state of template_body to 4000
           $._structural_type,
-          // This adds _simple_type, but not the above intentionall/y.
+          // This adds _simple_type, but not the above intentionally.
           seq($._simple_type, field("arguments", $.arguments)),
           seq($._annotated_type, field("arguments", $.arguments)),
           seq($.compound_type, field("arguments", $.arguments)),
@@ -1616,7 +1618,7 @@ module.exports = grammar({
             choice(
               seq(
                 "\\",
-                choice(/[^xu]/, /uu?[0-9a-fA-F]{4}/, /x[0-9a-fA-F]{2}/),
+                choice(/[^xu]/, /[uU]+[0-9a-fA-F]{4}/, /x[0-9a-fA-F]{2}/),
               ),
               /[^\\'\n]/,
             ),
@@ -1625,6 +1627,12 @@ module.exports = grammar({
         ),
       ),
 
+    /**
+     * Note that raw strings are treated like normal interpolated strings,
+     * with the result that escape sequences will be parsed as normal
+     * in single-line raw strings, even though Scala will not interpret them
+     * as escape sequences.
+     */
     interpolated_string_expression: $ =>
       seq(field("interpolator", $.identifier), $.interpolated_string),
 
@@ -1632,7 +1640,7 @@ module.exports = grammar({
 
     _interpolated_multiline_string_start: $ => '"""',
 
-    _dollar_escape: $ => seq("$", choice("$", '"')),
+    _dollar_escape: $ => alias(seq("$", choice("$", '"')), $.escape_sequence),
 
     _aliased_interpolation_identifier: $ =>
       alias($._interpolation_identifier, $.identifier),
@@ -1647,24 +1655,50 @@ module.exports = grammar({
           repeat(
             seq(
               $._interpolated_string_middle,
-              choice($._dollar_escape, $.interpolation),
+              choice($._dollar_escape, $.interpolation, $.escape_sequence),
             ),
           ),
-          $._interpolated_string_end,
+          $._single_line_string_end,
         ),
         seq(
           $._interpolated_multiline_string_start,
           repeat(
             seq(
               $._interpolated_multiline_string_middle,
+              // Multiline strings ignore escape sequences
               choice($._dollar_escape, $.interpolation),
             ),
           ),
-          $._interpolated_multiline_string_end,
+          $._multiline_string_end,
         ),
       ),
 
-    string: $ => choice($._simple_string, $._simple_multiline_string),
+    escape_sequence: _ => token.immediate(seq(
+      '\\',
+      choice(
+        /[tbnrf"'\\]/,
+        // The Java spec allows any number of u's and U's at the start of a unicode escape.
+        /[uU]+[0-9a-fA-F]{4}/,
+        // Octals are not allowed in Scala 3, but are allowed in Scala 2. tree-sitter 
+        // does not have a mechanism for distinguishing between different versions of a
+        // language, so I think it makes sense to allow them. Maybe in the future we
+        // should move them to a `deprecated` syntax node?
+        /0[1-7][0-7]*/,
+      ),
+    )),
+
+    string: $ => choice(
+      seq(
+        $._simple_string_start,
+        repeat(seq($._simple_string_middle, $.escape_sequence)),
+        $._single_line_string_end,
+      ),
+      seq(
+        $._simple_multiline_string_start,
+        /// Multiline strings ignore escape sequences
+        $._multiline_string_end,
+      ),
+    ),
 
     _semicolon: $ => choice(";", $._automatic_semicolon),
 
