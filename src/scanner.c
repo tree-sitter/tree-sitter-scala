@@ -21,8 +21,6 @@ enum TokenType {
   SIMPLE_MULTILINE_STRING_START,
   INTERPOLATED_STRING_MIDDLE,
   INTERPOLATED_MULTILINE_STRING_MIDDLE,
-  RAW_STRING_MIDDLE,
-  RAW_MULTILINE_STRING_MIDDLE,
   SINGLE_LINE_STRING_END,
   MULTILINE_STRING_END,
   ELSE,
@@ -43,8 +41,6 @@ const char* token_name[] = {
   "SIMPLE_MULTILINE_STRING_START",
   "INTERPOLATED_STRING_MIDDLE",
   "INTERPOLATED_MULTILINE_STRING_MIDDLE",
-  "RAW_STRING_MIDDLE",
-  "RAW_MULTILINE_STRING_MIDDLE",
   "SINGLE_LINE_STRING_END",
   "MULTILINE_STRING_END",
   "ELSE",
@@ -55,12 +51,6 @@ const char* token_name[] = {
   "WITH",
   "ERROR_SENTINEL"
 };
-
-typedef enum {
-  STRING_MODE_SIMPLE,
-  STRING_MODE_INTERPOLATED,
-  STRING_MODE_RAW,
-} StringMode;
 
 typedef struct {
   Array(int16_t) indents;
@@ -139,7 +129,7 @@ static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 
-static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode string_mode) {
+static bool scan_string_content(TSLexer *lexer, bool is_multiline, bool is_interpolated) {
   unsigned closing_quote_count = 0;
   for (;;) {
     if (lexer->lookahead == '"') {
@@ -155,36 +145,28 @@ static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode st
         lexer->mark_end(lexer);
         return true;
       }
-    } else if (lexer->lookahead == '$' && string_mode != STRING_MODE_SIMPLE) {
-      if (string_mode == STRING_MODE_INTERPOLATED) {
-        lexer->result_symbol = is_multiline ? INTERPOLATED_MULTILINE_STRING_MIDDLE : INTERPOLATED_STRING_MIDDLE;
-      } else if (string_mode == STRING_MODE_RAW) {
-        lexer->result_symbol = is_multiline ? RAW_MULTILINE_STRING_MIDDLE : RAW_STRING_MIDDLE;
-      } else {
-        LOG("unreachable state\n");
-        advance(lexer);
-      }
-
+    } else if (lexer->lookahead == '$' && is_interpolated) {
+      lexer->result_symbol = is_multiline ? INTERPOLATED_MULTILINE_STRING_MIDDLE : INTERPOLATED_STRING_MIDDLE;
       lexer->mark_end(lexer);
       return true;
     } else {
       closing_quote_count = 0;
       if (lexer->lookahead == '\\') {
-        // Multiline strings and raw strings ignore escape sequences
-        if (is_multiline || string_mode == STRING_MODE_RAW) {
+        // Multiline strings ignore escape sequences
+        if (is_multiline) {
           advance(lexer);
           if (!lexer->eof(lexer)) {
             advance(lexer);
           }
-        } else if (string_mode == STRING_MODE_INTERPOLATED) {
-          lexer->result_symbol = INTERPOLATED_STRING_MIDDLE;
-          lexer->mark_end(lexer);
-          return true;
         } else {
-          lexer->result_symbol = SIMPLE_STRING_MIDDLE;
+          lexer->result_symbol = is_interpolated ? INTERPOLATED_STRING_MIDDLE : SIMPLE_STRING_MIDDLE;
           lexer->mark_end(lexer);
           return true;
         }
+      // During error recovery and dynamic precedence resolution, the external 
+      // scanner will be invoked with all valid_symbols set to true, which means
+      // we will be asked to scan a string token when we are not actually in a 
+      // string context. Here we detect these cases and return false.
       } else if (lexer->lookahead == '\n' && !is_multiline) {
         return false;
       } else if (lexer->eof(lexer)) {
@@ -468,34 +450,24 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   }
 
   if (valid_symbols[SIMPLE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_SIMPLE);
-
+    return scan_string_content(lexer, false, false);
   }
 
   if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_INTERPOLATED);
-    LOG("returning %s\n", token_name[lexer->result_symbol]);
+    return scan_string_content(lexer, false, true);
   }
 
   if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, true, STRING_MODE_INTERPOLATED);
-    LOG("returning %s\n", token_name[lexer->result_symbol]);
+    return scan_string_content(lexer, true, true);
   }
 
-  if (valid_symbols[RAW_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_RAW);
-    LOG("returning %s\n", token_name[lexer->result_symbol]);
-  }
-
-  if (valid_symbols[RAW_MULTILINE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, true, STRING_MODE_RAW);
-  }
-
-  // We have to check for MULTILINE_STRING_END after last because we don't have a
-  // MULTILINE_STRING_MIDDLE token with which to distinguish multi-line simple strings
-  // from multi-line interpolated or raw strings.
+  // We still need to handle the simple multiline string case, but there is
+  // no `MULTILINE_STRING_MIDDLE` token, and `MULTILINE_STRING_END` is used
+  // by both simple and interpolated multiline strings. So this check needs to
+  // come after the `INTERPOLATED_MULTILINE_STRING_MIDDLE` check, so that we
+  // can be sure we are in a simple multiline string context.
   if (valid_symbols[MULTILINE_STRING_END]) {
-    return scan_string_content(lexer, true, STRING_MODE_SIMPLE);
+    return scan_string_content(lexer, true, false);
   }
 
   return false;

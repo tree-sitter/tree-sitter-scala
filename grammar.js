@@ -38,8 +38,6 @@ module.exports = grammar({
     $._simple_multiline_string_start,
     $._interpolated_string_middle,
     $._interpolated_multiline_string_middle,
-    $._raw_string_middle,
-    $._raw_multiline_string_middle,
     $._single_line_string_end,
     $._multiline_string_end,
     "else",
@@ -1038,7 +1036,6 @@ module.exports = grammar({
       choice(
         $._identifier,
         $.stable_identifier,
-        $._aliased_raw_interpolated_string,
         $.interpolated_string_expression,
         $.capture_pattern,
         $.tuple_pattern,
@@ -1150,7 +1147,6 @@ module.exports = grammar({
         $.identifier,
         $.operator_identifier,
         $.literal,
-        $._aliased_raw_interpolated_string,
         $.interpolated_string_expression,
         $.unit,
         $.tuple_expression,
@@ -1631,35 +1627,15 @@ module.exports = grammar({
         ),
       ),
 
-    _raw_interpolated_string: $ =>
-        choice(
-          seq(
-            'raw"',
-            repeat(
-              seq(
-                $._raw_string_middle,
-                choice($._dollar_escape, $.interpolation),
-              ),
-            ),
-            $._single_line_string_end,
-          ),
-          seq(
-            'raw"""',
-            repeat(
-              seq(
-                $._raw_multiline_string_middle,
-                choice($._dollar_escape, $.interpolation),
-              ),
-            ),
-            $._multiline_string_end,
-          ),
-        ),
-
-    _aliased_raw_interpolated_string: $ => alias($._raw_interpolated_string, $.interpolated_string_expression),
-
+    /**
+     * Note that raw strings are treated like normal interpolated strings,
+     * with the result that escape sequences will be parsed as normal
+     * in single-line raw strings, even though Scala will not interpret them
+     * as escape sequences.
+     */
     interpolated_string_expression: $ =>
-        seq(field("interpolator", $.identifier), $.interpolated_string),
-      
+      seq(field("interpolator", $.identifier), $.interpolated_string),
+
     _interpolated_string_start: $ => '"',
 
     _interpolated_multiline_string_start: $ => '"""',
