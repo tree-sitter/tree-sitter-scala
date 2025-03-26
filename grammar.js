@@ -1630,13 +1630,17 @@ module.exports = grammar({
         ),
       ),
 
-    interpolated_string_expression: $ => 
-        choice(
-          seq(field("interpolator", alias($._raw_string_start, $.identifier)), alias($._raw_string, $.interpolated_string)),
-          seq(field("interpolator", $.identifier), $.interpolated_string),
+    interpolated_string_expression: $ =>
+      choice(
+        seq(
+          field("interpolator", alias($._raw_string_start, $.identifier)),
+          alias($._raw_string, $.interpolated_string),
+        ),
+        seq(field("interpolator", $.identifier), $.interpolated_string),
       ),
 
-    _dollar_escape: $ => alias(token(seq("$", choice("$", '"'))), $.escape_sequence),
+    _dollar_escape: $ =>
+      alias(token(seq("$", choice("$", '"'))), $.escape_sequence),
 
     _aliased_interpolation_identifier: $ =>
       alias($._interpolation_identifier, $.identifier),
@@ -1670,14 +1674,14 @@ module.exports = grammar({
       ),
 
     // We need to handle single-line raw strings separately from interpolated strings,
-    // because raw strings are not parsed for escape sequences. For example, raw strings 
+    // because raw strings are not parsed for escape sequences. For example, raw strings
     // are often used for regular expressions, which contain backslashes that would
     // be invalid if parsed as escape sequences. We do not special case multiline
     // raw strings, because multiline strings do not parse escape sequences anyway.
     // Scala handles multiline raw strings identically to other multiline interpolated,
     // so we could parse them as interpolated strings, but I think the code is cleaner
     // if we maintain the distinction.
-    _raw_string: $ => 
+    _raw_string: $ =>
       choice(
         seq(
           $._simple_string_start,
@@ -1689,7 +1693,7 @@ module.exports = grammar({
               ),
             ),
             $._single_line_string_end,
-          ), 
+          ),
         ),
         seq(
           $._simple_multiline_string_start,
@@ -1697,38 +1701,42 @@ module.exports = grammar({
             seq(
               $._raw_string_multiline_middle,
               choice($._dollar_escape, $.interpolation),
-            )
+            ),
           ),
           $._multiline_string_end,
         ),
       ),
 
-    escape_sequence: _ => token.immediate(seq(
-      '\\',
-      choice(
-        /[tbnrf"'\\]/,
-        // The Java spec allows any number of u's and U's at the start of a unicode escape.
-        /[uU]+[0-9a-fA-F]{4}/,
-        // Octals are not allowed in Scala 3, but are allowed in Scala 2. tree-sitter 
-        // does not have a mechanism for distinguishing between different versions of a
-        // language, so I think it makes sense to allow them. Maybe in the future we
-        // should move them to a `deprecated` syntax node?
-        /[0-3]?[0-7]{1,2}/,
+    escape_sequence: _ =>
+      token.immediate(
+        seq(
+          "\\",
+          choice(
+            /[tbnrf"'\\]/,
+            // The Java spec allows any number of u's and U's at the start of a unicode escape.
+            /[uU]+[0-9a-fA-F]{4}/,
+            // Octals are not allowed in Scala 3, but are allowed in Scala 2. tree-sitter
+            // does not have a mechanism for distinguishing between different versions of a
+            // language, so I think it makes sense to allow them. Maybe in the future we
+            // should move them to a `deprecated` syntax node?
+            /[0-3]?[0-7]{1,2}/,
+          ),
+        ),
       ),
-    )),
 
-    string: $ => choice(
-      seq(
-        $._simple_string_start,
-        repeat(seq($._simple_string_middle, $.escape_sequence)),
-        $._single_line_string_end,
+    string: $ =>
+      choice(
+        seq(
+          $._simple_string_start,
+          repeat(seq($._simple_string_middle, $.escape_sequence)),
+          $._single_line_string_end,
+        ),
+        seq(
+          $._simple_multiline_string_start,
+          /// Multiline strings ignore escape sequences
+          $._multiline_string_end,
+        ),
       ),
-      seq(
-        $._simple_multiline_string_start,
-        /// Multiline strings ignore escape sequences
-        $._multiline_string_end,
-      ),
-    ),
 
     _semicolon: $ => choice(";", $._automatic_semicolon),
 
