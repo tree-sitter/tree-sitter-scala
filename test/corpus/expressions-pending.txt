@@ -1,0 +1,43 @@
+================================================================================
+Trailing coma after for comprehension in lambda parameter of a function
+:skip
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/449
+object Foo:
+  def foo(f: Option[Int] => Option[Int]): Option[Int] = f(None)
+
+  foo(o =>
+    for {
+      a <- o
+    } yield a,
+  )
+
+--------------------------------------------------------------------------------
+
+================================================================================
+Lambda expression with semicolon
+:skip
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/389
+TypeTreeWithDeferredRefCheck() { () => val tp = qual.tpe; val sym = tp.typeSymbolDirect
+  1
+}
+
+val l1 = { () => val x = 1; 2 }
+
+--------------------------------------------------------------------------------
+
+================================================================================
+infix_expression across multiple lines
+:skip
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/141
+def foo: Boolean =
+  x
+  || a.b(c)
+
+--------------------------------------------------------------------------------
+
