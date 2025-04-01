@@ -43,6 +43,10 @@ Then adjust as necessary. Note that depending on your change you may also have
 to touch the `/src/scanner.c` file if you need more advanced features like
 look-ahead.
 
+## Pending Tests
+
+In `./test/corpus`, there are several files named `*-pending.txt`. These contain tests labeled with `:skip`, meaning they are not currently run. Each test includes examples of valid Scala syntax that `tree-sitter-scala` is known to fail to parse. If you’d like to contribute to `tree-sitter-scala`, a good place to start is by trying to fix one of these tests.
+
 ## Syntax highlighting
 
 Right now the most common use-case for syntax highlight using tree-sitter is
