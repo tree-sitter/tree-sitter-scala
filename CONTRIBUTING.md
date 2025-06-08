@@ -114,3 +114,12 @@ tree-sitter parse <path/to/your/file.scala>
 ```
 
 Then the tree will be printed out for you to copy.
+
+## Release
+
+1. Update `version` in `tree-sitte.json`
+2. Update `version` in `package.json`, then run `npm install`
+3. Update `VERSION` in `CMakeLists.txt`
+4. Update `VERSION` in `Makefile`
+5. Update `version` in `Cargo.toml`, then run `cargo build`
+6. Update `version` in `pyproject.toml`
