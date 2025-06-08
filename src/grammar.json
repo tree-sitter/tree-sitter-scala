@@ -75,14 +75,6 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "package_clause"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "package_object"
-        },
-        {
-          "type": "SYMBOL",
           "name": "_definition"
         },
         {
@@ -157,6 +149,14 @@
         {
           "type": "SYMBOL",
           "name": "function_declaration"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "package_clause"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "package_object"
         }
       ]
     },

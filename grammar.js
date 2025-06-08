@@ -125,11 +125,7 @@ module.exports = grammar({
       ),
 
     _top_level_definition: $ =>
-      choice(
-        $._definition,
-        $._end_marker,
-        $.expression,
-      ),
+      choice($._definition, $._end_marker, $.expression),
 
     _definition: $ =>
       choice(
