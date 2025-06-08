@@ -40,6 +40,14 @@
         "named": true
       },
       {
+        "type": "package_clause",
+        "named": true
+      },
+      {
+        "type": "package_object",
+        "named": true
+      },
+      {
         "type": "trait_definition",
         "named": true
       },
@@ -1649,14 +1657,6 @@
         },
         {
           "type": "expression",
-          "named": true
-        },
-        {
-          "type": "package_clause",
-          "named": true
-        },
-        {
-          "type": "package_object",
           "named": true
         }
       ]
