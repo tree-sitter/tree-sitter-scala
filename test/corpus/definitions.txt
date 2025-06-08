@@ -141,6 +141,11 @@ package a.b
 package c {
   object A
 }
+package d {
+  package e {
+    object B
+  }
+}
 
 --------------------------------------------------------------------------------
 
@@ -154,7 +159,17 @@ package c {
       (identifier))
     (template_body
       (object_definition
-        (identifier)))))
+        (identifier))))
+  (package_clause
+    (package_identifier
+      (identifier))
+    (template_body
+      (package_clause
+        (package_identifier
+          (identifier))
+        (template_body
+          (object_definition
+            (identifier)))))))
 
 ================================================================================
 Package with comma
@@ -210,6 +225,12 @@ package object d extends A {
   val hello: String = "there"
 }
 
+package object p1 {
+  package object p2 {
+    val a = 1
+  }
+}
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -221,7 +242,16 @@ package object d extends A {
       (val_definition
         (identifier)
         (type_identifier)
-        (string)))))
+        (string))))
+  (package_object
+    (identifier)
+    (template_body
+      (package_object
+        (identifier)
+        (template_body
+          (val_definition
+            (identifier)
+            (integer_literal)))))))
 
 ================================================================================
 Imports
