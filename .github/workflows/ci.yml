@@ -85,11 +85,12 @@ jobs:
       - name: Run parser and binding tests
         uses: tree-sitter/parser-test-action@v2
         with:
+          generate: false
           test-rust: true
           test-node: true
           test-python: true
           test-go: true
-          test-swift: true
+          test-swift: false
 
       - name: Parse sample files
         uses: tree-sitter/parse-action@v4

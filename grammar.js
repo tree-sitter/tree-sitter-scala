@@ -126,8 +126,6 @@ module.exports = grammar({
 
     _top_level_definition: $ =>
       choice(
-        $.package_clause,
-        $.package_object,
         $._definition,
         $._end_marker,
         $.expression,
@@ -150,6 +148,8 @@ module.exports = grammar({
         $.type_definition,
         $.function_definition,
         $.function_declaration,
+        $.package_clause,
+        $.package_object,
       ),
 
     enum_definition: $ =>
