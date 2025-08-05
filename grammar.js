@@ -708,6 +708,7 @@ module.exports = grammar({
               $.infix_modifier,
               $.into_modifier,
               $.open_modifier,
+              $.tracked_modifier,
               $.transparent_modifier,
             ),
           ),
@@ -725,6 +726,7 @@ module.exports = grammar({
     infix_modifier: $ => prec("mod", "infix"),
     into_modifier: $ => prec("mod", "into"),
     open_modifier: $ => prec("mod", "open"),
+    tracked_modifier: $ => prec("mod", "tracked"),
     transparent_modifier: $ => prec("mod", "transparent"),
 
     /**
@@ -1500,7 +1502,7 @@ module.exports = grammar({
     _soft_identifier: $ =>
       prec(
         "soft_id",
-        choice("infix", "inline", "into", "opaque", "open", "transparent", "end"),
+        choice("infix", "inline", "opaque", "open", "tracked", "transparent", "end"),
       ),
 
     /**
