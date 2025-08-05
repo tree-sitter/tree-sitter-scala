@@ -749,3 +749,18 @@ type B = "foo" | "bar" & "buz"
       (operator_identifier)
       (literal_type
         (string)))))
+
+================================================================================
+Applied Constructor Types (Scala 3)
+================================================================================
+
+val c: C(42)
+
+--------------------------------------------------------------------------------
+(compilation_unit
+  (val_declaration
+    (identifier)
+    (applied_constructor_type
+      (type_identifier)
+      (arguments
+        (integer_literal)))))
