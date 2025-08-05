@@ -1912,3 +1912,22 @@ export printUnit.Test as _
     (as_renamed_identifier
       (identifier)
       (wildcard))))
+
+================================================================================
+'into' soft modifier (Scala 3)
+================================================================================
+
+into trait Modifier:
+  val into: Int
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (modifiers
+      (into_modifier))
+    (identifier)
+    (template_body
+      (val_declaration
+        (identifier)
+        (type_identifier)))))
