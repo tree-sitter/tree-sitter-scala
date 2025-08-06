@@ -9,7 +9,6 @@ const PREC = {
   case: 3,
   stable_id: 4,
   unit: 4,
-  ascription: 4,
   postfix: 5,
   colon_call: 5,
   infix: 6,
@@ -883,9 +882,13 @@ module.exports = grammar({
           $.singleton_type,
           $.stable_type_identifier,
           $._type_identifier,
+          $.applied_constructor_type,
           $.wildcard,
         ),
       ),
+
+    applied_constructor_type: $ =>
+      seq($._type_identifier, $.arguments),
 
     compound_type: $ =>
       choice(
@@ -1368,8 +1371,7 @@ module.exports = grammar({
      * PostfixExpr [Ascription]
      */
     ascription_expression: $ =>
-      prec.dynamic(
-        PREC.ascription,
+      prec.left(
         seq(
           $._postfix_expression_choice,
           ":",
