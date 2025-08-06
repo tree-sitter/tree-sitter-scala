@@ -1931,3 +1931,27 @@ into trait Modifier:
       (val_declaration
         (identifier)
         (type_identifier)))))
+
+================================================================================
+'tracked' soft modifier (Scala 3)
+================================================================================
+
+class F(tracked val x: C):
+  tracked val tracked: Int
+
+--------------------------------------------------------------------------------
+(compilation_unit
+  (class_definition
+    (identifier)
+    (class_parameters
+      (class_parameter
+        (modifiers
+          (tracked_modifier))
+        (identifier)
+        (type_identifier)))
+    (template_body
+      (val_declaration
+        (modifiers
+          (tracked_modifier))
+        (identifier)
+        (type_identifier)))))
