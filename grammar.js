@@ -889,8 +889,7 @@ module.exports = grammar({
         ),
       ),
 
-    applied_constructor_type: $ =>
-      seq($._type_identifier, $.arguments),
+    applied_constructor_type: $ => seq($._type_identifier, $.arguments),
 
     compound_type: $ =>
       choice(
@@ -1502,7 +1501,15 @@ module.exports = grammar({
     _soft_identifier: $ =>
       prec(
         "soft_id",
-        choice("infix", "inline", "opaque", "open", "tracked", "transparent", "end"),
+        choice(
+          "infix",
+          "inline",
+          "opaque",
+          "open",
+          "tracked",
+          "transparent",
+          "end",
+        ),
       ),
 
     /**

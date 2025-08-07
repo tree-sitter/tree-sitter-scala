@@ -3182,7 +3182,15 @@
               },
               {
                 "type": "SYMBOL",
+                "name": "into_modifier"
+              },
+              {
+                "type": "SYMBOL",
                 "name": "open_modifier"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "tracked_modifier"
               },
               {
                 "type": "SYMBOL",
@@ -3260,12 +3268,28 @@
         "value": "infix"
       }
     },
+    "into_modifier": {
+      "type": "PREC",
+      "value": "mod",
+      "content": {
+        "type": "STRING",
+        "value": "into"
+      }
+    },
     "open_modifier": {
       "type": "PREC",
       "value": "mod",
       "content": {
         "type": "STRING",
         "value": "open"
+      }
+    },
+    "tracked_modifier": {
+      "type": "PREC",
+      "value": "mod",
+      "content": {
+        "type": "STRING",
+        "value": "tracked"
       }
     },
     "transparent_modifier": {
@@ -4185,10 +4209,27 @@
           },
           {
             "type": "SYMBOL",
+            "name": "applied_constructor_type"
+          },
+          {
+            "type": "SYMBOL",
             "name": "wildcard"
           }
         ]
       }
+    },
+    "applied_constructor_type": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_type_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "arguments"
+        }
+      ]
     },
     "compound_type": {
       "type": "CHOICE",
@@ -6475,8 +6516,8 @@
       ]
     },
     "ascription_expression": {
-      "type": "PREC_DYNAMIC",
-      "value": 4,
+      "type": "PREC_LEFT",
+      "value": 0,
       "content": {
         "type": "SEQ",
         "members": [
@@ -7047,6 +7088,10 @@
           {
             "type": "STRING",
             "value": "open"
+          },
+          {
+            "type": "STRING",
+            "value": "tracked"
           },
           {
             "type": "STRING",
