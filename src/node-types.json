@@ -375,6 +375,10 @@
           "named": true
         },
         {
+          "type": "applied_constructor_type",
+          "named": true
+        },
+        {
           "type": "generic_type",
           "named": true
         },
@@ -428,6 +432,10 @@
         "required": true,
         "types": [
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "generic_type",
             "named": true
           },
@@ -461,6 +469,25 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "applied_constructor_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "arguments",
+          "named": true
+        },
+        {
+          "type": "type_identifier",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -568,6 +595,10 @@
         },
         {
           "type": "annotation",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -867,6 +898,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -1477,6 +1512,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -1675,6 +1714,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "generic_type",
             "named": true
           },
@@ -1714,6 +1757,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -1786,6 +1833,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -2279,6 +2330,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "arguments",
             "named": true
           },
@@ -2714,6 +2769,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -2850,6 +2909,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -2947,6 +3010,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -3058,6 +3125,10 @@
         "required": true,
         "types": [
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "generic_type",
             "named": true
           },
@@ -3113,6 +3184,10 @@
       "types": [
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -3263,6 +3338,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "arguments",
             "named": true
           },
@@ -3356,6 +3435,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -3978,6 +4061,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -4043,6 +4130,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -4119,6 +4210,10 @@
       "types": [
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -4233,6 +4328,11 @@
     }
   },
   {
+    "type": "into_modifier",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "lambda_expression",
     "named": true,
     "fields": {
@@ -4302,6 +4402,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -4409,6 +4513,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -4631,6 +4739,10 @@
           "named": true
         },
         {
+          "type": "applied_constructor_type",
+          "named": true
+        },
+        {
           "type": "compound_type",
           "named": true
         },
@@ -4702,7 +4814,15 @@
           "named": true
         },
         {
+          "type": "into_modifier",
+          "named": true
+        },
+        {
           "type": "open_modifier",
+          "named": true
+        },
+        {
+          "type": "tracked_modifier",
           "named": true
         },
         {
@@ -4736,6 +4856,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -4865,6 +4989,10 @@
       "types": [
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -5161,6 +5289,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -5259,6 +5391,10 @@
           "named": true
         },
         {
+          "type": "applied_constructor_type",
+          "named": true
+        },
+        {
           "type": "compound_type",
           "named": true
         },
@@ -5339,6 +5475,10 @@
       "types": [
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -5648,6 +5788,10 @@
         "required": true,
         "types": [
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "generic_type",
             "named": true
           },
@@ -5697,6 +5841,10 @@
         },
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -5814,6 +5962,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -5902,6 +6054,10 @@
       "types": [
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -6042,6 +6198,10 @@
         },
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -6234,6 +6394,11 @@
     }
   },
   {
+    "type": "tracked_modifier",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "trait_definition",
     "named": true,
     "fields": {
@@ -6407,6 +6572,10 @@
           "named": true
         },
         {
+          "type": "applied_constructor_type",
+          "named": true
+        },
+        {
           "type": "compound_type",
           "named": true
         },
@@ -6479,6 +6648,10 @@
       "types": [
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -6565,6 +6738,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -6632,6 +6809,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -6703,6 +6884,10 @@
       "types": [
         {
           "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
           "named": true
         },
         {
@@ -6806,6 +6991,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -6966,6 +7155,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -7159,6 +7352,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -7237,6 +7434,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -7349,6 +7550,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -7450,6 +7655,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -7575,6 +7784,10 @@
             "named": true
           },
           {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "compound_type",
             "named": true
           },
@@ -7676,6 +7889,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -7784,6 +8001,10 @@
         "types": [
           {
             "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
             "named": true
           },
           {
@@ -8161,6 +8382,10 @@
     "named": true
   },
   {
+    "type": "into",
+    "named": false
+  },
+  {
     "type": "lazy",
     "named": false
   },
@@ -8230,6 +8455,10 @@
   },
   {
     "type": "throw",
+    "named": false
+  },
+  {
+    "type": "tracked",
     "named": false
   },
   {
