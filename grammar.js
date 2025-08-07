@@ -15,6 +15,7 @@ const PREC = {
   constructor_app: 7,
   prefix: 7,
   compound: 7,
+  then: 7,
   call: 8,
   field: 8,
   macro: 10,
@@ -1203,17 +1204,19 @@ module.exports = grammar({
         ),
       ),
 
-    // NOTE(susliko): _if_condition and its magic dynamic precedence were introduced as a fix to
-    // https://github.com/tree-sitter/tree-sitter-scala/issues/263 and
-    // https://github.com/tree-sitter/tree-sitter-scala/issues/342
-    // Neither do I understand why this works, nor have I found a better solution
     _if_condition: $ =>
-      prec.dynamic(
-        4,
+      prec.right(
+        PREC.then,
         choice(
           $.parenthesized_expression,
-          seq($._indentable_expression, "then"),
-        ),
+          $._then_condition,
+        )
+      ),
+
+    _then_condition: $ =>
+      prec.right(
+        PREC.then,
+        seq($._indentable_expression, "then"),
       ),
 
     /*
