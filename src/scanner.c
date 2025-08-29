@@ -63,6 +63,7 @@ typedef struct {
   int16_t last_newline_count;
   int16_t last_column;
   char current_quote_char;
+  int16_t current_delimiter_length;
 } Scanner;
 
 void *tree_sitter_scala_external_scanner_create() {
@@ -71,6 +72,7 @@ void *tree_sitter_scala_external_scanner_create() {
   scanner->last_indentation_size = -1;
   scanner->last_column = -1;
   scanner->current_quote_char = '"';
+  scanner->current_delimiter_length = 0;
   return scanner;
 }
 
@@ -83,7 +85,7 @@ void tree_sitter_scala_external_scanner_destroy(void *payload) {
 unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *scanner = (Scanner*)payload;
 
-  if ((scanner->indents.size + 3) * sizeof(int16_t) + sizeof(char) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+  if ((scanner->indents.size + 4) * sizeof(int16_t) + sizeof(char) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
 
@@ -96,6 +98,8 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->current_quote_char, sizeof(char));
   size += sizeof(char);
+  memcpy(buffer + size, &scanner->current_delimiter_length, sizeof(int16_t));
+  size += sizeof(int16_t);
 
   for (unsigned i = 0; i < scanner->indents.size; i++) {
     memcpy(buffer + size, &scanner->indents.contents[i], sizeof(int16_t));
@@ -113,6 +117,7 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   scanner->last_column = -1;
   scanner->last_newline_count = 0;
   scanner->current_quote_char = '"';
+  scanner->current_delimiter_length = 0;
 
   if (length == 0) {
     return;
@@ -129,6 +134,10 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   if (size < length) {
     scanner->current_quote_char = buffer[size];
     size += sizeof(char);
+  }
+  if (size < length) {
+    scanner->current_delimiter_length = *(int16_t *)&buffer[size];
+    size += sizeof(int16_t);
   }
 
   while (size < length) {
@@ -153,8 +162,8 @@ typedef enum {
   STRING_MODE_RAW
 } StringMode;
 
-static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode string_mode, char quote_char) {
-  LOG("scan_string_content(%d, %d, %c)\n", is_multiline, string_mode, lexer->lookahead);
+static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode string_mode, char quote_char, int16_t delimiter_length) {
+  LOG("scan_string_content(%d, %d, %c, %d)\n", is_multiline, string_mode, lexer->lookahead, delimiter_length);
   unsigned closing_quote_count = 0;
   for (;;) {
     if (lexer->lookahead == quote_char) {
@@ -165,7 +174,7 @@ static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode st
         lexer->mark_end(lexer);
         return true;
       }
-      if (closing_quote_count >= 3 && lexer->lookahead != quote_char) {
+      if (closing_quote_count >= delimiter_length && lexer->lookahead != quote_char) {
         lexer->result_symbol = MULTILINE_STRING_END;
         lexer->mark_end(lexer);
         return true;
@@ -480,32 +489,38 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       advance(lexer);
       if (lexer->lookahead == quote_char) {
         advance(lexer);
+        // Double quotes only support exactly 3 quotes for multiline
+        scanner->current_delimiter_length = 3;
         lexer->result_symbol = SIMPLE_MULTILINE_STRING_START;
         lexer->mark_end(lexer);
         return true;
       }
     }
 
+    // Single-line string
+    scanner->current_delimiter_length = 1;
     lexer->result_symbol = SIMPLE_STRING_START;
     return true;
   }
 
   if (valid_symbols[SIMPLE_STRING_START] && lexer->lookahead == '\'') {
-    // Check if this is a triple-single-quoted string (''')
-    // We need to peek ahead without consuming characters
-    advance(lexer);
-    if (lexer->lookahead == '\'') {
+    // Check if this is an extended single-quoted string (''' or more)
+    int16_t quote_count = 0;
+    while (lexer->lookahead == '\'') {
+      quote_count++;
       advance(lexer);
-      if (lexer->lookahead == '\'') {
-        // This is a triple-single-quoted string
-        scanner->current_quote_char = '\'';
-        advance(lexer);
-        lexer->result_symbol = SIMPLE_MULTILINE_STRING_START;
-        lexer->mark_end(lexer);
-        return true;
-      }
     }
-    // Not a triple-single-quoted string, reset and let character literal parser handle it
+    
+    if (quote_count >= 3) {
+      // This is a multi-line single-quoted string with extended delimiters
+      scanner->current_quote_char = '\'';
+      scanner->current_delimiter_length = quote_count;
+      lexer->result_symbol = SIMPLE_MULTILINE_STRING_START;
+      lexer->mark_end(lexer);
+      return true;
+    }
+    
+    // Not an extended delimiter string, let character literal parser handle it
     return false;
   }
 
@@ -518,22 +533,27 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       if (lexer->lookahead == 'w') {
         advance(lexer);
         if (lexer->lookahead == '"') {
-          scanner->current_quote_char = lexer->lookahead;
+          scanner->current_quote_char = '"';
+          scanner->current_delimiter_length = 1;
           lexer->mark_end(lexer);
           lexer->result_symbol = RAW_STRING_START;
           return true;
         }
         if (lexer->lookahead == '\'') {
-          // Check if this is raw''' by advancing and checking
-          advance(lexer);
-          if (lexer->lookahead == '\'') {
+          // Count consecutive single quotes for extended delimiters
+          int16_t quote_count = 0;
+          while (lexer->lookahead == '\'') {
+            quote_count++;
             advance(lexer);
-            if (lexer->lookahead == '\'') {
-              scanner->current_quote_char = '\'';
-              lexer->mark_end(lexer);
-              lexer->result_symbol = RAW_STRING_START;
-              return true;
-            }
+          }
+          
+          if (quote_count >= 3) {
+            // Single quotes support extended delimiters
+            scanner->current_quote_char = '\'';
+            scanner->current_delimiter_length = quote_count;
+            lexer->mark_end(lexer);
+            lexer->result_symbol = RAW_STRING_START;
+            return true;
           }
         }
       }
@@ -541,23 +561,23 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   }
 
   if (valid_symbols[SIMPLE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_SIMPLE, scanner->current_quote_char);
+    return scan_string_content(lexer, false, STRING_MODE_SIMPLE, scanner->current_quote_char, scanner->current_delimiter_length);
   }
 
   if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_INTERPOLATED, scanner->current_quote_char);
+    return scan_string_content(lexer, false, STRING_MODE_INTERPOLATED, scanner->current_quote_char, scanner->current_delimiter_length);
   }
 
   if (valid_symbols[RAW_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_RAW, scanner->current_quote_char);
+    return scan_string_content(lexer, false, STRING_MODE_RAW, scanner->current_quote_char, scanner->current_delimiter_length);
   }
 
   if (valid_symbols[RAW_STRING_MULTILINE_MIDDLE]) {
-    return scan_string_content(lexer, true, STRING_MODE_RAW, scanner->current_quote_char);
+    return scan_string_content(lexer, true, STRING_MODE_RAW, scanner->current_quote_char, scanner->current_delimiter_length);
   }  
 
   if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, true, STRING_MODE_INTERPOLATED, scanner->current_quote_char);
+    return scan_string_content(lexer, true, STRING_MODE_INTERPOLATED, scanner->current_quote_char, scanner->current_delimiter_length);
   }
 
   // We still need to handle the simple multiline string case, but there is
@@ -567,7 +587,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   // `RAW_STRING_MULTILINE_MIDDLE` check, so that we can be sure we are in a 
   // simple multiline string context.
   if (valid_symbols[MULTILINE_STRING_END]) {
-    return scan_string_content(lexer, true, STRING_MODE_SIMPLE, scanner->current_quote_char);
+    return scan_string_content(lexer, true, STRING_MODE_SIMPLE, scanner->current_quote_char, scanner->current_delimiter_length);
   }
 
   return false;

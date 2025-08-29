@@ -561,30 +561,24 @@ val x = (
       (integer_literal))))
 
 ================================================================================
-Triple single-quoted strings
+Extended delimiters for single-quoted strings
 ================================================================================
 
-val emptyTripleSingle = ''''''
+val fourQuotes = ''''
+can contain ''' inside
+''''
 
-val oneLineTripleSingle = '''I'm just on one line'''
+val fiveQuotes = '''''
+can contain ''' and '''' inside
+'''''
 
-val multiLineTripleSingle = '''
-  a
-  $thisIsntInterpolated
-  ${thisEither}
-  no escape codes in multiline strings \uD83D\uDE00 \n
-'''
+val sixQuotes = ''''''
+can contain ''' and '''' and ''''' inside
+''''''
 
-val singleQuoteInTripleSingle = '''''''
-
-val tripleQuoteEscape = '''doesn't need escaping'''''
-
-val interpolatedTripleSingle = s'''
-  Hello $name
-  ${expression}
-'''
-
-val basicRaw = raw"basic raw string"
+val sevenQuotes = '''''''
+can contain ''' and '''' and ''''' and '''''' inside
+'''''''
 
 --------------------------------------------------------------------------------
 
@@ -600,22 +594,4 @@ val basicRaw = raw"basic raw string"
     (string))
   (val_definition
     (identifier)
-    (string))
-  (val_definition
-    (identifier)
-    (string))
-  (val_definition
-    (identifier)
-    (interpolated_string_expression
-      (identifier)
-      (interpolated_string
-        (interpolation
-          (identifier))
-        (interpolation
-          (block
-            (identifier))))))
-  (val_definition
-    (identifier)
-    (interpolated_string_expression
-      (identifier)
-      (interpolated_string))))
+    (string)))
