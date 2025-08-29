@@ -384,7 +384,6 @@ val raw = s"Foo $$ ${bar}"
           (block
             (identifier)))))))
 
-
 ================================================================================
 Integer literals
 ================================================================================
@@ -585,10 +584,7 @@ val interpolatedTripleSingle = s'''
   ${expression}
 '''
 
-val rawTripleSingle = raw'''
-  No interpolation here: $name
-  \n doesn't become newline
-'''
+val basicRaw = raw"basic raw string"
 
 --------------------------------------------------------------------------------
 

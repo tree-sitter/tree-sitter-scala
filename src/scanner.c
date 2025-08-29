@@ -492,22 +492,20 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
 
   if (valid_symbols[SIMPLE_STRING_START] && lexer->lookahead == '\'') {
     // Check if this is a triple-single-quoted string (''')
-    TSLexer lookahead = *lexer;
-    advance(&lookahead);
-    if (lookahead.lookahead == '\'') {
-      advance(&lookahead);
-      if (lookahead.lookahead == '\'') {
+    // We need to peek ahead without consuming characters
+    advance(lexer);
+    if (lexer->lookahead == '\'') {
+      advance(lexer);
+      if (lexer->lookahead == '\'') {
         // This is a triple-single-quoted string
         scanner->current_quote_char = '\'';
-        advance(lexer);
-        advance(lexer);
         advance(lexer);
         lexer->result_symbol = SIMPLE_MULTILINE_STRING_START;
         lexer->mark_end(lexer);
         return true;
       }
     }
-    // Not a triple-single-quoted string, let character literal parser handle it
+    // Not a triple-single-quoted string, reset and let character literal parser handle it
     return false;
   }
 
@@ -526,12 +524,11 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
           return true;
         }
         if (lexer->lookahead == '\'') {
-          // Check if this is raw'''
-          TSLexer lookahead = *lexer;
-          advance(&lookahead);
-          if (lookahead.lookahead == '\'') {
-            advance(&lookahead);
-            if (lookahead.lookahead == '\'') {
+          // Check if this is raw''' by advancing and checking
+          advance(lexer);
+          if (lexer->lookahead == '\'') {
+            advance(lexer);
+            if (lexer->lookahead == '\'') {
               scanner->current_quote_char = '\'';
               lexer->mark_end(lexer);
               lexer->result_symbol = RAW_STRING_START;
