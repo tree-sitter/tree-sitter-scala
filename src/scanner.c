@@ -62,6 +62,7 @@ typedef struct {
   int16_t last_indentation_size;
   int16_t last_newline_count;
   int16_t last_column;
+  char current_quote_char;
 } Scanner;
 
 void *tree_sitter_scala_external_scanner_create() {
@@ -69,6 +70,7 @@ void *tree_sitter_scala_external_scanner_create() {
   array_init(&scanner->indents);
   scanner->last_indentation_size = -1;
   scanner->last_column = -1;
+  scanner->current_quote_char = '"';
   return scanner;
 }
 
@@ -81,7 +83,7 @@ void tree_sitter_scala_external_scanner_destroy(void *payload) {
 unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *scanner = (Scanner*)payload;
 
-  if ((scanner->indents.size + 3) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+  if ((scanner->indents.size + 3) * sizeof(int16_t) + sizeof(char) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
 
@@ -92,6 +94,8 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->last_column, sizeof(int16_t));
   size += sizeof(int16_t);
+  memcpy(buffer + size, &scanner->current_quote_char, sizeof(char));
+  size += sizeof(char);
 
   for (unsigned i = 0; i < scanner->indents.size; i++) {
     memcpy(buffer + size, &scanner->indents.contents[i], sizeof(int16_t));
@@ -108,6 +112,7 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   scanner->last_indentation_size = -1;
   scanner->last_column = -1;
   scanner->last_newline_count = 0;
+  scanner->current_quote_char = '"';
 
   if (length == 0) {
     return;
@@ -121,6 +126,10 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   size += sizeof(int16_t);
   scanner->last_column = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
+  if (size < length) {
+    scanner->current_quote_char = buffer[size];
+    size += sizeof(char);
+  }
 
   while (size < length) {
     array_push(&scanner->indents, *(int16_t *)&buffer[size]);
@@ -144,11 +153,11 @@ typedef enum {
   STRING_MODE_RAW
 } StringMode;
 
-static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode string_mode) {
+static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode string_mode, char quote_char) {
   LOG("scan_string_content(%d, %d, %c)\n", is_multiline, string_mode, lexer->lookahead);
   unsigned closing_quote_count = 0;
   for (;;) {
-    if (lexer->lookahead == '"') {
+    if (lexer->lookahead == quote_char) {
       advance(lexer);
       closing_quote_count++;
       if (!is_multiline) {
@@ -156,7 +165,7 @@ static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode st
         lexer->mark_end(lexer);
         return true;
       }
-      if (closing_quote_count >= 3 && lexer->lookahead != '"') {
+      if (closing_quote_count >= 3 && lexer->lookahead != quote_char) {
         lexer->result_symbol = MULTILINE_STRING_END;
         lexer->mark_end(lexer);
         return true;
@@ -183,9 +192,9 @@ static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode st
           advance(lexer);
           // In single-line raw strings, `\"` is not translated to `"`, but it also does
           // not close the string. Likewise, `\\` is not translated to `\`, but it does
-          // stop the second `\` from stopping a double-quote from closing the string.
+          // stop the second `\` from stopping a quote from closing the string.
           if (!is_multiline && string_mode == STRING_MODE_RAW && 
-            (lexer->lookahead == '"' || lexer->lookahead == '\\')) {
+            (lexer->lookahead == quote_char || lexer->lookahead == '\\')) {
             advance(lexer);
           }
         } else {
@@ -462,12 +471,14 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   }
 
   if (valid_symbols[SIMPLE_STRING_START] && lexer->lookahead == '"') {
+    char quote_char = lexer->lookahead;
+    scanner->current_quote_char = quote_char;
     advance(lexer);
     lexer->mark_end(lexer);
 
-    if (lexer->lookahead == '"') {
+    if (lexer->lookahead == quote_char) {
       advance(lexer);
-      if (lexer->lookahead == '"') {
+      if (lexer->lookahead == quote_char) {
         advance(lexer);
         lexer->result_symbol = SIMPLE_MULTILINE_STRING_START;
         lexer->mark_end(lexer);
@@ -479,8 +490,29 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     return true;
   }
 
+  if (valid_symbols[SIMPLE_STRING_START] && lexer->lookahead == '\'') {
+    // Check if this is a triple-single-quoted string (''')
+    TSLexer lookahead = *lexer;
+    advance(&lookahead);
+    if (lookahead.lookahead == '\'') {
+      advance(&lookahead);
+      if (lookahead.lookahead == '\'') {
+        // This is a triple-single-quoted string
+        scanner->current_quote_char = '\'';
+        advance(lexer);
+        advance(lexer);
+        advance(lexer);
+        lexer->result_symbol = SIMPLE_MULTILINE_STRING_START;
+        lexer->mark_end(lexer);
+        return true;
+      }
+    }
+    // Not a triple-single-quoted string, let character literal parser handle it
+    return false;
+  }
+
   // We need two tokens of lookahead to determine if we are parsing a raw string,
-  // the `raw` and the `"`, which is why we need to do it in the external scanner.
+  // the `raw` and the quote, which is why we need to do it in the external scanner.
   if (valid_symbols[RAW_STRING_START] && lexer->lookahead == 'r') {
     advance(lexer);
     if (lexer->lookahead == 'a') {
@@ -488,32 +520,47 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       if (lexer->lookahead == 'w') {
         advance(lexer);
         if (lexer->lookahead == '"') {
+          scanner->current_quote_char = lexer->lookahead;
           lexer->mark_end(lexer);
           lexer->result_symbol = RAW_STRING_START;
           return true;
+        }
+        if (lexer->lookahead == '\'') {
+          // Check if this is raw'''
+          TSLexer lookahead = *lexer;
+          advance(&lookahead);
+          if (lookahead.lookahead == '\'') {
+            advance(&lookahead);
+            if (lookahead.lookahead == '\'') {
+              scanner->current_quote_char = '\'';
+              lexer->mark_end(lexer);
+              lexer->result_symbol = RAW_STRING_START;
+              return true;
+            }
+          }
         }
       }
     }
   }
 
   if (valid_symbols[SIMPLE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_SIMPLE);
+    return scan_string_content(lexer, false, STRING_MODE_SIMPLE, scanner->current_quote_char);
   }
 
   if (valid_symbols[INTERPOLATED_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_INTERPOLATED);
+    return scan_string_content(lexer, false, STRING_MODE_INTERPOLATED, scanner->current_quote_char);
   }
 
   if (valid_symbols[RAW_STRING_MIDDLE]) {
-    return scan_string_content(lexer, false, STRING_MODE_RAW);
+    return scan_string_content(lexer, false, STRING_MODE_RAW, scanner->current_quote_char);
   }
 
   if (valid_symbols[RAW_STRING_MULTILINE_MIDDLE]) {
-    return scan_string_content(lexer, true, STRING_MODE_RAW);
+    return scan_string_content(lexer, true, STRING_MODE_RAW, scanner->current_quote_char);
   }  
 
   if (valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE]) {
-    return scan_string_content(lexer, true, STRING_MODE_INTERPOLATED);
+    return scan_string_content(lexer, true, STRING_MODE_INTERPOLATED, scanner->current_quote_char);
   }
 
   // We still need to handle the simple multiline string case, but there is
@@ -523,7 +570,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   // `RAW_STRING_MULTILINE_MIDDLE` check, so that we can be sure we are in a 
   // simple multiline string context.
   if (valid_symbols[MULTILINE_STRING_END]) {
-    return scan_string_content(lexer, true, STRING_MODE_SIMPLE);
+    return scan_string_content(lexer, true, STRING_MODE_SIMPLE, scanner->current_quote_char);
   }
 
   return false;

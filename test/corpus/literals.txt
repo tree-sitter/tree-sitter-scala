@@ -560,3 +560,66 @@ val x = (
       (integer_literal)
       (integer_literal)
       (integer_literal))))
+
+================================================================================
+Triple single-quoted strings
+================================================================================
+
+val emptyTripleSingle = ''''''
+
+val oneLineTripleSingle = '''I'm just on one line'''
+
+val multiLineTripleSingle = '''
+  a
+  $thisIsntInterpolated
+  ${thisEither}
+  no escape codes in multiline strings \uD83D\uDE00 \n
+'''
+
+val singleQuoteInTripleSingle = '''''''
+
+val tripleQuoteEscape = '''doesn't need escaping'''''
+
+val interpolatedTripleSingle = s'''
+  Hello $name
+  ${expression}
+'''
+
+val rawTripleSingle = raw'''
+  No interpolation here: $name
+  \n doesn't become newline
+'''
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string
+        (interpolation
+          (identifier))
+        (interpolation
+          (block
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (interpolated_string_expression
+      (identifier)
+      (interpolated_string))))

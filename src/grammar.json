@@ -7721,6 +7721,47 @@
               "name": "_multiline_string_end"
             }
           ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "IMMEDIATE_TOKEN",
+              "content": {
+                "type": "STRING",
+                "value": "'''"
+              }
+            },
+            {
+              "type": "REPEAT",
+              "content": {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_interpolated_multiline_string_middle"
+                  },
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "_dollar_escape"
+                      },
+                      {
+                        "type": "SYMBOL",
+                        "name": "interpolation"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_multiline_string_end"
+            }
+          ]
         }
       ]
     },
@@ -8785,5 +8826,6 @@
     "expression",
     "_definition",
     "_pattern"
-  ]
+  ],
+  "reserved": {}
 }

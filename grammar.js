@@ -1680,6 +1680,17 @@ module.exports = grammar({
           ),
           $._multiline_string_end,
         ),
+        seq(
+          token.immediate("'''"),
+          repeat(
+            seq(
+              $._interpolated_multiline_string_middle,
+              // Multiline strings ignore escape sequences
+              choice($._dollar_escape, $.interpolation),
+            ),
+          ),
+          $._multiline_string_end,
+        ),
       ),
 
     // We need to handle single-line raw strings separately from interpolated strings,
