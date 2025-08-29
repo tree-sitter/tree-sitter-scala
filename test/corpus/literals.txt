@@ -384,7 +384,6 @@ val raw = s"Foo $$ ${bar}"
           (block
             (identifier)))))))
 
-
 ================================================================================
 Integer literals
 ================================================================================
@@ -560,3 +559,39 @@ val x = (
       (integer_literal)
       (integer_literal)
       (integer_literal))))
+
+================================================================================
+Extended delimiters for single-quoted strings
+================================================================================
+
+val fourQuotes = ''''
+can contain ''' inside
+''''
+
+val fiveQuotes = '''''
+can contain ''' and '''' inside
+'''''
+
+val sixQuotes = ''''''
+can contain ''' and '''' and ''''' inside
+''''''
+
+val sevenQuotes = '''''''
+can contain ''' and '''' and ''''' and '''''' inside
+'''''''
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string))
+  (val_definition
+    (identifier)
+    (string)))
