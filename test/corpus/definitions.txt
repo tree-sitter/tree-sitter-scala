@@ -1545,6 +1545,72 @@ object A:
               (arguments))))))
 
 ================================================================================
+Given with type parameters (Scala 3.4+ syntax)
+================================================================================
+
+object A:
+  given [T: Foo as bar] => Serde[T] = x
+
+  given [T <: M] => (config: K) => Serde[T] = x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    name: (identifier)
+    body: (template_body
+      (given_definition
+        (type_parameters
+          name: (identifier)
+          bound: (context_bound
+            type: (type_identifier)
+            name: (identifier)))
+        return_type: (generic_type
+          type: (type_identifier)
+          type_arguments: (type_arguments
+            (type_identifier)))
+        body: (identifier))
+      (given_definition
+        (type_parameters
+          name: (identifier)
+          bound: (upper_bound
+            type: (type_identifier)))
+        (given_conditional
+          (parameter
+            name: (identifier)
+            type: (type_identifier)))
+        return_type: (generic_type
+          type: (type_identifier)
+          type_arguments: (type_arguments
+            (type_identifier)))
+        body: (identifier)))))
+
+================================================================================
+Class with using type-only parameters (Scala 3 syntax)
+================================================================================
+
+class Foo(x: Int)(using A, B, Runtime[Any]) extends Bar
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    name: (identifier)
+    class_parameters: (class_parameters
+      (class_parameter
+        name: (identifier)
+        type: (type_identifier)))
+    class_parameters: (class_parameters
+      (type_identifier)
+      (type_identifier)
+      (generic_type
+        type: (type_identifier)
+        type_arguments: (type_arguments
+          (type_identifier))))
+    extend: (extends_clause
+      type: (type_identifier))))
+
+================================================================================
 Top-level Definitions (Scala 3 syntax)
 ================================================================================
 
