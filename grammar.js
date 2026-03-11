@@ -111,6 +111,7 @@ module.exports = grammar({
     [$.lambda_expression, $.self_type, $._type_identifier],
     [$.lambda_expression, $._type_identifier],
     [$.binding, $._simple_expression, $._type_identifier],
+    [$.class_parameter, $._type_identifier],
   ],
 
   word: $ => $._alpha_identifier,
@@ -757,8 +758,16 @@ module.exports = grammar({
         seq(
           optional($._automatic_semicolon),
           "(",
-          optional(choice("implicit", "using")),
-          trailingCommaSep($.class_parameter),
+          choice(
+            seq(
+              "using",
+              choice(
+                trailingCommaSep1($.class_parameter),
+                trailingCommaSep1($._param_type),
+              ),
+            ),
+            seq(optional("implicit"), trailingCommaSep($.class_parameter)),
+          ),
           ")",
         ),
       ),

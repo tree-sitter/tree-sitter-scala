@@ -1545,6 +1545,31 @@ object A:
               (arguments))))))
 
 ================================================================================
+Class with using type-only parameters (Scala 3 syntax)
+================================================================================
+
+class Foo(x: Int)(using A, B, Runtime[Any]) extends Bar
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    name: (identifier)
+    class_parameters: (class_parameters
+      (class_parameter
+        name: (identifier)
+        type: (type_identifier)))
+    class_parameters: (class_parameters
+      (type_identifier)
+      (type_identifier)
+      (generic_type
+        type: (type_identifier)
+        type_arguments: (type_arguments
+          (type_identifier))))
+    extend: (extends_clause
+      type: (type_identifier))))
+
+================================================================================
 Top-level Definitions (Scala 3 syntax)
 ================================================================================
 
