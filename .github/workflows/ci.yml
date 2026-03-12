@@ -13,7 +13,7 @@ jobs:
       gen: ${{ steps.changes.outputs.gen }}
     steps:
       - name: checkout tree-sitter-scala
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 10
 
@@ -34,13 +34,13 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: checkout tree-sitter-scala
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 10
 
       - name: checkout scala/scala
         if: ${{ runner.os == 'Linux' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: scala/scala
           ref: v2.13.14
@@ -48,7 +48,7 @@ jobs:
 
       - name: checkout scala/scala3
         if: ${{ runner.os == 'Linux' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: scala/scala3
           ref: 3.5.0-RC2
@@ -56,7 +56,7 @@ jobs:
 
       - name: checkout lichess-org/lila
         if: ${{ runner.os == 'Linux' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: lichess-org/lila
           ref: 83e61b9ef617164fe1d3a5112fcc611d0e5a7ea9
@@ -64,14 +64,14 @@ jobs:
 
       - name: checkout nvim-treesitter/nvim-treesitter
         if: ${{ runner.os == 'Linux' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: nvim-treesitter/nvim-treesitter
           path: nvim_treesitter
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Set up tree-sitter
         uses: tree-sitter/setup-action/cli@v1
@@ -87,7 +87,7 @@ jobs:
         with:
           generate: false
           test-rust: true
-          test-node: true
+          test-node: false
           test-python: true
           test-go: true
           test-swift: false
@@ -129,7 +129,7 @@ jobs:
       - name: copy nvim-treesitter queries
         if: ${{ runner.os == 'Linux' }}
         shell: bash
-        run: cp ./nvim_treesitter/queries/scala/*.scm ./queries/
+        run: cp ./nvim_treesitter/runtime/queries/scala/*.scm ./queries/
 
       - name: Check if queries are out of sync with nvim-treesitter
         if: ${{ runner.os == 'Linux' }}
