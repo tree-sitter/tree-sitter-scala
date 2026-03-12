@@ -1,7 +1,7 @@
 [package]
 name = "tree-sitter-scala"
 description = "Scala grammar for tree-sitter"
-version = "0.24.1"
+version = "0.25.0"
 authors = ["Max Brunsfeld <maxbrunsfeld@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -24,4 +24,4 @@ tree-sitter-language = "0.1"
 cc = "1.1"
 
 [dev-dependencies]
-tree-sitter = "0.24"
+tree-sitter = "0.25"
