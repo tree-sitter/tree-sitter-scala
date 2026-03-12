@@ -634,10 +634,8 @@ module.exports = grammar({
 
     _given_sig: $ => seq($._given_conditional, "=>"),
 
-    _given_conditional: $ => choice(
-      alias($.parameters, $.given_conditional),
-      $.type_parameters,
-    ),
+    _given_conditional: $ =>
+      choice(alias($.parameters, $.given_conditional), $.type_parameters),
 
     _given_constructor: $ =>
       prec.right(

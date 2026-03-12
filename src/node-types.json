@@ -1610,7 +1610,83 @@
       "required": false,
       "types": [
         {
+          "type": "annotated_type",
+          "named": true
+        },
+        {
+          "type": "applied_constructor_type",
+          "named": true
+        },
+        {
           "type": "class_parameter",
+          "named": true
+        },
+        {
+          "type": "compound_type",
+          "named": true
+        },
+        {
+          "type": "function_type",
+          "named": true
+        },
+        {
+          "type": "generic_type",
+          "named": true
+        },
+        {
+          "type": "infix_type",
+          "named": true
+        },
+        {
+          "type": "lazy_parameter_type",
+          "named": true
+        },
+        {
+          "type": "literal_type",
+          "named": true
+        },
+        {
+          "type": "match_type",
+          "named": true
+        },
+        {
+          "type": "named_tuple_type",
+          "named": true
+        },
+        {
+          "type": "projected_type",
+          "named": true
+        },
+        {
+          "type": "repeated_parameter_type",
+          "named": true
+        },
+        {
+          "type": "singleton_type",
+          "named": true
+        },
+        {
+          "type": "stable_type_identifier",
+          "named": true
+        },
+        {
+          "type": "structural_type",
+          "named": true
+        },
+        {
+          "type": "tuple_type",
+          "named": true
+        },
+        {
+          "type": "type_identifier",
+          "named": true
+        },
+        {
+          "type": "type_lambda",
+          "named": true
+        },
+        {
+          "type": "wildcard",
           "named": true
         }
       ]
@@ -3420,6 +3496,10 @@
         },
         {
           "type": "modifiers",
+          "named": true
+        },
+        {
+          "type": "type_parameters",
           "named": true
         }
       ]
