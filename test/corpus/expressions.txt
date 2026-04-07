@@ -997,6 +997,33 @@ class C {
             (identifier)))))))
 
 ================================================================================
+Multi-line infix expressions with leading infix operators
+================================================================================
+
+def foo =
+  a
+  || b
+  && c
+  `in` d
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (infix_expression
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (identifier))
+          (operator_identifier)
+          (identifier))
+        (identifier)
+        (identifier)))))
+
+================================================================================
 Prefix expressions
 ================================================================================
 
