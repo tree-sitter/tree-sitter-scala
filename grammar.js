@@ -861,9 +861,6 @@ module.exports = grammar({
     indented_cases: $ =>
       prec.left(seq($._indent, repeat1($.case_clause), $._outdent)),
 
-    _indented_type_cases: $ =>
-      prec.left(seq($._indent, repeat1($.type_case_clause), $._outdent)),
-
     // ---------------------------------------------------------------
     // Types
 
@@ -993,7 +990,16 @@ module.exports = grammar({
       ),
 
     match_type: $ =>
-      prec.left(seq($._infix_type_choice, "match", $._indented_type_cases)),
+      prec.left(
+        seq(
+          $._infix_type_choice,
+          "match",
+          choice(
+            seq($._indent, repeat1($.type_case_clause), $._outdent),
+            seq("{", repeat1($.type_case_clause), "}"),
+          ),
+        ),
+      ),
 
     type_case_clause: $ =>
       prec.left(
