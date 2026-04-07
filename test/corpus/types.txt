@@ -214,6 +214,7 @@ Match types (Scala 3 syntax)
 type Elem[A] = A match
   case String   => Char
   case Array[a] => a
+  case t *: rest => t
 
 --------------------------------------------------------------------------------
 
@@ -232,6 +233,48 @@ type Elem[A] = A match
           (type_identifier)
           (type_arguments
             (type_identifier)))
+        (type_identifier))
+      (type_case_clause
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_identifier))
+        (type_identifier)))))
+
+================================================================================
+Match types with braced syntax (Scala 3 syntax)
+================================================================================
+
+type Elem[A] = A match {
+  case String => Char
+  case Array[a] => a
+  case t *: rest => t
+}
+
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (type_definition
+    (type_identifier)
+    (type_parameters
+      (identifier))
+    (match_type
+      (type_identifier)
+      (type_case_clause
+        (type_identifier)
+        (type_identifier))
+      (type_case_clause
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))
+        (type_identifier))
+      (type_case_clause
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_identifier))
         (type_identifier)))))
 
 ================================================================================
