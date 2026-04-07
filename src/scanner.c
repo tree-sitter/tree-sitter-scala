@@ -134,6 +134,21 @@ static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 
+// Used to detect leading infix operators on continuation lines.
+// See: https://www.scala-lang.org/api/3.x/docs/changed-features/operators.html
+static bool is_op_char(int32_t c) {
+  switch (c) {
+    case '!': case '#': case '%': case '&':
+    case '*': case '+': case '-': case '<': 
+    case '=': case '>': case '?': case '@':
+    case '\\': case '^': case '|': case '~': 
+    case ':':
+      return true;
+    default:
+      return false;
+  }
+}
+
 // We enumerate 3 types of strings that we need to handle differently:
 // 1. Simple strings, `"..."` or `"""..."""`
 // 2. Interpolated strings, `s"..."` or `f"..."` or `foo"..."` or foo"""...""".
@@ -449,6 +464,32 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
 
     if (newline_count > 1) {
       return true;
+    }
+
+    // Don't insert automatic semicolon before leading infix operators:
+    // - symbolic, e.g. || or &&
+    // - back-ticked, e.g. `in`
+    if (is_op_char(lexer->lookahead) || lexer->lookahead == '`') {
+      if (is_op_char(lexer->lookahead)) {
+        advance(lexer);
+        while (is_op_char(lexer->lookahead)) {
+          advance(lexer);
+        }
+        if (iswspace(lexer->lookahead)) {
+          return false;
+        }
+      } else if (lexer->lookahead == '`') {
+        advance(lexer);
+        while (lexer->lookahead != '`' && !lexer->eof(lexer)) {
+          advance(lexer);
+        }
+        if (lexer->lookahead == '`') {
+          advance(lexer);
+          if (iswspace(lexer->lookahead)) {
+            return false;
+          }
+        }
+      }
     }
 
     return true;
