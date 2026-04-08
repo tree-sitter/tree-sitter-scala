@@ -855,11 +855,19 @@ module.exports = grammar({
     indented_block: $ =>
       prec.left(
         PREC.control,
-        seq($._indent, $._block, $._outdent, optional($._end_marker)),
+        seq(
+          $._indent,
+          $._block,
+          optional(","),
+          $._outdent,
+          optional($._end_marker),
+        ),
       ),
 
     indented_cases: $ =>
-      prec.left(seq($._indent, repeat1($.case_clause), $._outdent)),
+      prec.left(
+        seq($._indent, repeat1($.case_clause), optional(","), $._outdent),
+      ),
 
     // ---------------------------------------------------------------
     // Types

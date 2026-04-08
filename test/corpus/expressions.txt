@@ -1592,6 +1592,36 @@ def f(): Unit =
           (unit))))))
 
 ================================================================================
+Indented blocks with trailing comma (Scala 3)
+================================================================================
+
+object Foo:
+  foo(o =>
+    for {
+      a <- o
+    } yield a,
+  )
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (call_expression
+        (identifier)
+        (arguments
+          (lambda_expression
+            (identifier)
+            (indented_block
+              (for_expression
+                (enumerators
+                  (enumerator
+                    (identifier)
+                    (identifier)))
+                (identifier)))))))))
+
+================================================================================
 Chained expressions
 ================================================================================
 
