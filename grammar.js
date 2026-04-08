@@ -80,10 +80,8 @@ module.exports = grammar({
     // In case of: 'extension'  _indent  '{'  'case'  operator_identifier  'if'  operator_identifier  •  '=>'  …
     // we treat `operator_identifier` as `simple_expression`
     [$._simple_expression, $.lambda_expression],
-    // 'package'  package_identifier  '{'  operator_identifier  •  ':'  …
-    [$.self_type, $._simple_expression],
-    // 'package'  package_identifier  '{'  operator_identifier  '=>'  •  'enum'  …
-    [$.self_type, $.lambda_expression],
+    // operator_identifier  •  ':'  …
+    [$._simple_expression, $._single_lambda_param],
     // 'class'  _class_constructor  •  _automatic_semicolon  …
     [$._class_definition],
     // 'class'  operator_identifier  •  _automatic_semicolon  …
@@ -106,10 +104,19 @@ module.exports = grammar({
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
     [$.block, $._braced_template_body1],
-    [$._simple_expression, $.self_type, $._type_identifier],
     [$._simple_expression, $._type_identifier],
-    [$.lambda_expression, $.self_type, $._type_identifier],
-    [$.lambda_expression, $._type_identifier],
+    // '['  operator_identifier  ':'  '{'  operator_identifier  •  '=>'  …
+    [$._single_lambda_param, $.self_type, $._type_identifier],
+    // '['  operator_identifier  ':'  '{'  operator_identifier  •  '?=>'  …
+    [$._single_lambda_param, $._type_identifier],
+    // '('  operator_identifier  •  ':'  …
+    [$._simple_expression, $._single_lambda_param, $.binding],
+    // 'given'  '{'  operator_identifier  •  ':'  …
+    [$._simple_expression, $._single_lambda_param, $.self_type],
+    // '['  operator_identifier  ':'  '{'  operator_identifier  •  ':'  …
+    [$._simple_expression, $._single_lambda_param, $.self_type, $._type_identifier],
+    // 'given'  '{'  operator_identifier  ':'  _type  •  '=>'  …
+    [$._single_lambda_param, $._self_type_ascription],
     [$.binding, $._simple_expression, $._type_identifier],
     [$.class_parameter, $._type_identifier],
   ],
@@ -1183,6 +1190,11 @@ module.exports = grammar({
         $.call_expression,
       ),
 
+    _single_lambda_param: $ =>
+      prec.right(
+        seq(optional("implicit"), $._identifier, optional(seq(":", $._type)))
+      ),
+
     lambda_expression: $ =>
       prec.right(
         seq(
@@ -1191,8 +1203,8 @@ module.exports = grammar({
             "parameters",
             choice(
               $.bindings,
-              seq(optional("implicit"), $._identifier),
               $.wildcard,
+              $._single_lambda_param,
             ),
           ),
           choice("=>", "?=>"),

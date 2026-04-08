@@ -1144,6 +1144,7 @@ object O {
    if (c) d.e }
   { a => implicit b => b }
   { (_, a) => a }
+  { x: Int => x + 1 }
 }
 
 --------------------------------------------------------------------------------
@@ -1230,7 +1231,15 @@ object O {
               (wildcard))
             (binding
               (identifier)))
-          (identifier))))))
+          (identifier)))
+      (block
+        (lambda_expression
+          (identifier)
+          (type_identifier)
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (integer_literal)))))))
 
 ================================================================================
 Lambda Expression (Scala 3 syntax)
