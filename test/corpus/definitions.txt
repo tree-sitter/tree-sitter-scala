@@ -1075,7 +1075,6 @@ class A:
         (context_bound
           (type_identifier))))))
 
-
 ================================================================================
 Function declarations
 ================================================================================
@@ -1247,7 +1246,7 @@ class A:
           (parameter
             (identifier)
             (type_identifier)))
-            (type_identifier))
+        (type_identifier))
       (function_declaration
         (identifier)
         (type_parameters
@@ -1533,16 +1532,16 @@ object A:
             (generic_type
               (type_identifier)
               (type_arguments
-              (type_identifier))))))
-          (given_definition
-            (given_conditional
-              (parameter
-                (identifier)
-                (type_identifier)))
-            (type_identifier)
-            (call_expression
-              (identifier)
-              (arguments))))))
+                (type_identifier))))))
+      (given_definition
+        (given_conditional
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier)
+        (call_expression
+          (identifier)
+          (arguments))))))
 
 ================================================================================
 Given with type parameters (Scala 3.4+ syntax)
@@ -1696,7 +1695,7 @@ Enums (Scala 3)
 ================================================================================
 
 @A
-enum Hello[Y] extends java.Enumeration derives Codec, Eq {
+private enum Hello[Y] extends java.Enumeration derives Codec, Eq {
   @A("") @B case World, You
   @A case Test[A](bla: Int, yo: String) extends Hello[A]
   case T extends Hello[String](25)
@@ -1708,6 +1707,8 @@ enum Hello[Y] extends java.Enumeration derives Codec, Eq {
   (enum_definition
     (annotation
       (type_identifier))
+    (modifiers
+      (access_modifier))
     (identifier)
     (type_parameters
       (identifier))
@@ -2006,6 +2007,7 @@ class F(tracked val x: C):
   tracked val tracked: Int
 
 --------------------------------------------------------------------------------
+
 (compilation_unit
   (class_definition
     (identifier)
