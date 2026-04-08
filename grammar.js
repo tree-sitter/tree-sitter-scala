@@ -32,6 +32,7 @@ module.exports = grammar({
     $._automatic_semicolon,
     $._indent,
     $._outdent,
+    $._comma_outdent,
     $._simple_string_start,
     $._simple_string_middle,
     $._simple_multiline_string_start,
@@ -855,8 +856,9 @@ module.exports = grammar({
     indented_block: $ =>
       prec.left(
         PREC.control,
-        seq($._indent, $._block, $._outdent, optional($._end_marker)),
+        seq($._indent, $._block, choice($._outdent, $._comma_outdent), optional($._end_marker)),
       ),
+
 
     indented_cases: $ =>
       prec.left(seq($._indent, repeat1($.case_clause), $._outdent)),
