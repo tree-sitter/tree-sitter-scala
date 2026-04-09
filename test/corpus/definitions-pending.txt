@@ -7,11 +7,3 @@ Function without parens
 send_! "!"
 
 --------------------------------------------------------------------------------
-
-================================================================================
-Types of lambda parameters without parenthesis
-:skip
-================================================================================
-
-// https://github.com/tree-sitter/tree-sitter-scala/issues/361
-xs.map { x: Int => x }
