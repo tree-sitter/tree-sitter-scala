@@ -16,6 +16,7 @@ enum TokenType {
   AUTOMATIC_SEMICOLON,
   INDENT,
   OUTDENT,
+  COMMA_OUTDENT,
   SIMPLE_STRING_START,
   SIMPLE_STRING_MIDDLE,
   SIMPLE_MULTILINE_STRING_START,
@@ -39,6 +40,7 @@ const char* token_name[] = {
   "AUTOMATIC_SEMICOLON",
   "INDENT",
   "OUTDENT",
+  "COMMA_OUTDENT",
   "SIMPLE_STRING_START",
   "SIMPLE_STRING_MIDDLE",
   "SIMPLE_MULTILINE_STRING_START",
@@ -287,6 +289,20 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       indentation_size++;
     }
     skip(lexer);
+  }
+
+  // Separate from OUTDENT because the scanner cannot distinguish a comma that
+  // terminates an indented block (e.g. `map: x => f(x),`) from one that is
+  // internal to it (e.g. `case EnumCase1, EnumCase2`). By using a distinct
+  // token, tree-sitter only makes it valid in grammar contexts where comma
+  // termination is expected (colon_argument, _indentable_expression).
+  if (valid_symbols[COMMA_OUTDENT] && lexer->lookahead == ',' && prev != -1) {
+    if (scanner->indents.size > 0) {
+      array_pop(&scanner->indents);
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = COMMA_OUTDENT;
+    return true;
   }
 
   // Before advancing the lexer, check if we can double outdent

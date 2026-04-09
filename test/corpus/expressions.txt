@@ -231,6 +231,61 @@ class C:
             (identifier)))))))
 
 ================================================================================
+Trailing comma after for comprehension in lambda parameter of a function
+================================================================================
+
+foo(o =>
+    for {
+      a <- o
+    } yield a,
+  )
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    function: (identifier)
+    arguments: (arguments
+      (lambda_expression
+        parameters: (identifier)
+        (indented_block
+          (for_expression
+            enumerators: (enumerators
+              (enumerator
+                (identifier)
+                (identifier)))
+            body: (identifier)))))))
+
+================================================================================
+Colon argument followed by comma
+================================================================================
+
+boxTop(
+    back.map: url =>
+      a(b),
+    title,
+)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    (identifier)
+    (arguments
+      (call_expression
+        (field_expression
+          (identifier)
+          (identifier))
+        (colon_argument
+          (identifier)
+          (indented_block
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier))))))
+      (identifier))))
+
+================================================================================
 Generic functions
 ================================================================================
 
