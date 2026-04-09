@@ -158,6 +158,7 @@ module.exports = grammar({
     enum_definition: $ =>
       seq(
         repeat($.annotation),
+        optional($.modifiers),
         "enum",
         $._class_constructor,
         field("extend", optional($.extends_clause)),
