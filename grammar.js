@@ -755,7 +755,7 @@ module.exports = grammar({
         seq(
           "extends",
           field("type", $._constructor_applications),
-          optional($.arguments),
+          repeat($.arguments),
         ),
       ),
 

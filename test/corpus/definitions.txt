@@ -579,6 +579,8 @@ class D(c: String) extends E(c) with F
 
 class MyClass extends Potato() with Tomato
 
+class A extends B(c)(d)(e)
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -637,7 +639,17 @@ class MyClass extends Potato() with Tomato
     (extends_clause
       (type_identifier)
       (arguments)
-      (type_identifier))))
+      (type_identifier)))
+  (class_definition
+    (identifier)
+    (extends_clause
+      (type_identifier)
+      (arguments
+        (identifier))
+      (arguments
+        (identifier))
+      (arguments
+        (identifier)))))
 
 ================================================================================
 Subclass definitions (Scala 3 syntax)
