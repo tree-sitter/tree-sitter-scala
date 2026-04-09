@@ -1200,6 +1200,10 @@ object O {
   { a => implicit b => b }
   { (_, a) => a }
   { x: Int => x + 1 }
+  { () => val x = 1; 2 }
+  { () => val tp = qual.tpe; val sym = tp.typeSymbolDirect
+    1
+  }
 }
 
 --------------------------------------------------------------------------------
@@ -1294,7 +1298,28 @@ object O {
           (infix_expression
             (identifier)
             (operator_identifier)
-            (integer_literal)))))))
+            (integer_literal))))
+      (block
+        (lambda_expression
+          (bindings)
+          (val_definition
+            (identifier)
+            (integer_literal))
+          (integer_literal)))
+      (block
+        (lambda_expression
+          (bindings)
+          (val_definition
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier)))
+          (val_definition
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier)))
+          (integer_literal))))))
 
 ================================================================================
 Lambda Expression (Scala 3 syntax)
