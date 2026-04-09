@@ -115,7 +115,12 @@ module.exports = grammar({
     // 'given'  '{'  operator_identifier  •  ':'  …
     [$._simple_expression, $._single_lambda_param, $.self_type],
     // '['  operator_identifier  ':'  '{'  operator_identifier  •  ':'  …
-    [$._simple_expression, $._single_lambda_param, $.self_type, $._type_identifier],
+    [
+      $._simple_expression,
+      $._single_lambda_param,
+      $.self_type,
+      $._type_identifier,
+    ],
     // 'given'  '{'  operator_identifier  ':'  _type  •  '=>'  …
     [$._single_lambda_param, $._self_type_ascription],
     [$.binding, $._simple_expression, $._type_identifier],
@@ -864,9 +869,13 @@ module.exports = grammar({
     indented_block: $ =>
       prec.left(
         PREC.control,
-        seq($._indent, $._block, choice($._outdent, $._comma_outdent), optional($._end_marker)),
+        seq(
+          $._indent,
+          $._block,
+          choice($._outdent, $._comma_outdent),
+          optional($._end_marker),
+        ),
       ),
-
 
     indented_cases: $ =>
       prec.left(seq($._indent, repeat1($.case_clause), $._outdent)),
@@ -1195,7 +1204,7 @@ module.exports = grammar({
 
     _single_lambda_param: $ =>
       prec.right(
-        seq(optional("implicit"), $._identifier, optional(seq(":", $._type)))
+        seq(optional("implicit"), $._identifier, optional(seq(":", $._type))),
       ),
 
     lambda_expression: $ =>
@@ -1204,11 +1213,7 @@ module.exports = grammar({
           optional(seq(field("type_parameters", $.type_parameters), "=>")),
           field(
             "parameters",
-            choice(
-              $.bindings,
-              $.wildcard,
-              $._single_lambda_param,
-            ),
+            choice($.bindings, $.wildcard, $._single_lambda_param),
           ),
           choice("=>", "?=>"),
           $._indentable_expression,

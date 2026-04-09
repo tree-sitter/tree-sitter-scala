@@ -2297,6 +2297,10 @@
         {
           "type": "annotation",
           "named": true
+        },
+        {
+          "type": "modifiers",
+          "named": true
         }
       ]
     }
@@ -4423,7 +4427,31 @@
         "required": true,
         "types": [
           {
+            "type": ":",
+            "named": false
+          },
+          {
+            "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
             "type": "bindings",
+            "named": true
+          },
+          {
+            "type": "compound_type",
+            "named": true
+          },
+          {
+            "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "generic_type",
             "named": true
           },
           {
@@ -4435,7 +4463,51 @@
             "named": false
           },
           {
+            "type": "infix_type",
+            "named": true
+          },
+          {
+            "type": "literal_type",
+            "named": true
+          },
+          {
+            "type": "match_type",
+            "named": true
+          },
+          {
+            "type": "named_tuple_type",
+            "named": true
+          },
+          {
             "type": "operator_identifier",
+            "named": true
+          },
+          {
+            "type": "projected_type",
+            "named": true
+          },
+          {
+            "type": "singleton_type",
+            "named": true
+          },
+          {
+            "type": "stable_type_identifier",
+            "named": true
+          },
+          {
+            "type": "structural_type",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "type_lambda",
             "named": true
           },
           {

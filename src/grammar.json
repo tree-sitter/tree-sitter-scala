@@ -171,6 +171,18 @@
           }
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "modifiers"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "STRING",
           "value": "enum"
         },
@@ -4141,8 +4153,17 @@
             "name": "_block"
           },
           {
-            "type": "SYMBOL",
-            "name": "_outdent"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "_outdent"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_comma_outdent"
+              }
+            ]
           },
           {
             "type": "CHOICE",
@@ -5769,6 +5790,52 @@
         }
       ]
     },
+    "_single_lambda_param": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "implicit"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_identifier"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": ":"
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "_type"
+                  }
+                ]
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          }
+        ]
+      }
+    },
     "lambda_expression": {
       "type": "PREC_RIGHT",
       "value": 0,
@@ -5811,29 +5878,12 @@
                   "name": "bindings"
                 },
                 {
-                  "type": "SEQ",
-                  "members": [
-                    {
-                      "type": "CHOICE",
-                      "members": [
-                        {
-                          "type": "STRING",
-                          "value": "implicit"
-                        },
-                        {
-                          "type": "BLANK"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "_identifier"
-                    }
-                  ]
+                  "type": "SYMBOL",
+                  "name": "wildcard"
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "wildcard"
+                  "name": "_single_lambda_param"
                 }
               ]
             }
@@ -8704,12 +8754,8 @@
       "lambda_expression"
     ],
     [
-      "self_type",
-      "_simple_expression"
-    ],
-    [
-      "self_type",
-      "lambda_expression"
+      "_simple_expression",
+      "_single_lambda_param"
     ],
     [
       "_class_definition"
@@ -8762,21 +8808,36 @@
     ],
     [
       "_simple_expression",
+      "_type_identifier"
+    ],
+    [
+      "_single_lambda_param",
       "self_type",
+      "_type_identifier"
+    ],
+    [
+      "_single_lambda_param",
       "_type_identifier"
     ],
     [
       "_simple_expression",
-      "_type_identifier"
+      "_single_lambda_param",
+      "binding"
     ],
     [
-      "lambda_expression",
+      "_simple_expression",
+      "_single_lambda_param",
+      "self_type"
+    ],
+    [
+      "_simple_expression",
+      "_single_lambda_param",
       "self_type",
       "_type_identifier"
     ],
     [
-      "lambda_expression",
-      "_type_identifier"
+      "_single_lambda_param",
+      "_self_type_ascription"
     ],
     [
       "binding",
@@ -8832,6 +8893,10 @@
     {
       "type": "SYMBOL",
       "name": "_outdent"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_comma_outdent"
     },
     {
       "type": "SYMBOL",
