@@ -2467,7 +2467,7 @@
       }
     },
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "types": [
         {
@@ -4528,9 +4528,13 @@
       }
     },
     "children": {
-      "multiple": false,
-      "required": true,
+      "multiple": true,
+      "required": false,
       "types": [
+        {
+          "type": "_definition",
+          "named": true
+        },
         {
           "type": "expression",
           "named": true

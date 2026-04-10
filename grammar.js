@@ -866,13 +866,17 @@ module.exports = grammar({
     _indentable_expression: $ =>
       prec.right(choice($.indented_block, $.indented_cases, $.expression)),
 
-    block: $ => seq("{", optional(
-      choice(
-        $._block,
-        alias($._block_lambda_expression, $.lambda_expression)
-      )),
-      "}"
-    ),
+    block: $ =>
+      seq(
+        "{",
+        optional(
+          choice(
+            $._block,
+            alias($._block_lambda_expression, $.lambda_expression),
+          ),
+        ),
+        "}",
+      ),
 
     indented_block: $ =>
       prec.left(
@@ -1229,13 +1233,13 @@ module.exports = grammar({
       ),
 
     /* Special-case lambda expression to handle lambdas in braces (in $.block), e.g.
-    * { (...) => val a = 1; val b = 2
-    *    3
-    * }
-    *
-    * It exists as a separate rule because grammar generation becomes unacceptably slow
-    * if we include $._block right into $.lambda_expression as a viable option for the lambda body.
-    */
+     * { (...) => val a = 1; val b = 2
+     *    3
+     * }
+     *
+     * It exists as a separate rule because grammar generation becomes unacceptably slow
+     * if we include $._block right into $.lambda_expression as a viable option for the lambda body.
+     */
     _block_lambda_expression: $ =>
       prec.right(
         seq(
@@ -1244,7 +1248,7 @@ module.exports = grammar({
             choice($.bindings, $.wildcard, $._single_lambda_param),
           ),
           choice("=>", "?=>"),
-          $._block
+          $._block,
         ),
       ),
 
