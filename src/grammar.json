@@ -6413,8 +6413,8 @@
       }
     },
     "_case_pattern": {
-      "type": "PREC_RIGHT",
-      "value": 10,
+      "type": "PREC_DYNAMIC",
+      "value": 1,
       "content": {
         "type": "SEQ",
         "members": [
