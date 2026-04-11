@@ -485,13 +485,20 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     // Don't insert automatic semicolon before leading infix operators:
     // - symbolic, e.g. || or &&
     // - back-ticked, e.g. `in`
+    // Only suppress if the operator is followed by horizontal whitespace
+    // and then non-newline content on the same line, meaning it has an operand.
     if (is_op_char(lexer->lookahead) || lexer->lookahead == '`') {
       if (is_op_char(lexer->lookahead)) {
         advance(lexer);
         while (is_op_char(lexer->lookahead)) {
           advance(lexer);
         }
-        if (iswspace(lexer->lookahead)) {
+        bool found_space = false;
+        while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+          advance(lexer);
+          found_space = true;
+        }
+        if (found_space && !iswspace(lexer->lookahead) && !lexer->eof(lexer)) {
           return false;
         }
       } else if (lexer->lookahead == '`') {
@@ -501,7 +508,12 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
         }
         if (lexer->lookahead == '`') {
           advance(lexer);
-          if (iswspace(lexer->lookahead)) {
+          bool found_space = false;
+          while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+            advance(lexer);
+            found_space = true;
+          }
+          if (found_space && !iswspace(lexer->lookahead) && !lexer->eof(lexer)) {
             return false;
           }
         }
