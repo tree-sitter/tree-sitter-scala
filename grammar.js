@@ -1341,10 +1341,10 @@ module.exports = grammar({
         seq("case", $._case_pattern, field("body", optional($._block))),
       ),
 
-    // This is created to capture guard from the right
+    // Dynamic precedence to win over lambda_expression in complex contexts
     _case_pattern: $ =>
-      prec.right(
-        10,
+      prec.dynamic(
+        1,
         seq(field("pattern", $._pattern), optional($.guard), "=>"),
       ),
 

@@ -1955,3 +1955,35 @@ using()
   (call_expression
     (identifier)
     (arguments)))
+
+================================================================================
+Compound expression with instance declaration, pattern matching with guards and if statement
+================================================================================
+
+new Foo {
+  tree match {
+    case Foo if foos contains foo =>
+      if (foo) bar
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (instance_expression
+    (type_identifier)
+    (template_body
+      (match_expression
+        (identifier)
+        (case_block
+          (case_clause
+            (identifier)
+            (guard
+              (infix_expression
+                (identifier)
+                (identifier)
+                (identifier)))
+            (if_expression
+              (parenthesized_expression
+                (identifier))
+              (identifier))))))))
