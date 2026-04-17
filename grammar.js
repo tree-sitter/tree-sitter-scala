@@ -1286,13 +1286,26 @@ module.exports = grammar({
 
     /*
      *   MatchClause       ::=  'match' <<< CaseClauses >>>
+     *
+     *   Handles:
+     *     InfixExpr MatchClause
+     *     ‘inline’ InfixExpr MatchClause
+     *     SimpleExpr ‘.’ MatchClause
      */
     match_expression: $ =>
-      seq(
-        optional($.inline_modifier),
-        field("value", $.expression),
-        "match",
-        field("body", choice($.case_block, $.indented_cases)),
+      choice(
+        seq(
+          optional($.inline_modifier),
+          field("value", $.expression),
+          "match",
+          field("body", choice($.case_block, $.indented_cases)),
+        ),
+        seq(
+          field("value", $._simple_expression),
+          ".",
+          "match",
+          field("body", choice($.case_block, $.indented_cases)),
+        )
       ),
 
     try_expression: $ =>
