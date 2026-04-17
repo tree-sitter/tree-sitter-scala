@@ -237,30 +237,43 @@ module.exports = grammar({
 
     package_object: $ => seq("package", "object", $._object_definition),
 
+
     import_declaration: $ =>
       prec.left(seq("import", sep1(",", $._namespace_expression))),
 
     export_declaration: $ =>
       prec.left(seq("export", sep1(",", $._namespace_expression))),
 
+    /*
+      ImportExpr        ::=  SimpleRef {‘.’ id} ‘.’ ImportSpec
+                          |  SimpleRef ‘as’ id
+      ImportSpec        ::=  NamedSelector
+                          |  WildCardSelector
+                          | ‘{’ ImportSelectors) ‘}’
+      NamedSelector     ::=  id [‘as’ (id | ‘_’)]
+      WildCardSelector  ::=  ‘*’ | ‘given’ [InfixType]
+    */
     _namespace_expression: $ =>
       prec.left(
-        seq(
-          field("path", sep1(".", $._identifier)),
-          optional(
-            seq(
-              ".",
-              choice(
-                $.namespace_wildcard,
-                $.namespace_selectors,
-                // Only allowed in Scala 3
-                // ImportExpr        ::=
-                //    SimpleRef {‘.’ id} ‘.’ ImportSpec |  SimpleRef ‘as’ id
-                $.as_renamed_identifier,
+        choice(
+          seq(
+            field("path", sep1(".", $._identifier)),
+            optional(
+              seq(
+                ".",
+                choice(
+                  $.namespace_wildcard,
+                  $.namespace_selectors,
+                  // Only allowed in Scala 3
+                  // ImportExpr        ::=
+                  //    SimpleRef {‘.’ id} ‘.’ ImportSpec |  SimpleRef ‘as’ id
+                  $.as_renamed_identifier,
+                ),
               ),
             ),
           ),
-        ),
+          $.as_renamed_identifier
+        )
       ),
 
     namespace_wildcard: $ => prec.left(1, choice("*", "_", "given")),

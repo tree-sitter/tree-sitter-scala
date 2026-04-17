@@ -381,6 +381,7 @@ Imports: Rename (Scala 3 Syntax)
 import lang.System.{lineSeparator as EOL}
 import lang.System.lineSeparator as EOL
 import lang.System.lineSeparator as _
+import lineSeparator as ls
 
 --------------------------------------------------------------------------------
 
@@ -403,7 +404,11 @@ import lang.System.lineSeparator as _
     (identifier)
     (as_renamed_identifier
       (identifier)
-      (wildcard))))
+      (wildcard)))
+  (import_declaration
+    (as_renamed_identifier
+      (identifier)
+      (identifier))))
 
 ================================================================================
 Imports: Rename
