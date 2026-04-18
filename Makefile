@@ -4,7 +4,7 @@ endif
 
 LANGUAGE_NAME := tree-sitter-scala
 HOMEPAGE_URL := https://github.com/tree-sitter/tree-sitter-scala
-VERSION := 0.25.0
+VERSION := 0.25.1
 
 # repository
 SRC_DIR := src
