@@ -678,6 +678,10 @@
           "named": true
         },
         {
+          "type": "match_expression",
+          "named": true
+        },
+        {
           "type": "match_type",
           "named": true
         },
@@ -818,6 +822,10 @@
           },
           {
             "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "match_expression",
             "named": true
           },
           {
@@ -1111,6 +1119,10 @@
           },
           {
             "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "match_expression",
             "named": true
           },
           {
@@ -2349,7 +2361,7 @@
     "fields": {
       "path": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": ".",
@@ -2645,6 +2657,10 @@
           },
           {
             "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "match_expression",
             "named": true
           },
           {
@@ -3652,6 +3668,10 @@
             "named": true
           },
           {
+            "type": "match_expression",
+            "named": true
+          },
+          {
             "type": "null_literal",
             "named": true
           },
@@ -3799,7 +3819,7 @@
     "fields": {
       "path": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": ".",
@@ -3930,6 +3950,10 @@
             "named": true
           },
           {
+            "type": "match_expression",
+            "named": true
+          },
+          {
             "type": "null_literal",
             "named": true
           },
@@ -4043,6 +4067,10 @@
           },
           {
             "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "match_expression",
             "named": true
           },
           {
@@ -4799,6 +4827,10 @@
         },
         {
           "type": "interpolated_string_expression",
+          "named": true
+        },
+        {
+          "type": "match_expression",
           "named": true
         },
         {
@@ -5790,6 +5822,10 @@
           "named": true
         },
         {
+          "type": "match_expression",
+          "named": true
+        },
+        {
           "type": "null_literal",
           "named": true
         },
@@ -5886,6 +5922,10 @@
         },
         {
           "type": "interpolated_string_expression",
+          "named": true
+        },
+        {
+          "type": "match_expression",
           "named": true
         },
         {

@@ -238,7 +238,6 @@ module.exports = grammar({
 
     package_object: $ => seq("package", "object", $._object_definition),
 
-
     import_declaration: $ =>
       prec.left(seq("import", sep1(",", $._namespace_expression))),
 
@@ -273,8 +272,8 @@ module.exports = grammar({
               ),
             ),
           ),
-          $.as_renamed_identifier
-        )
+          $.as_renamed_identifier,
+        ),
       ),
 
     namespace_wildcard: $ => prec.left(1, choice("*", "_", "given")),
@@ -1315,7 +1314,7 @@ module.exports = grammar({
           "match",
           field("body", choice($.case_block, $.indented_cases)),
         ),
-        $._dot_match_expression
+        $._dot_match_expression,
       ),
 
     _dot_match_expression: $ =>

@@ -670,21 +670,44 @@
       "type": "PREC_LEFT",
       "value": 0,
       "content": {
-        "type": "SEQ",
+        "type": "CHOICE",
         "members": [
           {
-            "type": "FIELD",
-            "name": "path",
-            "content": {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "_identifier"
-                },
-                {
-                  "type": "REPEAT",
-                  "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "path",
+                "content": {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_identifier"
+                    },
+                    {
+                      "type": "REPEAT",
+                      "content": {
+                        "type": "SEQ",
+                        "members": [
+                          {
+                            "type": "STRING",
+                            "value": "."
+                          },
+                          {
+                            "type": "SYMBOL",
+                            "name": "_identifier"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
                     "type": "SEQ",
                     "members": [
                       {
@@ -692,48 +715,34 @@
                         "value": "."
                       },
                       {
-                        "type": "SYMBOL",
-                        "name": "_identifier"
+                        "type": "CHOICE",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "namespace_wildcard"
+                          },
+                          {
+                            "type": "SYMBOL",
+                            "name": "namespace_selectors"
+                          },
+                          {
+                            "type": "SYMBOL",
+                            "name": "as_renamed_identifier"
+                          }
+                        ]
                       }
                     ]
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SEQ",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": "."
                   },
                   {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "SYMBOL",
-                        "name": "namespace_wildcard"
-                      },
-                      {
-                        "type": "SYMBOL",
-                        "name": "namespace_selectors"
-                      },
-                      {
-                        "type": "SYMBOL",
-                        "name": "as_renamed_identifier"
-                      }
-                    ]
+                    "type": "BLANK"
                   }
                 ]
-              },
-              {
-                "type": "BLANK"
               }
             ]
+          },
+          {
+            "type": "SYMBOL",
+            "name": "as_renamed_identifier"
           }
         ]
       }
@@ -5796,6 +5805,15 @@
         {
           "type": "SYMBOL",
           "name": "call_expression"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_dot_match_expression"
+          },
+          "named": true,
+          "value": "match_expression"
         }
       ]
     },
@@ -6065,31 +6083,81 @@
       }
     },
     "match_expression": {
-      "type": "SEQ",
+      "type": "CHOICE",
       "members": [
         {
-          "type": "CHOICE",
+          "type": "SEQ",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "inline_modifier"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "inline_modifier"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
             },
             {
-              "type": "BLANK"
+              "type": "FIELD",
+              "name": "value",
+              "content": {
+                "type": "SYMBOL",
+                "name": "expression"
+              }
+            },
+            {
+              "type": "STRING",
+              "value": "match"
+            },
+            {
+              "type": "FIELD",
+              "name": "body",
+              "content": {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "case_block"
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "indented_cases"
+                  }
+                ]
+              }
             }
           ]
         },
+        {
+          "type": "SYMBOL",
+          "name": "_dot_match_expression"
+        }
+      ]
+    },
+    "_dot_match_expression": {
+      "type": "SEQ",
+      "members": [
         {
           "type": "FIELD",
           "name": "value",
           "content": {
             "type": "SYMBOL",
-            "name": "expression"
+            "name": "_simple_expression"
           }
         },
         {
           "type": "STRING",
-          "value": "match"
+          "value": "."
+        },
+        {
+          "type": "IMMEDIATE_TOKEN",
+          "content": {
+            "type": "STRING",
+            "value": "match"
+          }
         },
         {
           "type": "FIELD",
@@ -8907,6 +8975,10 @@
     [
       "_block",
       "_indentable_expression"
+    ],
+    [
+      "match_expression",
+      "_simple_expression"
     ]
   ],
   "precedences": [
