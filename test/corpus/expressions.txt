@@ -899,9 +899,12 @@ Dot-syntax for match expressions (Scala 3 syntax)
 ================================================================================
 
 def matchTest(x: Int): String =
-  x.match
-    case 0 =>
-    case 1 => 
+  x
+   .find()
+   .match
+     case 0 =>
+     case 1 => 
+   .run()
 
 --------------------------------------------------------------------------------
 
@@ -914,13 +917,21 @@ def matchTest(x: Int): String =
         (type_identifier)))
     (type_identifier)
     (indented_block
-      (match_expression
-        (identifier)
-        (indented_cases
-          (case_clause
-            (integer_literal))
-          (case_clause
-            (integer_literal)))))))
+      (call_expression
+        (field_expression
+          (match_expression
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments))
+            (indented_cases
+              (case_clause
+                (integer_literal))
+              (case_clause
+                (integer_literal))))
+          (identifier))
+        (arguments)))))
 
 ================================================================================
 Field expressions
