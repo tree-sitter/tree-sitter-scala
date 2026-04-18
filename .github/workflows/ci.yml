@@ -74,10 +74,10 @@ jobs:
           node-version: 24
 
       - name: Set up tree-sitter
-        uses: tree-sitter/setup-action/cli@v1
+        uses: tree-sitter/setup-action/cli@v2
         with:
           # Change also on sync.yaml
-          tree-sitter-ref: v0.25.10
+          tree-sitter-ref: v0.26.8
 
       - name: Generate parser from scratch and test it
         shell: bash
