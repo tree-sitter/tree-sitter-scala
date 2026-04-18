@@ -127,6 +127,7 @@ module.exports = grammar({
     [$.class_parameter, $._type_identifier],
     // '{'  _single_lambda_param  '=>'  expression  •  '}'  …
     [$._block, $._indentable_expression],
+    [$.match_expression, $._simple_expression],
   ],
 
   word: $ => $._alpha_identifier,
@@ -1225,6 +1226,7 @@ module.exports = grammar({
         $.field_expression,
         $.generic_function,
         $.call_expression,
+        alias($._dot_match_expression, $.match_expression),
       ),
 
     _single_lambda_param: $ =>
@@ -1313,12 +1315,15 @@ module.exports = grammar({
           "match",
           field("body", choice($.case_block, $.indented_cases)),
         ),
-        seq(
-          field("value", $._simple_expression),
-          ".",
-          "match",
-          field("body", choice($.case_block, $.indented_cases)),
-        )
+        $._dot_match_expression
+      ),
+
+    _dot_match_expression: $ =>
+      seq(
+        field("value", $._simple_expression),
+        ".",
+        token.immediate("match"),
+        field("body", choice($.case_block, $.indented_cases)),
       ),
 
     try_expression: $ =>
