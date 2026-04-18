@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-scala",
-  "version": "0.25.1",
+  "version": "0.26.0",
   "description": "Scala grammar for tree-sitter",
   "repository": "https://github.com/tree-sitter/tree-sitter-scala",
   "license": "MIT",
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "prebuildify": "^6.0.1",
-    "tree-sitter-cli": "^0.25.10",
+    "tree-sitter-cli": "^0.26.8",
     "prettier": "3.3.3"
   },
   "peerDependencies": {

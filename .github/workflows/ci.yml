@@ -77,7 +77,7 @@ jobs:
         uses: tree-sitter/setup-action/cli@v1
         with:
           # Change also on sync.yaml
-          tree-sitter-ref: v0.25.10
+          tree-sitter-ref: v0.26.8
 
       - name: Generate parser from scratch and test it
         shell: bash
