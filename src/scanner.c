@@ -247,6 +247,43 @@ static bool scan_word(TSLexer *lexer, const char* const word) {
   return !iswalnum(lexer->lookahead);
 }
 
+// Returns true if the lookahead starts a leading infix operator — a symbolic
+// operator or back-ticked identifier followed by whitespace and then a
+// non-whitespace operand on the same line. Such a line is a continuation of
+// the previous expression, so neither AUTOMATIC_SEMICOLON nor OUTDENT should
+// fire ahead of it. Advances the lexer; the caller must not rely on position.
+static bool is_leading_infix_continuation(TSLexer *lexer) {
+  if (is_op_char(lexer->lookahead)) {
+    advance(lexer);
+    while (is_op_char(lexer->lookahead)) {
+      advance(lexer);
+    }
+    bool found_space = false;
+    while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+      advance(lexer);
+      found_space = true;
+    }
+    return found_space && !iswspace(lexer->lookahead) && !lexer->eof(lexer);
+  }
+  if (lexer->lookahead == '`') {
+    advance(lexer);
+    while (lexer->lookahead != '`' && !lexer->eof(lexer)) {
+      advance(lexer);
+    }
+    if (lexer->lookahead != '`') {
+      return false;
+    }
+    advance(lexer);
+    bool found_space = false;
+    while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+      advance(lexer);
+      found_space = true;
+    }
+    return found_space && !iswspace(lexer->lookahead) && !lexer->eof(lexer);
+  }
+  return false;
+}
+
 static inline void debug_indents(Scanner *scanner) {
   LOG("    indents(%d): ", scanner->indents.size);
   for (unsigned i = 0; i < scanner->indents.size; i++) {
@@ -363,12 +400,6 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       )
       )
   ) {
-    if (scanner->indents.size > 0) {
-      array_pop(&scanner->indents);
-    }
-    LOG("    pop\n");
-    LOG("    OUTDENT\n");
-    lexer->result_symbol = OUTDENT;
     lexer->mark_end(lexer);
     if (detect_comment_start(lexer)) {
       return false;
@@ -380,6 +411,17 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     } else {
       scanner->last_column = (int16_t)lexer->get_column(lexer);
     }
+    // Don't close the indented block when the next line starts with a leading
+    // infix operator: that operator continues the previous expression.
+    if (lexer->lookahead != 0 && is_leading_infix_continuation(lexer)) {
+      return false;
+    }
+    if (scanner->indents.size > 0) {
+      array_pop(&scanner->indents);
+    }
+    LOG("    pop\n");
+    LOG("    OUTDENT\n");
+    lexer->result_symbol = OUTDENT;
     return true;
   }
 
@@ -487,37 +529,8 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     // - back-ticked, e.g. `in`
     // Only suppress if the operator is followed by horizontal whitespace
     // and then non-newline content on the same line, meaning it has an operand.
-    if (is_op_char(lexer->lookahead) || lexer->lookahead == '`') {
-      if (is_op_char(lexer->lookahead)) {
-        advance(lexer);
-        while (is_op_char(lexer->lookahead)) {
-          advance(lexer);
-        }
-        bool found_space = false;
-        while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
-          advance(lexer);
-          found_space = true;
-        }
-        if (found_space && !iswspace(lexer->lookahead) && !lexer->eof(lexer)) {
-          return false;
-        }
-      } else if (lexer->lookahead == '`') {
-        advance(lexer);
-        while (lexer->lookahead != '`' && !lexer->eof(lexer)) {
-          advance(lexer);
-        }
-        if (lexer->lookahead == '`') {
-          advance(lexer);
-          bool found_space = false;
-          while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
-            advance(lexer);
-            found_space = true;
-          }
-          if (found_space && !iswspace(lexer->lookahead) && !lexer->eof(lexer)) {
-            return false;
-          }
-        }
-      }
+    if (is_leading_infix_continuation(lexer)) {
+      return false;
     }
 
     return true;
