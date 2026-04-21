@@ -1792,9 +1792,14 @@ trait A { self =>
 }
 
 class B {
-  self: Something[A] => 
+  self: Something[A] =>
 
   case class Hello(a: Int)
+}
+
+trait C {
+  _: Analyzer with StdAttachments =>
+  def a = 1
 }
 
 --------------------------------------------------------------------------------
@@ -1830,7 +1835,18 @@ class B {
         (class_parameters
           (class_parameter
             (identifier)
-            (type_identifier)))))))
+            (type_identifier))))))
+  (trait_definition
+    (identifier)
+    (template_body
+      (self_type
+        (wildcard)
+        (compound_type
+          (type_identifier)
+          (type_identifier)))
+      (function_definition
+        (identifier)
+        (integer_literal)))))
 
 ================================================================================
 Inline methods and parameters (Scala 3)

@@ -67,6 +67,7 @@ module.exports = grammar({
     ["mod", "soft_id"],
     ["end", "soft_id"],
     ["new", "structural_type"],
+    ["self_type", "lambda"],
   ],
 
   conflicts: $ => [
@@ -128,6 +129,8 @@ module.exports = grammar({
     // '{'  _single_lambda_param  '=>'  expression  •  '}'  …
     [$._block, $._indentable_expression],
     [$.match_expression, $._simple_expression],
+    // _  :  Type  •  '=>'  …
+    [$.self_type, $._simple_expression],
   ],
 
   word: $ => $._alpha_identifier,
@@ -500,7 +503,10 @@ module.exports = grammar({
     self_type: $ =>
       prec.dynamic(
         1,
-        seq($._identifier, optional($._self_type_ascription), "=>"),
+        prec(
+          "self_type",
+          seq(choice($._identifier, $.wildcard), optional($._self_type_ascription), "=>"),
+        )
       ),
 
     _self_type_ascription: $ => seq(":", $._type),
@@ -1235,6 +1241,7 @@ module.exports = grammar({
 
     lambda_expression: $ =>
       prec.right(
+        "lambda",
         seq(
           optional(seq(field("type_parameters", $.type_parameters), "=>")),
           field(
@@ -1256,6 +1263,7 @@ module.exports = grammar({
      */
     _block_lambda_expression: $ =>
       prec.right(
+        "lambda",
         seq(
           field(
             "parameters",
