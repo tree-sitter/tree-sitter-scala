@@ -2027,29 +2027,42 @@
       "type": "PREC_DYNAMIC",
       "value": 1,
       "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_identifier"
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "_self_type_ascription"
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
-          },
-          {
-            "type": "STRING",
-            "value": "=>"
-          }
-        ]
+        "type": "PREC",
+        "value": "self_type",
+        "content": {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_identifier"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "wildcard"
+                }
+              ]
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_self_type_ascription"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "=>"
+            }
+          ]
+        }
       }
     },
     "_self_type_ascription": {
@@ -5865,7 +5878,7 @@
     },
     "lambda_expression": {
       "type": "PREC_RIGHT",
-      "value": 0,
+      "value": "lambda",
       "content": {
         "type": "SEQ",
         "members": [
@@ -5937,7 +5950,7 @@
     },
     "_block_lambda_expression": {
       "type": "PREC_RIGHT",
-      "value": 0,
+      "value": "lambda",
       "content": {
         "type": "SEQ",
         "members": [
@@ -8979,6 +8992,10 @@
     [
       "match_expression",
       "_simple_expression"
+    ],
+    [
+      "self_type",
+      "_simple_expression"
     ]
   ],
   "precedences": [
@@ -9010,6 +9027,16 @@
       {
         "type": "STRING",
         "value": "structural_type"
+      }
+    ],
+    [
+      {
+        "type": "STRING",
+        "value": "self_type"
+      },
+      {
+        "type": "STRING",
+        "value": "lambda"
       }
     ]
   ],

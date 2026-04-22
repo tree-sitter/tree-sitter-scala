@@ -505,8 +505,12 @@ module.exports = grammar({
         1,
         prec(
           "self_type",
-          seq(choice($._identifier, $.wildcard), optional($._self_type_ascription), "=>"),
-        )
+          seq(
+            choice($._identifier, $.wildcard),
+            optional($._self_type_ascription),
+            "=>",
+          ),
+        ),
       ),
 
     _self_type_ascription: $ => seq(":", $._type),
