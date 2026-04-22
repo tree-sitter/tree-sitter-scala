@@ -257,6 +257,31 @@ foo(o =>
             body: (identifier)))))))
 
 ================================================================================
+Leading infix operator at lower indent continues the expression across dedent
+================================================================================
+
+xs.filter(x =>
+     a
+  && b
+)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    function: (field_expression
+      value: (identifier)
+      field: (identifier))
+    arguments: (arguments
+      (lambda_expression
+        parameters: (identifier)
+        (indented_block
+          (infix_expression
+            left: (identifier)
+            operator: (operator_identifier)
+            right: (identifier)))))))
+
+================================================================================
 Colon argument followed by comma
 ================================================================================
 
