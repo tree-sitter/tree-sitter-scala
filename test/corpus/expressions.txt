@@ -1229,7 +1229,6 @@ object O {
   val l = a: List
   val x = 2: Byte
   Nil: List[String]
-  3: _*
   x: @unchecked
 }
 
@@ -1255,10 +1254,6 @@ object O {
           (type_identifier)
           (type_arguments
             (type_identifier))))
-      (ascription_expression
-        (integer_literal)
-        (repeated_parameter_type
-          (wildcard)))
       (ascription_expression
         (identifier)
         (annotation
@@ -2072,3 +2067,38 @@ new Foo {
               (parenthesized_expression
                 (identifier))
               (identifier))))))))
+
+================================================================================
+Vararg expressions
+================================================================================
+
+foo(args*)
+bar(xs: _*)
+foo(a, args*)
+bar(a, xs: _*)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    function: (identifier)
+    arguments: (arguments
+      (vararg
+        (identifier))))
+  (call_expression
+    function: (identifier)
+    arguments: (arguments
+      (vararg
+        (identifier))))
+  (call_expression
+    function: (identifier)
+    arguments: (arguments
+      (identifier)
+      (vararg
+        (identifier))))
+  (call_expression
+    function: (identifier)
+    arguments: (arguments
+      (identifier)
+      (vararg
+        (identifier)))))

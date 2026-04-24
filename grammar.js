@@ -58,6 +58,8 @@ module.exports = grammar({
     $._definition,
     $._param_type,
     $._identifier,
+    $._postfix_expression_choice,
+    $._infix_type_choice,
     $.literal,
   ],
 
@@ -96,6 +98,10 @@ module.exports = grammar({
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
     [$._type, $.compound_type],
+    // 'for'  'given'  _annotated_type  •  '*'  …
+    [$._type, $.infix_type],
+    // _simple_expression  ':'  _annotated_type  •  'match'  …
+    [$._type, $.match_type],
     // 'given'  '('  '['  _type_parameter  •  ','  …
     [$._variant_type_parameter, $.type_lambda],
     // 'given'  '('  operator_identifier  ':'  _type  •  ','  …
@@ -131,6 +137,12 @@ module.exports = grammar({
     [$.match_expression, $._simple_expression],
     // _  :  Type  •  '=>'  …
     [$.self_type, $._simple_expression],
+    // 'for'  null_literal  _asterisk  •  '*'  …
+    [$.repeat_pattern, $.operator_identifier],
+    // _simple_expression  '('  _simple_expression  _asterisk  •  ')'  …
+    [$.vararg, $.operator_identifier],
+    // _simple_expression  '('  expression  •  ','  …
+    [$._exprs_in_parens]
   ],
 
   word: $ => $._alpha_identifier,
@@ -985,7 +997,6 @@ module.exports = grammar({
     // This does not include _simple_type since _annotated_type covers it.
     _infix_type_choice: $ =>
       prec.left(
-        PREC.infix,
         choice(
           $.compound_type,
           $.infix_type,
@@ -996,7 +1007,6 @@ module.exports = grammar({
 
     infix_type: $ =>
       prec.left(
-        PREC.infix,
         seq(
           field("left", $._infix_type_choice),
           field("operator", $._identifier),
@@ -1091,7 +1101,7 @@ module.exports = grammar({
     lazy_parameter_type: $ => seq("=>", field("type", $._type)),
 
     repeated_parameter_type: $ =>
-      prec.left(PREC.postfix, seq(field("type", $._type), "*")),
+      seq(field("type", $._type), $._asterisk),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
@@ -1157,7 +1167,7 @@ module.exports = grammar({
         ),
       ),
 
-    repeat_pattern: $ => prec.right(seq(field("pattern", $._pattern), "*")),
+    repeat_pattern: $ => prec.right(seq(field("pattern", $._pattern), $._asterisk)),
 
     typed_pattern: $ =>
       prec.right(
@@ -1568,8 +1578,23 @@ module.exports = grammar({
     arguments: $ =>
       seq(
         "(",
-        choice(optional($._exprs_in_parens), seq("using", $._exprs_in_parens)),
+        choice(
+          $._vararg_arguments,
+          optional($._exprs_in_parens),
+          seq("using", $._exprs_in_parens)
+        ),
         ")",
+      ),
+
+    _vararg_arguments: $ =>
+      seq(optional(seq($._exprs_in_parens, ",")), $.vararg),
+
+    vararg: $ =>
+      choice(
+        // Scala 3: `args*`
+        seq($._simple_expression, $._asterisk),
+        // Scala 2: `args: _*`
+        seq($._simple_expression, ":", token(seq("_", token.immediate("*")))),
       ),
 
     // ExprsInParens     ::=  ExprInParens {‘,’ ExprInParens}
@@ -1603,9 +1628,7 @@ module.exports = grammar({
      *                       |  ‘`’ { charNoBackQuoteOrNewline | UnicodeEscape | charEscapeSeq
      */
     identifier: $ =>
-      prec.left(
-        choice($._alpha_identifier, $._backquoted_id, $._soft_identifier),
-      ),
+      choice($._alpha_identifier, $._backquoted_id, $._soft_identifier),
 
     // https://docs.scala-lang.org/scala3/reference/soft-modifier.html
     _soft_identifier: $ =>
@@ -1662,31 +1685,41 @@ module.exports = grammar({
 
     wildcard: $ => "_",
 
+    // We have an asterisk as a separte rule to avoid premature choice of 
+    // $.vararg branch over $.operator_identifier.
+    // Otherwise $.operator_identifier that is being declared as regexp 
+    // looses by a lexical precedence to an explicitly defined literal "*".
+    _asterisk: $ => "*",
+
+
     /**
      * Regex patterns created to avoid matching // comments and /* comment starts.
      * This could technically match illegal tokens such as val ?// = 1
      */
     operator_identifier: $ =>
-      token(
-        choice(
-          // opchar minus colon, equal, at
-          // Technically speaking, Sm (Math symbols https://www.compart.com/en/unicode/category/Sm)
-          // should be allowed as a single-character opchar, however, it includes `=`,
-          // so we should to avoid that to prevent bad parsing of `=` as infix term or type.
-          /[\-!#%&*+\/\\<>?\u005e\u007c~\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\p{So}]/,
-          seq(
-            // opchar minus slash
-            /[\-!#%&*+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
-            // opchar*
-            repeat1(/[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/),
-          ),
-          seq(
-            // opchar
-            /[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
-            // opchar minus slash and asterisk
-            /[\-!#%&+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
-            // opchar*
-            repeat(/[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/),
+      choice(
+        $._asterisk,
+        token(
+          choice(
+            // opchar minus colon, equal, at
+            // Technically speaking, Sm (Math symbols https://www.compart.com/en/unicode/category/Sm)
+            // should be allowed as a single-character opchar, however, it includes `=`,
+            // so we should to avoid that to prevent bad parsing of `=` as infix term or type.
+            /[\-!#%&*+\/\\<>?\u005e\u007c~\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\p{So}]/,
+            seq(
+              // opchar minus slash
+              /[\-!#%&*+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
+              // opchar*
+              repeat1(/[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/),
+            ),
+            seq(
+              // opchar
+              /[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
+              // opchar minus slash and asterisk
+              /[\-!#%&+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
+              // opchar*
+              repeat(/[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/),
+            ),
           ),
         ),
       ),
