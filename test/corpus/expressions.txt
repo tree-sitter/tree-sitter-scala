@@ -289,6 +289,8 @@ boxTop(
     back.map: url =>
       a(b),
     title,
+    x match
+      case a => a,
 )
 
 --------------------------------------------------------------------------------
@@ -308,7 +310,13 @@ boxTop(
               (identifier)
               (arguments
                 (identifier))))))
-      (identifier))))
+      (identifier)
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (identifier)
+            (identifier)))))))
 
 ================================================================================
 Generic functions

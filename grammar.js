@@ -925,7 +925,7 @@ module.exports = grammar({
       ),
 
     indented_cases: $ =>
-      prec.left(seq($._indent, repeat1($.case_clause), $._outdent)),
+      prec.left(seq($._indent, repeat1($.case_clause), choice($._outdent, $._comma_outdent))),
 
     // ---------------------------------------------------------------
     // Types
