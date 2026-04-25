@@ -142,7 +142,7 @@ module.exports = grammar({
     // _simple_expression  '('  _simple_expression  _asterisk  •  ')'  …
     [$.vararg, $.operator_identifier],
     // _simple_expression  '('  expression  •  ','  …
-    [$._exprs_in_parens]
+    [$._exprs_in_parens],
   ],
 
   word: $ => $._alpha_identifier,
@@ -1100,8 +1100,7 @@ module.exports = grammar({
 
     lazy_parameter_type: $ => seq("=>", field("type", $._type)),
 
-    repeated_parameter_type: $ =>
-      seq(field("type", $._type), $._asterisk),
+    repeated_parameter_type: $ => seq(field("type", $._type), $._asterisk),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
@@ -1167,7 +1166,8 @@ module.exports = grammar({
         ),
       ),
 
-    repeat_pattern: $ => prec.right(seq(field("pattern", $._pattern), $._asterisk)),
+    repeat_pattern: $ =>
+      prec.right(seq(field("pattern", $._pattern), $._asterisk)),
 
     typed_pattern: $ =>
       prec.right(
@@ -1581,7 +1581,7 @@ module.exports = grammar({
         choice(
           $._vararg_arguments,
           optional($._exprs_in_parens),
-          seq("using", $._exprs_in_parens)
+          seq("using", $._exprs_in_parens),
         ),
         ")",
       ),
@@ -1685,12 +1685,11 @@ module.exports = grammar({
 
     wildcard: $ => "_",
 
-    // We have an asterisk as a separte rule to avoid premature choice of 
+    // We have an asterisk as a separte rule to avoid premature choice of
     // $.vararg branch over $.operator_identifier.
-    // Otherwise $.operator_identifier that is being declared as regexp 
+    // Otherwise $.operator_identifier that is being declared as regexp
     // looses by a lexical precedence to an explicitly defined literal "*".
     _asterisk: $ => "*",
-
 
     /**
      * Regex patterns created to avoid matching // comments and /* comment starts.
