@@ -1387,6 +1387,8 @@ object A:
 
   given (config: Config) => Factory = ConcreteFactory()
 
+  given lila.db.NoDbHandler[GoodPercent] with {}
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -1558,7 +1560,17 @@ object A:
         (type_identifier)
         (call_expression
           (identifier)
-          (arguments))))))
+          (arguments)))
+      (given_definition
+        (generic_type
+          (stable_type_identifier
+            (stable_identifier
+              (identifier)
+              (identifier))
+            (type_identifier))
+          (type_arguments
+            (type_identifier)))
+        (with_template_body)))))
 
 ================================================================================
 Given with type parameters (Scala 3.4+ syntax)
