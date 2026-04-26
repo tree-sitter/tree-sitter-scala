@@ -375,7 +375,7 @@ module.exports = grammar({
       seq(
         field("name", $._identifier),
         field("type_parameters", optional($.type_parameters)),
-        optional($.annotation),
+        optional(alias($._constructor_annotation, $.annotation)),
         optional($.access_modifier),
         field(
           "class_parameters",
@@ -539,6 +539,24 @@ module.exports = grammar({
           field("arguments", repeat($.arguments)),
         ),
       ),
+
+    // Only allows 0 or 1 argument lists as these annotations
+    // usually come from Java, where multiple argument lists are not allowed
+    _constructor_annotation: $ => seq("@", field("name", $._simple_type),
+      optional(
+        alias(
+          seq(
+            // token.immediate here carries an assumption that there are no spaces between 
+            // an annotation name and its argument list, otherwise this list should be
+            // classified as a class constructor list
+            token.immediate("("),
+            optional($._exprs_in_parens),
+            ")",
+          ),
+          $.arguments
+        ),
+      )
+    ),
 
     val_definition: $ =>
       seq(
