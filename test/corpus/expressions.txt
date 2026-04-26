@@ -144,6 +144,10 @@ class C:
     x =>
       x + 1
 
+
+  xs.map: (_: Int, a) =>
+    a
+
   xs:
     println("")
 
@@ -190,6 +194,19 @@ class C:
                   (identifier)
                   (operator_identifier)
                   (integer_literal)))))))
+      (call_expression
+        (field_expression
+          (identifier)
+          (identifier))
+        (colon_argument
+          (bindings
+            (binding
+              (wildcard)
+              (type_identifier))
+            (binding
+              (identifier)))
+          (indented_block
+            (identifier))))
       (call_expression
         (identifier)
         (colon_argument

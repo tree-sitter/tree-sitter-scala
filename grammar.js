@@ -12,7 +12,6 @@ const PREC = {
   postfix: 5,
   colon_call: 5,
   infix: 6,
-  constructor_app: 7,
   prefix: 7,
   compound: 7,
   call: 8,
@@ -61,6 +60,7 @@ module.exports = grammar({
     $._postfix_expression_choice,
     $._infix_type_choice,
     $._param_value_type,
+    $._simple_type,
     $.literal,
   ],
 
@@ -71,6 +71,8 @@ module.exports = grammar({
     ["end", "soft_id"],
     ["new", "structural_type"],
     ["self_type", "lambda"],
+    ["annotation", "applied_constructor_type"],
+    ["constructor_application", "applied_constructor_type"],
   ],
 
   conflicts: $ => [
@@ -144,6 +146,16 @@ module.exports = grammar({
     [$.vararg, $.operator_identifier],
     // _simple_expression  '('  expression  •  ','  …
     [$._exprs_in_parens],
+    // _simple_expression  ':'  '('  wildcard  •  ','  …
+    [$._annotated_type, $.binding],
+    // '['  identifier  ':'  '{'  wildcard  •  ':'  …
+    [$.self_type, $._annotated_type, $._simple_expression],
+    // '['  identifier  ':'  '{'  '('  wildcard  •  ':'  …
+    [$.binding, $._annotated_type, $._simple_expression],
+    // '['  identifier  ':'  '{'  wildcard  •  '{'  …
+    [$._annotated_type, $._simple_expression],
+    // '['  identifier  ':'  '{'  wildcard  •  '['  …
+    [$.generic_type, $._simple_expression],
   ],
 
   word: $ => $._alpha_identifier,
@@ -533,30 +545,35 @@ module.exports = grammar({
 
     annotation: $ =>
       prec.right(
+        "annotation",
         seq(
           "@",
           field("name", $._simple_type),
-          field("arguments", repeat($.arguments)),
+          field("arguments", repeat(prec("annotation", $.arguments))),
         ),
       ),
 
     // Only allows 0 or 1 argument lists as these annotations
     // usually come from Java, where multiple argument lists are not allowed
-    _constructor_annotation: $ => seq("@", field("name", $._simple_type),
-      optional(
-        alias(
-          seq(
-            // token.immediate here carries an assumption that there are no spaces between 
-            // an annotation name and its argument list, otherwise this list should be
-            // classified as a class constructor list
-            token.immediate("("),
-            optional($._exprs_in_parens),
-            ")",
-          ),
-          $.arguments
-        ),
-      )
-    ),
+    _constructor_annotation: $ =>
+      prec(
+        "annotation",
+        seq("@", field("name", $._simple_type),
+          optional(
+            alias(
+              seq(
+                // token.immediate here carries an assumption that there are no spaces between 
+                // an annotation name and its argument list, otherwise this list should be
+                // classified as a class constructor list
+                token.immediate("("),
+                optional($._exprs_in_parens),
+                ")",
+              ),
+              $.arguments
+            ),
+          )
+        )
+      ),
 
     val_definition: $ =>
       seq(
@@ -744,8 +761,7 @@ module.exports = grammar({
      * but that doesn't seem to work.
      */
     _constructor_application: $ =>
-      prec.left(
-        PREC.constructor_app,
+      prec.left("constructor_application",
         choice(
           $._annotated_type,
           $.compound_type,
@@ -756,7 +772,7 @@ module.exports = grammar({
           seq($._simple_type, field("arguments", $.arguments)),
           seq($._annotated_type, field("arguments", $.arguments)),
           seq($.compound_type, field("arguments", $.arguments)),
-        ),
+        )
       ),
 
     _constructor_applications: $ =>
@@ -975,22 +991,22 @@ module.exports = grammar({
     annotated_type: $ => prec.right(seq($._simple_type, repeat1($.annotation))),
 
     _simple_type: $ =>
-      prec.left(
-        PREC.type,
-        choice(
-          $.generic_type,
-          $.projected_type,
-          $.tuple_type,
-          $.named_tuple_type,
-          $.singleton_type,
-          $.stable_type_identifier,
-          $._type_identifier,
-          $.applied_constructor_type,
-          $.wildcard,
-        ),
+      choice(
+        $.generic_type,
+        $.projected_type,
+        $.tuple_type,
+        $.named_tuple_type,
+        $.singleton_type,
+        $.stable_type_identifier,
+        $._type_identifier,
+        $.applied_constructor_type,
+        $.wildcard,
       ),
 
-    applied_constructor_type: $ => seq($._type_identifier, $.arguments),
+    applied_constructor_type: $ => prec(
+      "applied_constructor_type",
+      seq($._type_identifier, $.arguments)
+    ),
 
     compound_type: $ =>
       choice(
@@ -1405,12 +1421,9 @@ module.exports = grammar({
      * Binding           ::=  (id | ‘_’) [‘:’ Type]
      */
     binding: $ =>
-      prec.dynamic(
-        PREC.binding,
-        seq(
-          choice(field("name", $._identifier), $.wildcard),
-          optional(seq(":", field("type", $._param_type))),
-        ),
+      seq(
+        choice(field("name", $._identifier), $.wildcard),
+        optional(seq(":", field("type", $._param_type))),
       ),
 
     bindings: $ => seq("(", trailingCommaSep($.binding), ")"),
