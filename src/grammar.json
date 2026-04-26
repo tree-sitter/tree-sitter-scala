@@ -1873,37 +1873,67 @@
       ]
     },
     "with_template_body": {
-      "type": "PREC_LEFT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "SYMBOL",
-            "name": "_indent"
-          },
-          {
-            "type": "CHOICE",
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "PREC_LEFT",
+          "value": 1,
+          "content": {
+            "type": "SEQ",
             "members": [
               {
                 "type": "SYMBOL",
-                "name": "self_type"
+                "name": "_indent"
               },
               {
-                "type": "BLANK"
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "self_type"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_block"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_outdent"
               }
             ]
-          },
-          {
-            "type": "SYMBOL",
-            "name": "_block"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "_outdent"
           }
-        ]
-      }
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "{"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_block"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "}"
+            }
+          ]
+        }
+      ]
     },
     "_extension_template_body": {
       "type": "CHOICE",
@@ -4229,8 +4259,17 @@
             }
           },
           {
-            "type": "SYMBOL",
-            "name": "_outdent"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "_outdent"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_comma_outdent"
+              }
+            ]
           }
         ]
       }
@@ -5059,25 +5098,17 @@
       "members": [
         {
           "type": "SYMBOL",
-          "name": "_type"
-        },
-        {
-          "type": "SYMBOL",
           "name": "lazy_parameter_type"
         },
         {
           "type": "SYMBOL",
-          "name": "repeated_parameter_type"
+          "name": "_param_value_type"
         }
       ]
     },
-    "lazy_parameter_type": {
-      "type": "SEQ",
+    "_param_value_type": {
+      "type": "CHOICE",
       "members": [
-        {
-          "type": "STRING",
-          "value": "=>"
-        },
         {
           "type": "FIELD",
           "name": "type",
@@ -5085,6 +5116,10 @@
             "type": "SYMBOL",
             "name": "_type"
           }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "repeated_parameter_type"
         }
       ]
     },
@@ -5102,6 +5137,23 @@
         {
           "type": "SYMBOL",
           "name": "_asterisk"
+        }
+      ]
+    },
+    "lazy_parameter_type": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "=>"
+        },
+        {
+          "type": "FIELD",
+          "name": "type",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_param_value_type"
+          }
         }
       ]
     },
@@ -6574,8 +6626,17 @@
             "type": "FIELD",
             "name": "right",
             "content": {
-              "type": "SYMBOL",
-              "name": "expression"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "expression"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "indented_block"
+                }
+              ]
             }
           }
         ]
@@ -9242,6 +9303,7 @@
     "_identifier",
     "_postfix_expression_choice",
     "_infix_type_choice",
+    "_param_value_type",
     "literal"
   ],
   "supertypes": [
