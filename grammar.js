@@ -1424,7 +1424,7 @@ module.exports = grammar({
         seq(
           field("left", choice($.prefix_expression, $._simple_expression)),
           "=",
-          field("right", $.expression),
+          field("right", choice($.expression, $.indented_block))
         ),
       ),
 

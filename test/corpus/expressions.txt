@@ -363,32 +363,34 @@ class C {
 Assignments
 ================================================================================
 
-class C {
-  def main() {
-    a = b
-    a(1) = c
-  }
-}
+a = b
+a(1) = c
+views =
+  val key = 1
+  key + 1
 
 --------------------------------------------------------------------------------
 
 (compilation_unit
-  (class_definition
+  (assignment_expression
     (identifier)
-    (template_body
-      (function_definition
+    (identifier))
+  (assignment_expression
+    (call_expression
+      (identifier)
+      (arguments
+        (integer_literal)))
+    (identifier))
+  (assignment_expression
+    (identifier)
+    (indented_block
+      (val_definition
         (identifier)
-        (parameters)
-        (block
-          (assignment_expression
-            (identifier)
-            (identifier))
-          (assignment_expression
-            (call_expression
-              (identifier)
-              (arguments
-                (integer_literal)))
-            (identifier)))))))
+        (integer_literal))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (integer_literal)))))
 
 ================================================================================
 If expressions
