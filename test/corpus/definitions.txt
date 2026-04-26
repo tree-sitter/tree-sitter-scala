@@ -1617,9 +1617,9 @@ class Foo(x: Int)(using A, B, Runtime[Any]) extends Bar
         name: (identifier)
         type: (type_identifier)))
     class_parameters: (class_parameters
-      (type_identifier)
-      (type_identifier)
-      (generic_type
+      type: (type_identifier)
+      type: (type_identifier)
+      type: (generic_type
         type: (type_identifier)
         type_arguments: (type_arguments
           (type_identifier))))

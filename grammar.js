@@ -60,6 +60,7 @@ module.exports = grammar({
     $._identifier,
     $._postfix_expression_choice,
     $._infix_type_choice,
+    $._param_value_type,
     $.literal,
   ],
 
@@ -1096,11 +1097,22 @@ module.exports = grammar({
       ),
 
     _param_type: $ =>
-      choice($._type, $.lazy_parameter_type, $.repeated_parameter_type),
+      choice(
+        $.lazy_parameter_type,
+        $._param_value_type
+      ),
 
-    lazy_parameter_type: $ => seq("=>", field("type", $._type)),
+    _param_value_type: $ =>
+      choice(
+        field("type", $._type),
+        $.repeated_parameter_type
+      ),
 
-    repeated_parameter_type: $ => seq(field("type", $._type), $._asterisk),
+    repeated_parameter_type: $ =>
+      seq(field("type", $._type), $._asterisk),
+
+    lazy_parameter_type: $ =>
+      seq("=>", field("type", $._param_value_type)),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
