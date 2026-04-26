@@ -481,7 +481,10 @@ module.exports = grammar({
      */
     with_template_body: $ =>
       choice(
-        prec.left(PREC.control, seq($._indent, optional($.self_type), $._block, $._outdent)),
+        prec.left(
+          PREC.control,
+          seq($._indent, optional($.self_type), $._block, $._outdent),
+        ),
         seq("{", optional($._block), "}"),
       ),
 
@@ -926,7 +929,13 @@ module.exports = grammar({
       ),
 
     indented_cases: $ =>
-      prec.left(seq($._indent, repeat1($.case_clause), choice($._outdent, $._comma_outdent))),
+      prec.left(
+        seq(
+          $._indent,
+          repeat1($.case_clause),
+          choice($._outdent, $._comma_outdent),
+        ),
+      ),
 
     // ---------------------------------------------------------------
     // Types
@@ -1096,23 +1105,14 @@ module.exports = grammar({
         ),
       ),
 
-    _param_type: $ =>
-      choice(
-        $.lazy_parameter_type,
-        $._param_value_type
-      ),
+    _param_type: $ => choice($.lazy_parameter_type, $._param_value_type),
 
     _param_value_type: $ =>
-      choice(
-        field("type", $._type),
-        $.repeated_parameter_type
-      ),
+      choice(field("type", $._type), $.repeated_parameter_type),
 
-    repeated_parameter_type: $ =>
-      seq(field("type", $._type), $._asterisk),
+    repeated_parameter_type: $ => seq(field("type", $._type), $._asterisk),
 
-    lazy_parameter_type: $ =>
-      seq("=>", field("type", $._param_value_type)),
+    lazy_parameter_type: $ => seq("=>", field("type", $._param_value_type)),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
@@ -1424,7 +1424,7 @@ module.exports = grammar({
         seq(
           field("left", choice($.prefix_expression, $._simple_expression)),
           "=",
-          field("right", choice($.expression, $.indented_block))
+          field("right", choice($.expression, $.indented_block)),
         ),
       ),
 
