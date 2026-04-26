@@ -6,7 +6,9 @@ SCALA_SCALA_LIBRARY_EXPECTED=100
 SCALA_SCALA_COMPILER_EXPECTED=100
 DOTTY_COMPILER_EXPECTED=93
 LILA_MODULES_EXPECTED=98
+
 SYNTAX_COMPLEXITY_CEILING=1800
+PARSER_MAX_SIZE_MB=33
 
 if [ ! -d "$SCALA_SCALA_DIR" ]; then
   echo "\$SCALA_SCALA_DIR must be set"
@@ -17,6 +19,19 @@ if [ ! -d "$DOTTY_DIR" ]; then
   echo "\$DOTTY_DIR must be set"
   exit 1
 fi
+
+check_parser_size () {
+  local max_size_mb=$1
+  local max_size=$(($max_size_mb * 1024 * 1024))
+  local actual_size=$(stat -c%s src/parser.c)
+  local actual_size_mb=$(echo "scale=2; $actual_size / 1024 / 1024" | bc)
+  if [ "$actual_size" -gt "$max_size" ]; then
+    echo -e "::error file=src/parser.c::Parser size (${actual_size_mb}M) exceeds maximum allowed size (${max_size_mb}M)"
+    failed=$((failed + 1))
+  else
+    echo -e "::notice file=src/parser.c::Parser size: ${actual_size_mb}M / ${max_size_mb}M"
+  fi
+}
 
 failed=0
 
@@ -75,6 +90,8 @@ check_complexity () {
     failed=$((failed + 1))
   fi
 }
+
+check_parser_size $PARSER_MAX_SIZE_MB
 
 run_tree_sitter "$SCALA_SCALA_DIR/src/library/"  $SCALA_SCALA_LIBRARY_EXPECTED   scala2-library
 run_tree_sitter "$SCALA_SCALA_DIR/src/compiler/" $SCALA_SCALA_COMPILER_EXPECTED  scala2-compiler
