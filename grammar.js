@@ -558,21 +558,23 @@ module.exports = grammar({
     _constructor_annotation: $ =>
       prec(
         "annotation",
-        seq("@", field("name", $._simple_type),
+        seq(
+          "@",
+          field("name", $._simple_type),
           optional(
             alias(
               seq(
-                // token.immediate here carries an assumption that there are no spaces between 
+                // token.immediate here carries an assumption that there are no spaces between
                 // an annotation name and its argument list, otherwise this list should be
                 // classified as a class constructor list
                 token.immediate("("),
                 optional($._exprs_in_parens),
                 ")",
               ),
-              $.arguments
+              $.arguments,
             ),
-          )
-        )
+          ),
+        ),
       ),
 
     val_definition: $ =>
@@ -761,7 +763,8 @@ module.exports = grammar({
      * but that doesn't seem to work.
      */
     _constructor_application: $ =>
-      prec.left("constructor_application",
+      prec.left(
+        "constructor_application",
         choice(
           $._annotated_type,
           $.compound_type,
@@ -772,7 +775,7 @@ module.exports = grammar({
           seq($._simple_type, field("arguments", $.arguments)),
           seq($._annotated_type, field("arguments", $.arguments)),
           seq($.compound_type, field("arguments", $.arguments)),
-        )
+        ),
       ),
 
     _constructor_applications: $ =>
@@ -1003,10 +1006,8 @@ module.exports = grammar({
         $.wildcard,
       ),
 
-    applied_constructor_type: $ => prec(
-      "applied_constructor_type",
-      seq($._type_identifier, $.arguments)
-    ),
+    applied_constructor_type: $ =>
+      prec("applied_constructor_type", seq($._type_identifier, $.arguments)),
 
     compound_type: $ =>
       choice(
