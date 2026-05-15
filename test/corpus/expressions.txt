@@ -1048,6 +1048,11 @@ class C {
       "ok"
     }
     new Array: Array
+    new T.T with A
+    new T.T[B](a) with A
+    new {
+      val a: Int = 1
+    } with C with D
   }
 }
 
@@ -1100,7 +1105,34 @@ class C {
           (ascription_expression
             (instance_expression
               (type_identifier))
-            (type_identifier)))))))
+            (type_identifier))
+          (instance_expression
+            (compound_type
+              (stable_type_identifier
+                (identifier)
+                (type_identifier))
+              (type_identifier)))
+          (instance_expression
+            (compound_type
+              (applied_constructor_type
+                (generic_type
+                  (stable_type_identifier
+                    (identifier)
+                    (type_identifier))
+                  (type_arguments
+                    (type_identifier)))
+                (arguments
+                  (identifier)))
+              (type_identifier)))
+          (instance_expression
+            (early_defs
+              (val_definition
+                (identifier)
+                (type_identifier)
+                (integer_literal)))
+            (compound_type
+              (type_identifier)
+              (type_identifier))))))))
 
 ================================================================================
 Infix expressions

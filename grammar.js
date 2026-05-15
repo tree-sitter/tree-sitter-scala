@@ -774,7 +774,6 @@ module.exports = grammar({
           // This adds _simple_type, but not the above intentionally.
           seq($._simple_type, field("arguments", $.arguments)),
           seq($._annotated_type, field("arguments", $.arguments)),
-          seq($.compound_type, field("arguments", $.arguments)),
         ),
       ),
 
@@ -1007,7 +1006,18 @@ module.exports = grammar({
       ),
 
     applied_constructor_type: $ =>
-      prec("applied_constructor_type", seq($._type_identifier, $.arguments)),
+      prec(
+        "applied_constructor_type",
+        seq(
+          choice(
+            $.generic_type,
+            $.projected_type,
+            $.stable_type_identifier,
+            $._type_identifier,
+          ),
+          $.arguments,
+        ),
+      ),
 
     compound_type: $ =>
       choice(
@@ -1529,8 +1539,17 @@ module.exports = grammar({
           seq("new", $._constructor_application, $.template_body),
         ),
         prec("new", seq("new", $.template_body)),
+        prec("new",
+          seq("new",
+            field("early_defs", $._early_defs),
+            "with",
+            $._constructor_application,
+          ),
+        ),
         seq("new", $._constructor_application),
       ),
+
+    _early_defs: $ => alias($._braced_template_body, $.early_defs),
 
     /**
      * PostfixExpr [Ascription]
