@@ -7580,8 +7580,28 @@
         {
           "type": "SYMBOL",
           "name": "_soft_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_this_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_super_identifier"
         }
       ]
+    },
+    "_this_identifier": {
+      "type": "PREC",
+      "value": "this_id",
+      "content": {
+        "type": "STRING",
+        "value": "this"
+      }
+    },
+    "_super_identifier": {
+      "type": "STRING",
+      "value": "super"
     },
     "_soft_identifier": {
       "type": "PREC",
@@ -9280,6 +9300,16 @@
     [
       {
         "type": "STRING",
+        "value": "end"
+      },
+      {
+        "type": "STRING",
+        "value": "this_id"
+      }
+    ],
+    [
+      {
+        "type": "STRING",
         "value": "new"
       },
       {
@@ -9421,5 +9451,195 @@
     "_definition",
     "_pattern"
   ],
-  "reserved": {}
+  "reserved": {
+    "global": [
+      {
+        "type": "STRING",
+        "value": "abstract"
+      },
+      {
+        "type": "STRING",
+        "value": "case"
+      },
+      {
+        "type": "STRING",
+        "value": "class"
+      },
+      {
+        "type": "STRING",
+        "value": "def"
+      },
+      {
+        "type": "STRING",
+        "value": "do"
+      },
+      {
+        "type": "STRING",
+        "value": "enum"
+      },
+      {
+        "type": "STRING",
+        "value": "export"
+      },
+      {
+        "type": "STRING",
+        "value": "extends"
+      },
+      {
+        "type": "STRING",
+        "value": "false"
+      },
+      {
+        "type": "STRING",
+        "value": "final"
+      },
+      {
+        "type": "STRING",
+        "value": "finally"
+      },
+      {
+        "type": "STRING",
+        "value": "for"
+      },
+      {
+        "type": "STRING",
+        "value": "given"
+      },
+      {
+        "type": "STRING",
+        "value": "implicit"
+      },
+      {
+        "type": "STRING",
+        "value": "import"
+      },
+      {
+        "type": "STRING",
+        "value": "lazy"
+      },
+      {
+        "type": "STRING",
+        "value": "macro"
+      },
+      {
+        "type": "IMMEDIATE_TOKEN",
+        "content": {
+          "type": "STRING",
+          "value": "match"
+        }
+      },
+      {
+        "type": "STRING",
+        "value": "new"
+      },
+      {
+        "type": "STRING",
+        "value": "null"
+      },
+      {
+        "type": "STRING",
+        "value": "object"
+      },
+      {
+        "type": "STRING",
+        "value": "override"
+      },
+      {
+        "type": "STRING",
+        "value": "package"
+      },
+      {
+        "type": "STRING",
+        "value": "private"
+      },
+      {
+        "type": "STRING",
+        "value": "protected"
+      },
+      {
+        "type": "STRING",
+        "value": "return"
+      },
+      {
+        "type": "STRING",
+        "value": "sealed"
+      },
+      {
+        "type": "STRING",
+        "value": "super"
+      },
+      {
+        "type": "STRING",
+        "value": "this"
+      },
+      {
+        "type": "STRING",
+        "value": "throw"
+      },
+      {
+        "type": "STRING",
+        "value": "trait"
+      },
+      {
+        "type": "STRING",
+        "value": "true"
+      },
+      {
+        "type": "STRING",
+        "value": "try"
+      },
+      {
+        "type": "STRING",
+        "value": "type"
+      },
+      {
+        "type": "STRING",
+        "value": "val"
+      },
+      {
+        "type": "STRING",
+        "value": "var"
+      },
+      {
+        "type": "STRING",
+        "value": "while"
+      },
+      {
+        "type": "STRING",
+        "value": "yield"
+      },
+      {
+        "type": "STRING",
+        "value": ":"
+      },
+      {
+        "type": "STRING",
+        "value": "="
+      },
+      {
+        "type": "STRING",
+        "value": "<-"
+      },
+      {
+        "type": "STRING",
+        "value": "<%"
+      },
+      {
+        "type": "STRING",
+        "value": "#"
+      },
+      {
+        "type": "STRING",
+        "value": "@"
+      },
+      {
+        "type": "STRING",
+        "value": "=>>"
+      },
+      {
+        "type": "STRING",
+        "value": "?=>"
+      }
+    ]
+  }
 }

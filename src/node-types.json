@@ -8853,6 +8853,10 @@
     "named": false
   },
   {
+    "type": "super",
+    "named": false
+  },
+  {
     "type": "then",
     "named": false
   },
