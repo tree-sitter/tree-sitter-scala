@@ -494,6 +494,18 @@
           "named": true
         },
         {
+          "type": "generic_type",
+          "named": true
+        },
+        {
+          "type": "projected_type",
+          "named": true
+        },
+        {
+          "type": "stable_type_identifier",
+          "named": true
+        },
+        {
           "type": "type_identifier",
           "named": true
         }
@@ -2217,6 +2229,29 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "early_defs",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "expression",
+          "named": true
+        },
+        {
+          "type": "self_type",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -4356,6 +4391,16 @@
         "types": [
           {
             "type": "arguments",
+            "named": true
+          }
+        ]
+      },
+      "early_defs": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "early_defs",
             "named": true
           }
         ]

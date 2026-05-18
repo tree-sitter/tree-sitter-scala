@@ -3197,23 +3197,6 @@
                 }
               }
             ]
-          },
-          {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "compound_type"
-              },
-              {
-                "type": "FIELD",
-                "name": "arguments",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "arguments"
-                }
-              }
-            ]
           }
         ]
       }
@@ -4467,8 +4450,25 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_type_identifier"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "generic_type"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "projected_type"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "stable_type_identifier"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_type_identifier"
+              }
+            ]
           },
           {
             "type": "SYMBOL",
@@ -6937,6 +6937,35 @@
           }
         },
         {
+          "type": "PREC",
+          "value": "new",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "new"
+              },
+              {
+                "type": "FIELD",
+                "name": "early_defs",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_early_defs"
+                }
+              },
+              {
+                "type": "STRING",
+                "value": "with"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_constructor_application"
+              }
+            ]
+          }
+        },
+        {
           "type": "SEQ",
           "members": [
             {
@@ -6950,6 +6979,15 @@
           ]
         }
       ]
+    },
+    "_early_defs": {
+      "type": "ALIAS",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_braced_template_body"
+      },
+      "named": true,
+      "value": "early_defs"
     },
     "ascription_expression": {
       "type": "PREC_LEFT",
