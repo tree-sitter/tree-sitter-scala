@@ -1603,8 +1603,10 @@ module.exports = grammar({
           seq("new", $._constructor_application, $.template_body),
         ),
         prec("new", seq("new", $.template_body)),
-        prec("new",
-          seq("new",
+        prec(
+          "new",
+          seq(
+            "new",
             field("early_defs", $._early_defs),
             "with",
             $._constructor_application,
