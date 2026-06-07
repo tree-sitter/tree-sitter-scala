@@ -96,11 +96,24 @@ grammar {
     precedences: [
         ["mod", "soft_id"],
         ["end", "soft_id"],
+        ["end", "this_id"],
         ["new", "structural_type"],
         ["self_type", "lambda"],
         ["annotation", "applied_constructor_type"],
         ["constructor_application", "applied_constructor_type"],
     ],
+
+    reserved: {
+        global: [
+            "abstract", "case", "class", "def", "do", "enum", "export",
+            "extends", "false", "final", "finally", "for", "given",
+            "implicit", "import", "lazy", "macro", token_immediate("match"),
+            "new", "null", "object", "override", "package", "private",
+            "protected", "return", "sealed", "super", "this", "throw",
+            "trait", "true", "try", "type", "val", "var", "while", "yield",
+            ":", "=", "<-", "<%", "#", "@", "=>>", "?=>",
+        ],
+    },
 
     conflicts: [
         [tuple_type, parameter_types],
@@ -660,7 +673,6 @@ rule _constructor_application {
         _structural_type,
         seq(_simple_type, field(arguments, arguments)),
         seq(_annotated_type, field(arguments, arguments)),
-        seq(compound_type, field(arguments, arguments)),
     ))
 }
 
@@ -853,7 +865,10 @@ rule _simple_type {
 }
 
 rule applied_constructor_type {
-    prec("applied_constructor_type", seq(_type_identifier, arguments))
+    prec("applied_constructor_type", seq(
+        choice(generic_type, projected_type, stable_type_identifier, _type_identifier),
+        arguments,
+    ))
 }
 
 rule compound_type {
@@ -1263,9 +1278,12 @@ rule instance_expression {
     choice(
         prec_dynamic(0, seq("new", _constructor_application, template_body)),
         prec("new", seq("new", template_body)),
+        prec("new", seq("new", field(early_defs, _early_defs), "with", _constructor_application)),
         seq("new", _constructor_application),
     )
 }
+
+rule _early_defs { alias(_braced_template_body, early_defs) }
 
 rule ascription_expression {
     prec_left(0, seq(
@@ -1376,8 +1394,11 @@ rule quote_expression {
 // ---------------------------------------------------------------------------
 
 rule identifier {
-    choice(_alpha_identifier, _backquoted_id, _soft_identifier)
+    choice(_alpha_identifier, _backquoted_id, _soft_identifier, _this_identifier, _super_identifier)
 }
+
+rule _this_identifier { prec("this_id", "this") }
+rule _super_identifier { "super" }
 
 rule _soft_identifier {
     prec("soft_id", choice(
