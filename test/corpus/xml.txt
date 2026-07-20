@@ -1,0 +1,267 @@
+================================================================================
+XML literal: simple element
+================================================================================
+
+val a = <b>hi</b>
+val b = <x/>
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name)
+        (xml_text)
+        (xml_name))))
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name)))))
+
+================================================================================
+XML literal: attributes
+================================================================================
+
+val a = <x y="1" z='2'/>
+val b = <link xmlns=""/>
+val c = <elem key={x1} />
+val d = <z:hello foo="bar" xmlns:z="z">text</z:hello>
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name)
+        (xml_attribute
+          (xml_name)
+          (xml_string))
+        (xml_attribute
+          (xml_name)
+          (xml_string)))))
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name)
+        (xml_attribute
+          (xml_name)
+          (xml_string)))))
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name)
+        (xml_attribute
+          (xml_name)
+          (block
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name)
+        (xml_attribute
+          (xml_name)
+          (xml_string))
+        (xml_attribute
+          (xml_name)
+          (xml_string))
+        (xml_text)
+        (xml_name)))))
+
+================================================================================
+XML literal: nested elements and embedded expressions
+================================================================================
+
+val a =
+  <bks>
+    <book><title>{name}</title></book>
+    {{escaped}}
+  </bks>
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (indented_block
+      (xml_expression
+        (xml_element
+          (xml_name)
+          (xml_element
+            (xml_name)
+            (xml_element
+              (xml_name)
+              (block
+                (identifier))
+              (xml_name))
+            (xml_name))
+          (xml_text)
+          (xml_text)
+          (xml_text)
+          (xml_name))))))
+
+================================================================================
+XML literal: comment, CDATA, processing instruction
+================================================================================
+
+val a = <!-- thissa comment -->.toString
+val b = <?pi foo bar?>.toString
+val c = <![CDATA[ "quoted" ]]>.toString
+val d = <a><!-- inner --><![CDATA[x]]><?p q?></a>
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (field_expression
+      (xml_expression
+        (xml_comment))
+      (identifier)))
+  (val_definition
+    (identifier)
+    (field_expression
+      (xml_expression
+        (xml_processing_instruction))
+      (identifier)))
+  (val_definition
+    (identifier)
+    (field_expression
+      (xml_expression
+        (xml_cdata))
+      (identifier)))
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name)
+        (xml_comment)
+        (xml_cdata)
+        (xml_processing_instruction)
+        (xml_name)))))
+
+================================================================================
+XML literal: element sequence
+================================================================================
+
+val ns = <a/><b/>
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (xml_expression
+      (xml_element
+        (xml_name))
+      (xml_element
+        (xml_name)))))
+
+================================================================================
+XML literal: `<` operators are unaffected
+================================================================================
+
+val cmp = a < b
+val cmpParen = if (x <y) x else y
+val shift = 1 << 2
+val leadingInfix = a
+  < b
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (infix_expression
+      (identifier)
+      (operator_identifier)
+      (identifier)))
+  (val_definition
+    (identifier)
+    (if_expression
+      (parenthesized_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier)))
+      (identifier)
+      (identifier)))
+  (val_definition
+    (identifier)
+    (infix_expression
+      (integer_literal)
+      (operator_identifier)
+      (integer_literal)))
+  (val_definition
+    (identifier)
+    (infix_expression
+      (identifier)
+      (operator_identifier)
+      (identifier))))
+
+================================================================================
+XML patterns
+================================================================================
+
+def m(x: Node) = x match {
+  case <hello/> => true
+  case <x:ga/> => true
+  case <t>{_*}</t> => false
+  case <a>{ns @ _*}</a> => ns
+  case <bks><book/>{rest @ _*}</bks> => rest
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (match_expression
+      (identifier)
+      (case_block
+        (case_clause
+          (xml_pattern
+            (xml_name))
+          (boolean_literal))
+        (case_clause
+          (xml_pattern
+            (xml_name))
+          (boolean_literal))
+        (case_clause
+          (xml_pattern
+            (xml_name)
+            (repeat_pattern
+              (wildcard))
+            (xml_name))
+          (boolean_literal))
+        (case_clause
+          (xml_pattern
+            (xml_name)
+            (capture_pattern
+              (identifier)
+              (repeat_pattern
+                (wildcard)))
+            (xml_name))
+          (identifier))
+        (case_clause
+          (xml_pattern
+            (xml_name)
+            (xml_pattern
+              (xml_name))
+            (capture_pattern
+              (identifier)
+              (repeat_pattern
+                (wildcard)))
+            (xml_name))
+          (identifier))))))

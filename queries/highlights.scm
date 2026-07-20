@@ -118,6 +118,11 @@
 
 (infix_expression operator: (identifier) @operator)
 (infix_expression operator: (operator_identifier) @operator)
+; An operator receiving a colon argument, e.g. ``xs `++`:`` — parsed as a
+; postfix expression called with the colon argument.
+(call_expression
+  function: (postfix_expression (identifier) @operator .)
+  arguments: (colon_argument))
 (infix_type operator: (operator_identifier) @operator)
 (infix_type operator: (operator_identifier) @operator)
 
@@ -149,7 +154,7 @@
   "extends"
   "derives"
   "finally"
-;; `forSome` existential types not implemented yet
+  "forSome"
 ;; `macro` not implemented yet
   "object"
   "override"
@@ -163,9 +168,12 @@
   "using"
   "end"
   "implicit"
-  "extension"
   "with"
 ] @keyword
+
+; `extension` is a soft keyword: highlight it only where it starts an
+; extension definition, not when used as a plain identifier.
+(extension_definition "extension" @keyword)
 
 [
   "abstract"
@@ -258,3 +266,12 @@
 ;; Scala CLI using directives
 (using_directive_key) @parameter
 (using_directive_value) @string
+
+;; XML literals
+(xml_name) @tag
+(xml_attribute key: (xml_name) @attribute)
+(xml_string) @string
+(xml_text) @spell
+(xml_comment) @spell @comment
+(xml_cdata) @string
+(xml_processing_instruction) @keyword.directive

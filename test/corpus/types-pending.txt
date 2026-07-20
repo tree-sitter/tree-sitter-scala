@@ -1,7 +1,5 @@
-
 ================================================================================
 Subclass with multiline params and unnamed after named param
-:skip
 ================================================================================
 
 // https://github.com/tree-sitter/tree-sitter-scala/issues/465
@@ -14,9 +12,30 @@ class Child extends Base(
 
 --------------------------------------------------------------------------------
 
+(compilation_unit
+  (comment)
+  (comment)
+  (class_definition
+    (identifier)
+    (extends_clause
+      (type_identifier)
+      (arguments
+        (assignment_expression
+          (identifier)
+          (indented_block
+            (for_expression
+              (enumerators
+                (enumerator
+                  (identifier)
+                  (call_expression
+                    (identifier)
+                    (arguments
+                      (string)))))
+              (identifier))
+            (string)))))))
+
 ================================================================================
 case class nested in an object definition
-:skip
 ================================================================================
 
 // https://github.com/tree-sitter/tree-sitter-scala/issues/329
@@ -29,4 +48,18 @@ end Merge
 
 --------------------------------------------------------------------------------
 
-
+(compilation_unit
+  (comment)
+  (object_definition
+    (identifier)
+    (template_body
+      (class_definition
+        (identifier)
+        (class_parameters
+          (class_parameter
+            (identifier)
+            (type_identifier))
+          (class_parameter
+            (identifier)
+            (type_identifier)))
+        (template_body)))))

@@ -20,6 +20,36 @@ const PREC = {
   binding: 10,
 };
 
+// XML Name (SLS §10 / XML spec), covering namespaced names like `x:ga`.
+const XML_NAME = /[_\p{L}][-.:_\p{L}\p{Nd}]*/;
+
+// `⇒` (U+21D2) is the alternate Scala 2 spelling of `=>` (SLS 1.1, dropped in
+// Scala 3). It is not lexable as an operator_identifier (the single-opchar
+// class excludes it), so the extra token cannot collide with user operators.
+const fatArrow = () => choice("=>", alias("⇒", "=>"));
+
+// A `:` that is also accepted when it ends its line: the scanner lexes a
+// line-final lone colon as the external COLON_EOL token (scalac's COLONeol),
+// so every consumer of such a colon must accept both spellings.
+const colonEol = ($) => choice(":", alias($._colon_eol, ":"));
+
+// An expression as admitted in statement and RHS positions: do_while lives
+// OUTSIDE $.expression (after `for (...)` a `do` must always introduce the
+// for's own body, and a do-while alternative inside the bare body doubles
+// the paren-for automaton, ~+7MiB of parser.c), so every position that
+// takes statements or definition right-hand sides admits it through this
+// helper instead. Deeper operand positions (arguments, parenthesized) stay
+// unsupported, matching their near-nonexistent real-world use.
+const statementExpression = ($) => choice($.expression, $.do_while_expression);
+
+// `=>` or the context-function arrow `?=>`.
+const anyArrow = () => choice(fatArrow(), "?=>");
+
+// The function-type tail of an ascription that is actually a lambda type,
+// shared verbatim by both branches of ascription_expression.
+const ascriptionArrowTail = ($) =>
+  seq(anyArrow(), field("return_type", $._param_type));
+
 module.exports = grammar({
   name: "scala",
 
@@ -48,10 +78,39 @@ module.exports = grammar({
     "extends",
     "derives",
     "with",
+    // Only so the scanner can see when `match` is valid: a line-leading
+    // `match` continues the previous expression (`xs.filter(p)` + newline +
+    // `match ...`), so the automatic semicolon must be suppressed. The
+    // scanner never returns this token; the internal lexer matches it.
+    "match",
+    // A lone `:` that ends its line (scalac's COLONeol): starts a
+    // fewer-braces argument / template body. Lexing it externally makes the
+    // colon-argument vs across-the-newline-ascription split deterministic;
+    // see the COLON_EOL comment in scanner.c.
+    $._colon_eol,
+    $._xml_tag_start,
+    $._operator_eol,
+    // Lexed externally (with nesting) so the `/*` token does not occupy a
+    // column in every parse-table row, which costs ~0.6MiB of parser.c.
+    $.block_comment,
+    // Never returned by the scanner. Valid exactly in the states where the
+    // grammar offers it as a dead alternative (inside a line comment), which
+    // tells the scanner not to lex a block_comment there: in `// /* x`, the
+    // `/*` is line-comment text. External extras are otherwise valid in
+    // every state, so this is the only way to suppress them per state.
+    $._suppress_block_comment,
     $.error_sentinel,
   ],
 
   inline: $ => [
+    $._asterisk,
+    $._super_identifier,
+    $._this_identifier,
+    $._non_null_literal,
+    $._braced_template_body,
+    $._indented_template_body,
+    $._structural_type,
+    $._refinement,
     $._pattern,
     $._semicolon,
     $._definition,
@@ -62,6 +121,9 @@ module.exports = grammar({
     $._param_value_type,
     $._simple_type,
     $.literal,
+    $._xml_node,
+    $._xml_content,
+    $._xml_pattern_content,
   ],
 
   // Doc: https://tree-sitter.github.io/tree-sitter/creating-parsers, search "precedences"
@@ -78,6 +140,24 @@ module.exports = grammar({
 
   conflicts: $ => [
     [$.tuple_type, $.parameter_types],
+    // _xml_open_tag '/>' — a self-closing element is an xml_element where an
+    // expression is expected and an xml_pattern where a pattern is expected;
+    // in positions admitting both (e.g. for-comprehension bindings) only the
+    // continuation disambiguates.
+    [$.xml_element, $.xml_pattern],
+    [$._simple_expression, $._xml_embedded_pattern],
+    [$._simple_expression, $._xml_repeat_pattern],
+    // _simple_expression ':' identifier • '=>'/'?=>' — the identifier is
+    // either the bare function-type parameter of the ascription itself or a
+    // type_identifier reduction on the regular type path.
+    [$._type_identifier, $.ascription_expression],
+    // 'extension' • '{' — an extension definition with a braced body, or the
+    // soft identifier `extension` (valid in Scala 2) called with a block.
+    [$.extension_definition, $._soft_identifier],
+    // 'inline' • … — the soft identifier vs the inline modifier of a
+    // following definition / `inline if` / `inline match`; the continuation
+    // decides (e.g. `inline || x` keeps the identifier reading).
+    [$.inline_modifier, $._soft_identifier],
     [$.binding, $._simple_expression],
     [$.binding, $._type_identifier],
     [$.while_expression, $._simple_expression],
@@ -98,6 +178,8 @@ module.exports = grammar({
     [$._full_enum_def],
     // _start_val  identifier  ','  identifier  •  ':'  …
     [$.identifiers, $.val_declaration],
+    [$.val_declaration, $._definition_pattern],
+    [$.var_declaration, $._definition_pattern],
     // 'enum'  operator_identifier  _automatic_semicolon  '('  ')'  •  ':'  …
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
@@ -137,7 +219,7 @@ module.exports = grammar({
     [$.binding, $._simple_expression, $._type_identifier],
     [$.class_parameter, $._type_identifier],
     // '{'  _single_lambda_param  '=>'  expression  •  '}'  …
-    [$._block, $._indentable_expression],
+    [$._block_statements, $._indentable_expression],
     [$.match_expression, $._simple_expression],
     // _  :  Type  •  '=>'  …
     [$.self_type, $._simple_expression],
@@ -147,6 +229,11 @@ module.exports = grammar({
     [$.vararg, $.operator_identifier],
     // _simple_expression  '('  expression  •  ','  …
     [$._exprs_in_parens],
+    // _simple_expression  ':'  '('  name_and_type  ')'  •  '=>'  — the
+    // parenthesized list is either the lambda parameters of a colon argument
+    // or a named tuple type on the ascription reading; what follows `=>`
+    // (INDENT vs a same-line type) decides.
+    [$.named_tuple_type, $._colon_bindings],
     // _simple_expression  ':'  '('  wildcard  •  ','  …
     [$._annotated_type, $.binding],
     // '['  identifier  ':'  '{'  wildcard  •  ':'  …
@@ -233,7 +320,7 @@ module.exports = grammar({
       ),
 
     _top_level_definition: $ =>
-      choice($._definition, $._end_marker, $.expression),
+      choice($._definition, $._end_marker, statementExpression($)),
 
     _definition: $ =>
       choice(
@@ -272,7 +359,11 @@ module.exports = grammar({
         seq(
           sep1(
             $._semicolon,
-            choice($.enum_case_definitions, $.expression, $._definition),
+            choice(
+              $.enum_case_definitions,
+              statementExpression($),
+              $._definition,
+            ),
           ),
           optional($._semicolon),
         ),
@@ -280,10 +371,19 @@ module.exports = grammar({
 
     enum_body: $ =>
       choice(
-        prec.left(PREC.control, seq(":", $._indent, $._enum_block, $._outdent)),
+        prec.left(
+          PREC.control,
+          seq(
+            colonEol($),
+            $._indent,
+            optional($.self_type),
+            $._enum_block,
+            $._outdent,
+          ),
+        ),
         seq(
           "{",
-          // TODO: self type
+          optional($.self_type),
           optional($._enum_block),
           "}",
         ),
@@ -292,6 +392,8 @@ module.exports = grammar({
     enum_case_definitions: $ =>
       seq(
         repeat($.annotation),
+        // e.g. `private case External(...) extends ...` (dotty FileExtension)
+        optional($.modifiers),
         "case",
         choice(commaSep1($.simple_enum_case), $.full_enum_case),
       ),
@@ -349,7 +451,7 @@ module.exports = grammar({
       prec.left(
         choice(
           seq(
-            field("path", sep1(".", $._identifier)),
+            field("path", sep1(".", $._namespace_path_segment)),
             optional(
               seq(
                 ".",
@@ -367,6 +469,11 @@ module.exports = grammar({
           $.as_renamed_identifier,
         ),
       ),
+
+    // Scala 3 keywords that are valid identifiers in Scala 2 sources and thus
+    // may appear as package names in import/export paths (e.g. `import io.circe.export.Exported`).
+    _namespace_path_segment: $ =>
+      choice($._identifier, alias(choice("enum", "export"), $.identifier)),
 
     namespace_wildcard: $ => prec.left(1, choice("*", "_", "given")),
 
@@ -393,7 +500,7 @@ module.exports = grammar({
     arrow_renamed_identifier: $ =>
       seq(
         field("name", $._identifier),
-        "=>",
+        fatArrow(),
         field("alias", choice($._identifier, $.wildcard)),
       ),
 
@@ -528,7 +635,18 @@ module.exports = grammar({
     _indented_template_body: $ =>
       prec.left(
         PREC.control,
-        seq(":", $._indent, optional($.self_type), $._block, $._outdent),
+        seq(
+          colonEol($),
+          $._indent,
+          choice(
+            seq(optional($.self_type), $._block),
+            // A self type with an empty body: `trait A:` + `self: B =>`
+            // followed by the next definition (or EOF). Mirrors the braced
+            // variant in _braced_template_body1.
+            $.self_type,
+          ),
+          $._outdent,
+        ),
       ),
 
     _braced_template_body: $ =>
@@ -541,7 +659,14 @@ module.exports = grammar({
         ),
       ),
 
-    _braced_template_body1: $ => seq(optional($.self_type), $._block),
+    _braced_template_body1: $ =>
+      choice(
+        seq(optional($.self_type), $._block),
+        // A self type with an empty body: `trait A { self: B => }`. Without
+        // this the only reading of the body is an empty-bodied lambda, which
+        // breaks when another statement follows the closing brace.
+        $.self_type,
+      ),
     _braced_template_body2: $ =>
       seq(
         choice(
@@ -550,6 +675,10 @@ module.exports = grammar({
         ),
         optional($._block),
         $._outdent,
+        // A member indented shallower than its siblings pops the indent
+        // region before the closing brace; the remaining members are still
+        // part of the same braced body (scalac ignores indentation here).
+        optional($._block),
       ),
 
     /*
@@ -586,7 +715,13 @@ module.exports = grammar({
             "given",
             "extension",
             "val",
-            alias($._identifier, "_end_ident"),
+            // Only alphanumeric (or back-quoted) names: allowing operator
+            // identifiers here would swallow `end` used as a plain
+            // identifier before an infix operator (`${end - start}`).
+            alias(
+              choice($._alpha_identifier, $._backquoted_id),
+              "_end_ident",
+            ),
           ),
         ),
       ),
@@ -600,7 +735,7 @@ module.exports = grammar({
           seq(
             choice($._identifier, $.wildcard),
             optional($._self_type_ascription),
-            "=>",
+            fatArrow(),
           ),
         ),
       ),
@@ -644,7 +779,7 @@ module.exports = grammar({
     val_definition: $ =>
       seq(
         $._start_val,
-        field("pattern", choice($._pattern, $.identifiers)),
+        field("pattern", choice($._definition_pattern, $.identifiers)),
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._indentable_expression),
@@ -671,7 +806,7 @@ module.exports = grammar({
     var_definition: $ =>
       seq(
         $._start_var,
-        field("pattern", choice($._pattern, $.identifiers)),
+        field("pattern", choice($._definition_pattern, $.identifiers)),
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._indentable_expression),
@@ -788,7 +923,7 @@ module.exports = grammar({
         ),
       ),
 
-    _given_sig: $ => seq($._given_conditional, "=>"),
+    _given_sig: $ => seq($._given_conditional, fatArrow()),
 
     _given_conditional: $ =>
       choice(alias($.parameters, $.given_conditional), $.type_parameters),
@@ -815,7 +950,7 @@ module.exports = grammar({
         PREC.compound,
         seq(
           $._constructor_application,
-          choice(":", "with"),
+          choice(colonEol($), "with"),
           field("body", $.with_template_body),
         ),
       ),
@@ -836,8 +971,16 @@ module.exports = grammar({
           // but doing so increases the state of template_body to 4000
           $._structural_type,
           // This adds _simple_type, but not the above intentionally.
-          seq($._simple_type, field("arguments", $.arguments)),
-          seq($._annotated_type, field("arguments", $.arguments)),
+          // Note: constructor arguments attach only to a non-annotated simple
+          // type; after an annotation, argument lists belong to the annotation
+          // itself (scalac parses annotation arguments greedily).
+          seq(
+            $._simple_type,
+            field(
+              "arguments",
+              repeat1(prec("constructor_application", $.arguments)),
+            ),
+          ),
         ),
       ),
 
@@ -879,7 +1022,13 @@ module.exports = grammar({
 
     access_qualifier: $ => seq("[", $._identifier, "]"),
 
-    inline_modifier: $ => prec("mod", "inline"),
+    // Unlike the other soft modifiers, `inline` is valid at expression start
+    // (`inline if`, `inline match`), so a static "mod" > "soft_id" win would
+    // misparse `inline || x` (the identifier reading). Instead the token is
+    // reduced under a GLR fork (see conflicts) and the continuation decides;
+    // the dynamic precedence prefers the modifier when both readings complete
+    // (`inline if (c) a else b`).
+    inline_modifier: $ => prec.dynamic(1, "inline"),
     infix_modifier: $ => prec("mod", "infix"),
     into_modifier: $ => prec("mod", "into"),
     open_modifier: $ => prec("mod", "open"),
@@ -890,13 +1039,7 @@ module.exports = grammar({
      * InheritClauses    ::=  ['extends' ConstrApps] ['derives' QualId {',' QualId}]
      */
     extends_clause: $ =>
-      prec.left(
-        seq(
-          "extends",
-          field("type", $._constructor_applications),
-          repeat($.arguments),
-        ),
-      ),
+      prec.left(seq("extends", field("type", $._constructor_applications))),
 
     derives_clause: $ =>
       prec.left(
@@ -988,22 +1131,57 @@ module.exports = grammar({
     name_and_type: $ =>
       prec.left(
         PREC.control,
-        seq(field("name", $._identifier), ":", field("type", $._param_type)),
+        // colonEol: inside parentheses a line-final ':' is an ordinary
+        // parameter/ascription colon (scalac turns COLONeol off there), so
+        // the typed reading must accept the token the scanner produces:
+        // `(x:` + newline + `Int) => x` is a lambda. Must stay in sync with
+        // $.binding, whose token path this rule shares.
+        seq(
+          field("name", $._identifier),
+          colonEol($),
+          field("type", $._param_type),
+        ),
       ),
 
+    // Statements are separated by a semicolon or newline, and any separator
+    // may be followed by extra empty statements (`;`), so `}\n;{ ... }` and
+    // leading semicolons parse like scalac. A block of only semicolons is
+    // kept as its own branch (`{ ;; }`).
     _block: $ =>
+      prec.left(
+        choice(
+          seq(repeat1(";"), optional($._block_statements)),
+          $._block_statements,
+        ),
+      ),
+
+    // A statement separator: `;` or newline, optionally followed by extra
+    // empty statements.
+    _semis: $ => seq($._semicolon, repeat(";")),
+
+    _block_statements: $ =>
       prec.left(
         seq(
           sep1(
-            $._semicolon,
-            choice($.expression, $._definition, $._end_marker, ";"),
+            $._semis,
+            choice(
+              statementExpression($),
+              $._definition,
+              $._end_marker,
+            ),
           ),
-          optional($._semicolon),
+          optional($._semis),
         ),
       ),
 
     _indentable_expression: $ =>
-      prec.right(choice($.indented_block, $.indented_cases, $.expression)),
+      prec.right(
+        choice(
+          $.indented_block,
+          $.indented_cases,
+          statementExpression($),
+        ),
+      ),
 
     block: $ =>
       seq(
@@ -1050,6 +1228,13 @@ module.exports = grammar({
         $.literal_type,
         $._structural_type,
         $.type_lambda,
+        $.existential_type,
+      ),
+
+    // Scala 2 existential type (SLS §3.2.12): `P[T] forSome { type T }`
+    existential_type: $ =>
+      prec.left(
+        seq(field("type", $._infix_type_choice), "forSome", $._refinement),
       ),
 
     _annotated_type: $ => prec.right(choice($.annotated_type, $._simple_type)),
@@ -1199,7 +1384,7 @@ module.exports = grammar({
       ),
 
     _arrow_then_type: $ =>
-      prec.right(seq(choice("=>", "?=>"), field("return_type", $._type))),
+      prec.right(seq(anyArrow(), field("return_type", $._type))),
 
     // Deprioritize against typed_pattern._type.
     parameter_types: $ =>
@@ -1221,7 +1406,7 @@ module.exports = grammar({
 
     repeated_parameter_type: $ => seq(field("type", $._type), $._asterisk),
 
-    lazy_parameter_type: $ => seq("=>", field("type", $._param_value_type)),
+    lazy_parameter_type: $ => seq(fatArrow(), field("type", $._param_value_type)),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
@@ -1239,6 +1424,23 @@ module.exports = grammar({
 
     _pattern: $ =>
       choice(
+        $._definition_pattern,
+        $.alternative_pattern,
+        $.typed_pattern,
+        $.repeat_pattern,
+      ),
+
+    // SLS 4.1: the pattern of a val/var definition is a Pattern2 — no
+    // top-level alternatives (`p | q`) or ascription. A `:` after the
+    // pattern is the definition's own type annotation (so `val a: A | B`
+    // reads `|` as a union type, not an alternative pattern); nested
+    // positions (tuples, extractor arguments) still take a full _pattern.
+    // The infix operands are restricted too: through its left recursion a
+    // full _pattern would put the alternative/typed items right back into
+    // the closure, keeping the anonymous `|` token valid where the union
+    // type's operator_identifier must win the lexer.
+    _definition_pattern: $ =>
+      choice(
         $._identifier,
         $.stable_identifier,
         $.interpolated_string_expression,
@@ -1247,13 +1449,23 @@ module.exports = grammar({
         $.named_tuple_pattern,
         $.case_class_pattern,
         $.infix_pattern,
-        $.alternative_pattern,
-        $.typed_pattern,
         $.given_pattern,
         $.quote_expression,
         $.literal,
         $.wildcard,
-        $.repeat_pattern,
+        $.xml_pattern,
+      ),
+
+    // Operands are _definition_pattern, not the full _pattern — see the
+    // closure argument on _definition_pattern above.
+    infix_pattern: $ =>
+      prec.left(
+        PREC.infix,
+        seq(
+          field("left", $._definition_pattern),
+          field("operator", $._identifier),
+          field("right", $._definition_pattern),
+        ),
       ),
 
     case_class_pattern: $ =>
@@ -1265,16 +1477,6 @@ module.exports = grammar({
           field("pattern", trailingCommaSep($.named_pattern)),
         ),
         ")",
-      ),
-
-    infix_pattern: $ =>
-      prec.left(
-        PREC.infix,
-        seq(
-          field("left", $._pattern),
-          field("operator", $._identifier),
-          field("right", $._pattern),
-        ),
       ),
 
     capture_pattern: $ =>
@@ -1324,7 +1526,6 @@ module.exports = grammar({
         $.return_expression,
         $.throw_expression,
         $.while_expression,
-        $.do_while_expression,
         $.for_expression,
         $.macro_body,
         $._simple_expression,
@@ -1366,8 +1567,19 @@ module.exports = grammar({
         $.field_expression,
         $.generic_function,
         $.call_expression,
+        $.xml_expression,
+        $.method_value,
         alias($._dot_match_expression, $.match_expression),
       ),
+
+    /**
+     * SimpleExpr ::= SimpleExpr1 '_'  (SLS 6.7 Method Values, `f _`)
+     *
+     * A simple expression, so it can be an infix operand:
+     * `iso.reverseGet _ compose iso.get`.
+     */
+    method_value: $ =>
+      prec.left(PREC.call, seq($._simple_expression, $.wildcard)),
 
     _single_lambda_param: $ =>
       prec.right(
@@ -1378,12 +1590,12 @@ module.exports = grammar({
       prec.right(
         "lambda",
         seq(
-          optional(seq(field("type_parameters", $.type_parameters), "=>")),
+          optional(seq(field("type_parameters", $.type_parameters), fatArrow())),
           field(
             "parameters",
             choice($.bindings, $.wildcard, $._single_lambda_param),
           ),
-          choice("=>", "?=>"),
+          anyArrow(),
           $._indentable_expression,
         ),
       ),
@@ -1404,8 +1616,8 @@ module.exports = grammar({
             "parameters",
             choice($.bindings, $.wildcard, $._single_lambda_param),
           ),
-          choice("=>", "?=>"),
-          $._block,
+          anyArrow(),
+          optional($._block),
         ),
       ),
 
@@ -1487,8 +1699,18 @@ module.exports = grammar({
         seq("catch", choice($._indentable_expression, $._expr_case_clause)),
       ),
 
+    // The body also admits an indented block (dotty accepts definitions and
+    // several statements there): `catch case ex: T =>` + indented lines.
+    // The block's OUTDENT bounds the body, so a following dedented statement
+    // or `finally` is not swallowed.
     _expr_case_clause: $ =>
-      prec.left(seq("case", $._case_pattern, field("body", $.expression))),
+      prec.left(
+        seq(
+          "case",
+          $._case_pattern,
+          field("body", choice($.expression, $.indented_block)),
+        ),
+      ),
 
     finally_clause: $ => prec.right(seq("finally", $._indentable_expression)),
 
@@ -1498,7 +1720,8 @@ module.exports = grammar({
     binding: $ =>
       seq(
         choice(field("name", $._identifier), $.wildcard),
-        optional(seq(":", field("type", $._param_type))),
+        // colonEol: see name_and_type (the shared-token twin of this rule).
+        optional(seq(colonEol($), field("type", $._param_type))),
       ),
 
     bindings: $ => seq("(", trailingCommaSep($.binding), ")"),
@@ -1515,7 +1738,7 @@ module.exports = grammar({
     _case_pattern: $ =>
       prec.dynamic(
         1,
-        seq(field("pattern", $._pattern), optional($.guard), "=>"),
+        seq(field("pattern", $._pattern), optional($.guard), fatArrow()),
       ),
 
     guard: $ =>
@@ -1530,7 +1753,7 @@ module.exports = grammar({
         seq(
           field("left", choice($.prefix_expression, $._simple_expression)),
           "=",
-          field("right", choice($.expression, $.indented_block)),
+          field("right", choice(statementExpression($), $.indented_block)),
         ),
       ),
 
@@ -1556,7 +1779,7 @@ module.exports = grammar({
           PREC.colon_call,
           seq(
             field("function", $._postfix_expression_choice),
-            ":",
+            colonEol($),
             field("arguments", $.colon_argument),
           ),
         ),
@@ -1573,11 +1796,37 @@ module.exports = grammar({
           optional(
             field(
               "lambda_start",
-              seq(choice($.bindings, $._identifier, $.wildcard), "=>"),
+              seq(
+                choice(
+                  alias($._colon_bindings, $.bindings),
+                  $._identifier,
+                  $.wildcard,
+                ),
+                fatArrow(),
+              ),
             ),
           ),
           choice($.indented_block, $.indented_cases),
         ),
+      ),
+
+    /*
+     * Parenthesized lambda parameters of a colon argument. A typed parameter
+     * `x: T` is parsed as $.name_and_type (aliased to binding) so that the
+     * token path is shared with $.named_tuple_type on the ascription reading:
+     * after `f: (x: T)` the two interpretations stay a single parse until the
+     * closing paren, where a declared conflict forks them. The fork then
+     * resolves deterministically at `=>` — an INDENT token continues the
+     * colon-argument lambda, a same-line type continues the ascription —
+     * matching scalac's fewer-braces rule. Keeping typed parameters out of
+     * $.binding here avoids the binding/name_and_type reduce conflict that
+     * statically killed the lambda reading.
+     */
+    _colon_bindings: $ =>
+      seq(
+        "(",
+        trailingCommaSep(choice($.binding, alias($.name_and_type, $.binding))),
+        ")",
       ),
 
     field_expression: $ =>
@@ -1607,7 +1856,7 @@ module.exports = grammar({
           "new",
           seq(
             "new",
-            field("early_defs", $._early_defs),
+            field("early_defs", $.early_defs),
             "with",
             $._constructor_application,
           ),
@@ -1615,20 +1864,65 @@ module.exports = grammar({
         seq("new", $._constructor_application),
       ),
 
-    _early_defs: $ => alias($._braced_template_body, $.early_defs),
+    // Same shape as _braced_template_body; spelled out (rather than aliasing
+    // that rule) because _braced_template_body is inlined for parser size.
+    early_defs: $ =>
+      prec.left(
+        PREC.control,
+        seq(
+          "{",
+          optional(choice($._braced_template_body1, $._braced_template_body2)),
+          "}",
+        ),
+      ),
 
     /**
      * PostfixExpr [Ascription]
      */
+    /*
+     * The optional arrow tail supports ascription to function types, e.g.
+     * `(f: Int => Int)` or `(g: A => B => C)`. It lives directly in this rule
+     * (rather than relying on $.function_type) because in type position after
+     * `:` the function-type reading is statically deprioritized in favor of
+     * self-type/lambda-parameter readings. The dynamic penalty keeps
+     * `{ x: Int => body }` parsed as a lambda parameter, matching scalac.
+     */
     ascription_expression: $ =>
       prec.left(
         seq(
-          $._postfix_expression_choice,
+          // In Scala 3 a match chain is an InfixExpr, so it can be ascribed:
+          // `info match { ... }: @unchecked`.
+          choice($._postfix_expression_choice, $.match_expression),
           ":",
-          choice($._param_type, $.annotation),
+          choice(
+            seq(
+              field("type", $._param_type),
+              repeat(prec(1, prec.dynamic(-1, ascriptionArrowTail($)))),
+            ),
+            // A function type whose parameter is a bare identifier, e.g.
+            // `(f: Int => Int)`. Sharing the `identifier '=>'` token path with
+            // colon_argument's lambda_start keeps this a shift/shift overlap
+            // instead of a shift/reduce conflict; whichever continuation
+            // matches the following input survives.
+            prec.dynamic(
+              -1,
+              seq(
+                field("type", alias($._identifier, $.type_identifier)),
+                repeat1(ascriptionArrowTail($)),
+              ),
+            ),
+            $.annotation,
+          ),
         ),
       ),
 
+    /*
+     * NOTE: a colon argument after an infix operator (`a op:\n  body`) is
+     * covered by $.call_expression via $.postfix_expression, so it is not a
+     * right-operand choice here. Keeping it here would statically shadow
+     * postfix expressions followed by an ascription, e.g.
+     * `(1 second: Duration)`.
+     */
     infix_expression: $ =>
       prec.left(
         PREC.infix,
@@ -1641,14 +1935,21 @@ module.exports = grammar({
               $._simple_expression,
             ),
           ),
-          field("operator", $._identifier),
+          // A symbolic operator that ends its line continues the expression
+          // on the next line (SLS 1.2 infers no semicolon there). The
+          // external _operator_eol token only lexes in that layout, and by
+          // winning over the internal operator token it removes the postfix
+          // reading before the newline can split the statement.
+          field(
+            "operator",
+            choice(
+              $._identifier,
+              alias($._operator_eol, $.operator_identifier),
+            ),
+          ),
           field(
             "right",
-            choice(
-              $.prefix_expression,
-              $._simple_expression,
-              seq(":", $.colon_argument),
-            ),
+            choice($.prefix_expression, $._simple_expression),
           ),
         ),
       ),
@@ -1729,17 +2030,15 @@ module.exports = grammar({
     // ExprsInParens     ::=  ExprInParens {‘,’ ExprInParens}
     _exprs_in_parens: $ => trailingCommaSep1($.expression),
 
+    // The opening is a single two-character token so that a bare `$` used as
+    // an ordinary identifier (e.g. `$(selector)`) still lexes as an
+    // identifier. A `$ident` splice already lexes as one identifier anyway.
     splice_expression: $ =>
       prec.left(
         PREC.macro,
-        seq(
-          "$",
-          choice(
-            seq("{", $._block, "}"),
-            seq("[", $._type, "]"),
-            // TODO: This would never hit, since identifier permits $ sign
-            $.identifier,
-          ),
+        choice(
+          seq("${", $._block, "}"),
+          seq("$[", $._type, "]"),
         ),
       ),
 
@@ -1748,7 +2047,15 @@ module.exports = grammar({
         PREC.macro,
         seq(
           "'",
-          choice(seq("{", $._block, "}"), seq("[", $._type, "]"), $.identifier),
+          choice(
+            seq("{", $._block, "}"),
+            seq("[", $._type, "]"),
+            $.identifier,
+            // Keyword literals are quotable (`'null`, `'true`, `'false`);
+            // `'this` already parses via identifier.
+            $.null_literal,
+            $.boolean_literal,
+          ),
         ),
       ),
 
@@ -1780,6 +2087,7 @@ module.exports = grammar({
           "tracked",
           "transparent",
           "end",
+          "extension",
         ),
       ),
 
@@ -1842,7 +2150,7 @@ module.exports = grammar({
             // Technically speaking, Sm (Math symbols https://www.compart.com/en/unicode/category/Sm)
             // should be allowed as a single-character opchar, however, it includes `=`,
             // so we should to avoid that to prevent bad parsing of `=` as infix term or type.
-            /[\-!#%&*+\/\\<>?\u005e\u007c~\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\p{So}]/,
+            /[\-!#%&*+\/\\<>?\u005e\u007c~\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\u2200-\u22ff\p{So}]/,
             seq(
               // opchar minus slash
               /[\-!#%&*+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
@@ -1859,6 +2167,133 @@ module.exports = grammar({
             ),
           ),
         ),
+      ),
+
+    // ---------------------------------------------------------------
+    // XML literals (SLS §10)
+    //
+    // XML mode is entered only where an expression or pattern can start AND
+    // the `<` is immediately followed by a name-start character. The external
+    // scanner token $._xml_tag_start enforces both conditions: it is only
+    // valid in the grammar states that admit an XML literal, so an infix
+    // `a < b` (operator position) never reaches it, and it refuses to match
+    // when whitespace or an operator character follows the `<`, so `< b`,
+    // `<-`, `<:` and friends fall through to the regular operator tokens.
+    // Comment/CDATA/processing-instruction literals need no scanner support:
+    // their multi-character tokens win over the operator tokens by length.
+
+    // XmlExpr ::= XmlContent {Element}
+    xml_expression: $ => prec.right(repeat1($._xml_node)),
+
+    _xml_node: $ =>
+      choice(
+        $.xml_element,
+        $.xml_comment,
+        $.xml_cdata,
+        $.xml_processing_instruction,
+      ),
+
+    xml_element: $ => xmlElementShape($, $._xml_content),
+
+    // `<` + name (no whitespace in between) + attributes. Shared between
+    // expression elements and pattern elements so that GLR forks where both
+    // an expression and a pattern are viable shift the same states until the
+    // element body disambiguates them.
+    _xml_open_tag: $ =>
+      seq(
+        alias($._xml_tag_start, "<"),
+        field("name", alias(token.immediate(XML_NAME), $.xml_name)),
+        repeat($.xml_attribute),
+      ),
+
+    _xml_end_tag: $ =>
+      seq("</", field("name", alias(token(XML_NAME), $.xml_name)), ">"),
+
+    xml_attribute: $ =>
+      seq(
+        field("key", alias(token(XML_NAME), $.xml_name)),
+        "=",
+        field(
+          "value",
+          choice(
+            alias(token(choice(/"[^<"]*"/, /'[^<']*'/)), $.xml_string),
+            $.block,
+          ),
+        ),
+      ),
+
+    _xml_content: $ =>
+      choice(
+        ...xmlTextAlternatives($),
+        $.block,
+        $._xml_node,
+        // Dead alternative: `/*` in XML content is text, not a comment.
+        $._suppress_block_comment,
+      ),
+
+    xml_text: _ => token(prec(-1, /[^<{}]+/)),
+
+    xml_comment: _ =>
+      token(seq("<!--", repeat(choice(/[^-]/, seq("-", /[^-]/))), "-->")),
+
+    xml_cdata: _ =>
+      token(
+        seq(
+          "<![CDATA[",
+          repeat(choice(/[^\]]/, seq("]", /[^\]]/), seq("]]", /[^>]/))),
+          "]]>",
+        ),
+      ),
+
+    xml_processing_instruction: _ =>
+      token(seq("<?", repeat(choice(/[^?]/, seq("?", /[^>]/))), "?>")),
+
+    // XmlPattern ::= ElemPattern; embedded `{...}` blocks hold patterns.
+    xml_pattern: $ => xmlElementShape($, $._xml_pattern_content),
+
+    _xml_pattern_content: $ =>
+      choice(
+        ...xmlTextAlternatives($),
+        seq("{", trailingCommaSep1($._xml_embedded_pattern), "}"),
+        $.xml_pattern,
+        $.xml_comment,
+        $.xml_cdata,
+        $.xml_processing_instruction,
+        // Dead alternative: `/*` in XML content is text, not a comment.
+        $._suppress_block_comment,
+      ),
+
+    // A restricted top-level pattern for XML embeds. In positions where both
+    // an element and an element pattern stay viable, $.block (full statement
+    // closure, including `given` definitions) shares the state with this
+    // rule, and any alternative whose leftmost symbol is the full $._pattern
+    // (infix/alternative/repeat/typed patterns) drags given_pattern and
+    // ascriptions into the closure, conflict-cascading against the block's
+    // definitions. So only alternatives with a closed left edge are allowed
+    // here; nested pattern positions (after `@`, inside parens) still admit
+    // the full $._pattern.
+    _xml_embedded_pattern: $ =>
+      choice(
+        $._identifier,
+        $.stable_identifier,
+        $.interpolated_string_expression,
+        $.capture_pattern,
+        $.tuple_pattern,
+        $.named_tuple_pattern,
+        $.case_class_pattern,
+        $.quote_expression,
+        $.literal,
+        $.wildcard,
+        alias($._xml_repeat_pattern, $.repeat_pattern),
+        $.xml_pattern,
+      ),
+
+    // `_*` / `x*` at the top of an XML embed, without the $._pattern left
+    // recursion of $.repeat_pattern.
+    _xml_repeat_pattern: $ =>
+      seq(
+        field("pattern", choice($.wildcard, $._identifier)),
+        $._asterisk,
       ),
 
     _non_null_literal: $ =>
@@ -1935,7 +2370,18 @@ module.exports = grammar({
       alias($._interpolation_identifier, $.identifier),
 
     interpolation: $ =>
-      seq("$", choice($._aliased_interpolation_identifier, $.block)),
+      seq(
+        "$",
+        choice(
+          $._aliased_interpolation_identifier,
+          $.block,
+          // In pattern position an interpolation may hold a capture pattern,
+          // e.g. `case q"${name @ Ident(_)}" =>`. Restricted to
+          // capture_pattern to keep the pattern grammar out of expression
+          // interpolations.
+          prec.dynamic(-1, seq("{", $.capture_pattern, "}")),
+        ),
+      ),
 
     interpolated_string: $ =>
       choice(
@@ -2009,6 +2455,10 @@ module.exports = grammar({
             // language, so I think it makes sense to allow them. Maybe in the future we
             // should move them to a `deprecated` syntax node?
             /[0-3]?[0-7]{1,2}/,
+            // Any other escaped character. scalac accepts these at the lexer
+            // level in interpolated strings (their validity depends on the
+            // interpolator, e.g. quasiquotes accept a plain `\`).
+            /[^\r\n]/,
           ),
         ),
       ),
@@ -2033,7 +2483,8 @@ module.exports = grammar({
 
     unit: $ => prec(PREC.unit, seq("(", ")")),
 
-    return_expression: $ => prec.left(seq("return", optional($.expression))),
+    return_expression: $ =>
+      prec.left(seq("return", optional(statementExpression($)))),
 
     throw_expression: $ => prec.left(seq("throw", $.expression)),
 
@@ -2091,7 +2542,13 @@ module.exports = grammar({
               ),
             ),
             choice(
-              seq(field("body", $.expression)),
+              // The bare body form also admits an indented block: Scala 3
+              // allows `for (x <- xs)` + an indented multi-statement body
+              // with no `do` (dotty Typer.scala, Run.scala). Plain
+              // $.expression, NOT statementExpression: this is the one
+              // place a `do` must never start (see the helper's comment).
+              field("body", choice($.indented_block, $.expression)),
+              seq("do", field("body", $._indentable_expression)),
               seq("yield", field("body", $._indentable_expression)),
             ),
           ),
@@ -2130,16 +2587,37 @@ module.exports = grammar({
         seq(
           optional("case"),
           $._pattern,
-          choice("<-", "="),
+          choice("<-", "←", "="),
           $.expression,
           optional($.guard),
         ),
         repeat1($.guard),
       ),
 
-    _shebang: $ => alias(token(seq("#!", /.*/)), $.comment),
+    // Either a plain `#!...` first line, or the Scala 2 script header form
+    // whose shell preamble runs until a closing `!#` line:
+    //   #!/bin/sh
+    //   exec scala "$0" "$@"
+    //   !#
+    _shebang: $ =>
+      alias(
+        token(
+          seq(
+            "#!",
+            /[^\n]*/,
+            optional(seq(repeat(seq("\n", /[^\n]*/)), "\n!#")),
+          ),
+        ),
+        $.comment,
+      ),
 
-    comment: $ => seq(token("//"), choice($.using_directive, $._comment_text)),
+    // The dead $._suppress_block_comment alternative marks the after-`//` state
+    // for the external scanner; see the externals list.
+    comment: $ =>
+      seq(
+        token("//"),
+        choice($.using_directive, $._comment_text, $._suppress_block_comment),
+      ),
     _comment_text: $ => token(prec(PREC.comment, /.*/)),
 
     using_directive: $ =>
@@ -2152,8 +2630,6 @@ module.exports = grammar({
     using_directive_key: $ => token(/[^\s]+/),
     using_directive_value: $ => token(/.*/),
 
-    block_comment: $ =>
-      seq(token("/*"), repeat(choice(token(/./), token("//"))), token("*/")),
   },
 });
 
@@ -2179,4 +2655,20 @@ function trailingSep1(delimiter, rule) {
 
 function sep1(delimiter, rule) {
   return seq(rule, repeat(seq(delimiter, rule)));
+}
+
+// XML content alternatives shared between expression elements and pattern
+// elements: plain text and the `{{` / `}}` escaped literal braces.
+function xmlTextAlternatives($) {
+  return [$.xml_text, alias("{{", $.xml_text), alias("}}", $.xml_text)];
+}
+
+// Element skeleton (self-closing, or open tag + content + end tag), shared
+// between xml_element and xml_pattern, which differ only in their content
+// rule.
+function xmlElementShape($, content) {
+  return seq(
+    $._xml_open_tag,
+    choice("/>", seq(">", repeat(content), $._xml_end_tag)),
+  );
 }

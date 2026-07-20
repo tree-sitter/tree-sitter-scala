@@ -59,6 +59,52 @@ class $A$B$ {
         (type_identifier)))))
 
 ================================================================================
+Union types in val and var definitions and declarations
+================================================================================
+
+trait T {
+  val a: AnyRef | Null = null
+  var b: Link[?] | Null
+  val c: Int | String
+  val h :: t = xs
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_identifier))
+        (null_literal))
+      (var_declaration
+        (identifier)
+        (infix_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (type_identifier)))
+          (operator_identifier)
+          (type_identifier)))
+      (val_declaration
+        (identifier)
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_identifier)))
+      (val_definition
+        (infix_pattern
+          (identifier)
+          (operator_identifier)
+          (identifier))
+        (identifier)))))
+
+================================================================================
 Operator identifiers
 ================================================================================
 
@@ -141,6 +187,8 @@ Reserved keywords
 val val = ???
 
 --------------------------------------------------------------------------------
+
+
 
 ================================================================================
 Package
@@ -2084,3 +2132,283 @@ class F(tracked val x: C):
           (tracked_modifier))
         (identifier)
         (type_identifier)))))
+
+================================================================================
+Scala 3 keywords as import path segments
+================================================================================
+
+import io.circe.export.Exported
+import sttp.tapir.generated.reuse.enum.TapirGeneratedEndpoints.Status
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (import_declaration
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier))
+  (import_declaration
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)))
+
+================================================================================
+Unicode arrow in for comprehension generators
+================================================================================
+
+object A {
+  def f = for (i ← 1 to 2) println(i)
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (for_expression
+          (enumerators
+            (enumerator
+              (identifier)
+              (infix_expression
+                (integer_literal)
+                (identifier)
+                (integer_literal))))
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier))))))))
+
+================================
+Braced body member indented shallower than its siblings
+================================
+
+object hlist {
+  trait A {
+    type T
+  }
+
+ trait B[L] extends A {
+    type Out
+  }
+
+  trait C {
+    def x: Int
+  }
+}
+
+---
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (trait_definition
+        (identifier)
+        (template_body
+          (type_definition
+            (type_identifier))))
+      (trait_definition
+        (identifier)
+        (type_parameters
+          (identifier))
+        (extends_clause
+          (type_identifier))
+        (template_body
+          (type_definition
+            (type_identifier))))
+      (trait_definition
+        (identifier)
+        (template_body
+          (function_declaration
+            (identifier)
+            (type_identifier)))))))
+
+================================
+Self type with empty body
+================================
+
+trait A { self: Node => }
+
+trait B { self: Meta.type => }
+
+trait C { this: X =>
+}
+
+---
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier))))
+  (trait_definition
+    (identifier)
+    (template_body
+      (self_type
+        (identifier)
+        (singleton_type
+          (identifier)))))
+  (trait_definition
+    (identifier)
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier)))))
+
+================================================================================
+Colon template body with a self type and an empty body
+================================================================================
+
+trait OriginWarning(val origin: String):
+  self: Warning =>
+object OriginWarning:
+  val NoOrigin = "..."
+
+transparent trait Pure extends Any:
+  this: Pure =>
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier)))
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier))))
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (string))))
+  (trait_definition
+    (modifiers
+      (transparent_modifier))
+    (identifier)
+    (extends_clause
+      (type_identifier))
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier)))))
+
+================================================================================
+Enum with a self type and a modifier on a case
+================================================================================
+
+enum SymbolKind derives CanEqual:
+  kind =>
+
+  case Val, Var
+  private case External(override val toLowerCase: String) extends FileExtension(toLowerCase)
+  def isVar: Boolean = kind == Var
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (enum_definition
+    (identifier)
+    (derives_clause
+      (type_identifier))
+    (enum_body
+      (self_type
+        (identifier))
+      (enum_case_definitions
+        (simple_enum_case
+          (identifier))
+        (simple_enum_case
+          (identifier)))
+      (enum_case_definitions
+        (modifiers
+          (access_modifier))
+        (full_enum_case
+          (identifier)
+          (class_parameters
+            (class_parameter
+              (modifiers)
+              (identifier)
+              (type_identifier)))
+          (extends_clause
+            (type_identifier)
+            (arguments
+              (identifier)))))
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))))))
+
+================================================================================
+Parenthesized typed lambda parameter wrapped across the newline
+================================================================================
+
+val f = (x:
+    Int) => x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (lambda_expression
+      (bindings
+        (binding
+          (identifier)
+          (type_identifier)))
+      (identifier))))
+
+================================================================================
+Do-while in assignment and return positions
+================================================================================
+
+object O {
+  var w = 0
+  w = do step() while (cond)
+  def r: Unit = { return do step() while (cond) }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (var_definition
+        (identifier)
+        (integer_literal))
+      (assignment_expression
+        (identifier)
+        (do_while_expression
+          (call_expression
+            (identifier)
+            (arguments))
+          (parenthesized_expression
+            (identifier))))
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (block
+          (return_expression
+            (do_while_expression
+              (call_expression
+                (identifier)
+                (arguments))
+              (parenthesized_expression
+                (identifier)))))))))

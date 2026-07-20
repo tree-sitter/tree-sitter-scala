@@ -85,3 +85,26 @@ trait Function0[@specialized(Unit, Int, Double) T] {
     (type_parameters
       (annotation (type_identifier) (arguments (identifier) (identifier) (identifier))) (identifier))
     (template_body (function_declaration (identifier) (type_identifier)))))
+
+================================
+Annotated parent type with annotation arguments
+================================
+
+case class B2(s: String) extends Base @Second(3, "e") @Third(4)
+
+---
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (class_parameters
+      (class_parameter (identifier) (type_identifier)))
+    (extends_clause
+      (annotated_type
+        (type_identifier)
+        (annotation
+          (type_identifier)
+          (arguments (integer_literal) (string)))
+        (annotation
+          (type_identifier)
+          (arguments (integer_literal)))))))

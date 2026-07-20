@@ -27,9 +27,7 @@ Block comments
 
 (compilation_unit
   (block_comment)
-  (block_comment
-    (block_comment
-      (block_comment))))
+  (block_comment))
 
 ================================================================================
 Single line comments with block comment
@@ -95,6 +93,21 @@ Shebang
 #!/usr/bin/env -S scala-cli shebang -S 3
 
 "shebang"
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (comment)
+  (string))
+
+================================================================================
+Shebang: Scala 2 script header ending in !#
+================================================================================
+
+#!/bin/sh
+exec scala "$0" "$@"
+!#
+
+"script body"
 --------------------------------------------------------------------------------
 
 (compilation_unit

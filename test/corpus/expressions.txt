@@ -215,9 +215,10 @@ class C:
               (identifier)
               (arguments
                 (string))))))
-      (infix_expression
-        (identifier)
-        (identifier)
+      (call_expression
+        (postfix_expression
+          (identifier)
+          (identifier))
         (colon_argument
           (indented_block
             (val_definition
@@ -783,7 +784,8 @@ def main(): Unit =
           (typed_pattern
             (identifier)
             (type_identifier))
-          (identifier))))))
+          (indented_block
+            (identifier)))))))
 
 ================================================================================
 Match expressions
@@ -2161,3 +2163,1727 @@ bar(a, xs: _*)
       (identifier)
       (vararg
         (identifier)))))
+
+================================================================================
+Ascription to function types
+================================================================================
+
+object A {
+  val a = (this.unsubscribe: ActorRef => Unit)
+  val b = (fooMock.overloaded[Double]: Double => String).expects(1.0)
+  val c = PriorityGenerator({ case 1 => 2 }: Any => Int)
+  val d = (1 second: Duration)
+  val e = (identity _ : Int => Int)
+  val f = (handler: String => Context ?=> String)
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (ascription_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (type_identifier)
+            (type_identifier))))
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (parenthesized_expression
+              (ascription_expression
+                (generic_function
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (type_arguments
+                    (type_identifier)))
+                (type_identifier)
+                (type_identifier)))
+            (identifier))
+          (arguments
+            (floating_point_literal))))
+      (val_definition
+        (identifier)
+        (call_expression
+          (identifier)
+          (arguments
+            (ascription_expression
+              (case_block
+                (case_clause
+                  (integer_literal)
+                  (integer_literal)))
+              (type_identifier)
+              (type_identifier)))))
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (ascription_expression
+            (postfix_expression
+              (integer_literal)
+              (identifier))
+            (type_identifier))))
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (ascription_expression
+            (method_value
+              (identifier)
+              (wildcard))
+            (type_identifier)
+            (type_identifier))))
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (lambda_expression
+            (identifier)
+            (type_identifier)
+            (lambda_expression
+              (identifier)
+              (identifier))))))))
+
+================================================================================
+Lambda with an empty body
+================================================================================
+
+object A {
+  def g = persist(evt) { _ =>
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (call_expression
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))
+          (block
+            (lambda_expression
+              (wildcard))))))))
+
+================================================================================
+Soft keyword extension used as an identifier
+================================================================================
+
+object A {
+  def journal: ActorRef =
+    extension.journalFor(null)
+  def f = x match {
+    case 1 =>
+      extension.remove(name)
+      Behaviors.same
+  }
+  val s = s"snapshot-${extension}"
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (indented_block
+          (call_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (arguments
+              (null_literal)))))
+      (function_definition
+        (identifier)
+        (match_expression
+          (identifier)
+          (case_block
+            (case_clause
+              (integer_literal)
+              (call_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
+                (arguments
+                  (identifier)))
+              (field_expression
+                (identifier)
+                (identifier))))))
+      (val_definition
+        (identifier)
+        (interpolated_string_expression
+          (identifier)
+          (interpolated_string
+            (interpolation
+              (block
+                (identifier)))))))))
+
+================================================================================
+Mid-line else and finally after a brace-less if
+================================================================================
+
+object A {
+  def f =
+    if (c)
+      x match {
+        case 1 => 1
+      } else 2
+  def g = {
+    try if (force) graduates.removeIf(notAlive)
+    finally if (locked) gcStatus.set(false)
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (indented_block
+          (if_expression
+            (parenthesized_expression
+              (identifier))
+            (indented_block
+              (match_expression
+                (identifier)
+                (case_block
+                  (case_clause
+                    (integer_literal)
+                    (integer_literal)))))
+            (integer_literal))))
+      (function_definition
+        (identifier)
+        (block
+          (try_expression
+            (if_expression
+              (parenthesized_expression
+                (identifier))
+              (call_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
+                (arguments
+                  (identifier))))
+            (finally_clause
+              (if_expression
+                (parenthesized_expression
+                  (identifier))
+                (call_expression
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (arguments
+                    (boolean_literal)))))))))))
+
+================================================================================
+Mid-line else after an indented consequence
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/539
+def a = if (true)
+  1 else 2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (comment)
+  (function_definition
+    (identifier)
+    (if_expression
+      (parenthesized_expression
+        (boolean_literal))
+      (indented_block
+        (integer_literal))
+      (integer_literal))))
+
+================================================================================
+Catch on the same indentation as the match cases in a try body
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/540
+try optag match
+  case  _                                     => null
+  catch case ex: ArithmeticException => null
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (comment)
+  (try_expression
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (wildcard)
+          (null_literal))))
+    (catch_clause
+      (typed_pattern
+        (identifier)
+        (type_identifier))
+      (null_literal))))
+
+================================================================================
+Bare dollar identifier called with arguments
+================================================================================
+
+object A {
+  def f = {
+    $(s"$selector *[name=$fieldName]").fill.`with`(fieldValue)
+    $(selector).submit()
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (block
+          (call_expression
+            (field_expression
+              (field_expression
+                (call_expression
+                  (identifier)
+                  (arguments
+                    (interpolated_string_expression
+                      (identifier)
+                      (interpolated_string
+                        (interpolation
+                          (identifier))
+                        (interpolation
+                          (identifier))))))
+                (identifier))
+              (identifier))
+            (arguments
+              (identifier)))
+          (call_expression
+            (field_expression
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)))
+              (identifier))
+            (arguments)))))))
+
+================================
+Soft keyword `inline` as identifier in expressions
+================================
+
+val a = !inline || b
+val c = inline && b
+
+---
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (infix_expression
+      (prefix_expression
+        (identifier))
+      (operator_identifier)
+      (identifier)))
+  (val_definition
+    (identifier)
+    (infix_expression
+      (identifier)
+      (operator_identifier)
+      (identifier))))
+
+================================
+Trailing infix operator line continuation
+================================
+
+def f = for {
+  pipeline = a >>>
+               b >>>
+               c
+  _ <- queue.take *>
+         ref.update(g)
+} yield pipeline
+
+val cond =
+  if (c) ???
+  else d
+
+---
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (for_expression
+      (enumerators
+        (enumerator
+          (identifier)
+          (infix_expression
+            (infix_expression
+              (identifier)
+              (operator_identifier)
+              (identifier))
+            (operator_identifier)
+            (identifier)))
+        (enumerator
+          (wildcard)
+          (infix_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (operator_identifier)
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (identifier))))))
+      (identifier)))
+  (val_definition
+    (identifier)
+    (indented_block
+      (if_expression
+        (parenthesized_expression
+          (identifier))
+        (operator_identifier)
+        (identifier)))))
+
+================================
+Catch case with a multi-statement indented body
+================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/542
+try
+  ???
+catch case ex: Throwable =>
+  val test = 123
+  println(test)
+finally
+  cleanup()
+
+---
+
+(compilation_unit
+  (comment)
+  (try_expression
+    (indented_block
+      (operator_identifier))
+    (catch_clause
+      (typed_pattern
+        (identifier)
+        (type_identifier))
+      (indented_block
+        (val_definition
+          (identifier)
+          (integer_literal))
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)))))
+    (finally_clause
+      (indented_block
+        (call_expression
+          (identifier)
+          (arguments))))))
+
+================================
+If-then with a multiline condition continued by a leading infix operator
+================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/541
+if (false)
+  || true
+then
+  print("true")
+
+---
+
+(compilation_unit
+  (comment)
+  (if_expression
+    (infix_expression
+      (parenthesized_expression
+        (boolean_literal))
+      (operator_identifier)
+      (boolean_literal))
+    (indented_block
+      (call_expression
+        (identifier)
+        (arguments
+          (string))))))
+
+================================
+Braceless match with cases at the same indentation
+================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/264
+object A:
+  a match
+  case b =>
+  case c =>
+
+def foo =
+  name match
+  case n: Int =>
+    body1
+    body2
+  case _ =>
+    body3
+  done()
+
+---
+
+(compilation_unit
+  (comment)
+  (object_definition
+    (identifier)
+    (template_body
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (identifier))
+          (case_clause
+            (identifier))))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (typed_pattern
+              (identifier)
+              (type_identifier))
+            (identifier)
+            (identifier))
+          (case_clause
+            (wildcard)
+            (identifier))))
+      (call_expression
+        (identifier)
+        (arguments)))))
+
+================================
+Nested braceless match inside same-indentation cases
+================================
+
+def f =
+  x match
+  case A(p) =>
+    y match
+    case B => b
+    case _ => c
+  case None => d
+
+---
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (case_class_pattern
+              (type_identifier)
+              (identifier))
+            (match_expression
+              (identifier)
+              (indented_cases
+                (case_clause
+                  (identifier)
+                  (identifier))
+                (case_clause
+                  (wildcard)
+                  (identifier)))))
+          (case_clause
+            (identifier)
+            (identifier)))))))
+
+================================
+Multi-clause import inside a brace lambda body
+================================
+
+def f = runTestCommon() { _ =>
+  import scala.tools.scalap, scalap.scalax.rules.scalasig.ByteCode
+  1
+}
+
+---
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (call_expression
+      (call_expression
+        (identifier)
+        (arguments))
+      (block
+        (lambda_expression
+          (wildcard)
+          (indented_block
+            (import_declaration
+              (identifier)
+              (identifier)
+              (identifier)
+              (identifier)
+              (identifier)
+              (identifier)
+              (identifier)
+              (identifier))
+            (integer_literal)))))))
+
+================================
+Postfix operator at end of line before a definition keyword
+================================
+
+trait RunnerSpec {
+  val optPos = "pos" / "run compilation tests (success)" --?
+  val optNeg = "neg" / "run compilation tests (failure)" --?
+}
+
+---
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (postfix_expression
+          (infix_expression
+            (string)
+            (operator_identifier)
+            (string))
+          (operator_identifier)))
+      (val_definition
+        (identifier)
+        (postfix_expression
+          (infix_expression
+            (string)
+            (operator_identifier)
+            (string))
+          (operator_identifier))))))
+
+================================
+For with an enumerator continued after a trailing infix operator
+================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/358
+for
+  _ <- a *>
+       b
+yield ()
+
+---
+
+(compilation_unit
+  (comment)
+  (for_expression
+    (enumerators
+      (enumerator
+        (wildcard)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))))
+    (unit)))
+
+================================
+Soft keyword `end` as identifier in expressions
+================================
+
+def f = {
+  val end = 1
+  println(s"took: ${end - start}ms")
+  end - start
+}
+
+---
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (block
+      (val_definition
+        (identifier)
+        (integer_literal))
+      (call_expression
+        (identifier)
+        (arguments
+          (interpolated_string_expression
+            (identifier)
+            (interpolated_string
+              (interpolation
+                (block
+                  (infix_expression
+                    (identifier)
+                    (operator_identifier)
+                    (identifier))))))))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (identifier)))))
+
+================================
+Method values (eta expansion underscore)
+================================
+
+val h = f _
+def g(s: S) = (iso.reverseGet _ compose iso.get)(s) <==> s
+
+---
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (method_value
+      (identifier)
+      (wildcard)))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (infix_expression
+      (call_expression
+        (parenthesized_expression
+          (infix_expression
+            (method_value
+              (field_expression
+                (identifier)
+                (identifier))
+              (wildcard))
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier))))
+        (arguments
+          (identifier)))
+      (operator_identifier)
+      (identifier))))
+
+================================================================================
+Empty statements before a statement (`;{ ... }`, `;def`)
+================================================================================
+
+object A {
+  def f = {
+    val x = 1
+    ;{
+      val y = 2
+    }
+  }
+  ;def g = 1
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (block
+          (val_definition
+            (identifier)
+            (integer_literal))
+          (block
+            (val_definition
+              (identifier)
+              (integer_literal)))))
+      (function_definition
+        (identifier)
+        (integer_literal)))))
+
+================================================================================
+Unicode fat arrow (Scala 2)
+================================================================================
+
+import a.{b ⇒ c}
+
+object A {
+  val x = xs.map { case (k, v) ⇒ k }
+  val y = xs.map(v ⇒ v)
+  def f(g: ⇒ Int): Int ⇒ Int = h ⇒ g
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (import_declaration
+    (identifier)
+    (namespace_selectors
+      (arrow_renamed_identifier
+        (identifier)
+        (identifier))))
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (case_block
+            (case_clause
+              (tuple_pattern
+                (identifier)
+                (identifier))
+              (identifier)))))
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (lambda_expression
+              (identifier)
+              (identifier)))))
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (lazy_parameter_type
+              (type_identifier))))
+        (function_type
+          (parameter_types
+            (type_identifier))
+          (type_identifier))
+        (lambda_expression
+          (identifier)
+          (identifier))))))
+
+================================================================================
+Quoted keyword literals (Scala 3)
+================================================================================
+
+inline def e(inline m: String): Unit =
+  ${ impl('m, 'null, 'true, 'false) }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (modifiers
+      (inline_modifier))
+    (identifier)
+    (parameters
+      (parameter
+        (inline_modifier)
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (indented_block
+      (splice_expression
+        (call_expression
+          (identifier)
+          (arguments
+            (quote_expression
+              (identifier))
+            (quote_expression
+              (null_literal))
+            (quote_expression
+              (boolean_literal))
+            (quote_expression
+              (boolean_literal))))))))
+
+================================================================================
+Line-leading match continuing a method chain
+================================================================================
+
+def f =
+  xs
+    .partition(deepTest)
+      // partition into full matches and head matches
+    match
+      case (Nil, partials) => partials
+      case givenImports => givenImports
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier)))
+        (comment)
+        (indented_cases
+          (case_clause
+            (tuple_pattern
+              (identifier)
+              (identifier))
+            (identifier))
+          (case_clause
+            (identifier)
+            (identifier)))))))
+
+================================================================================
+Deeply nested bare colon arguments
+================================================================================
+
+def g =
+  typeRest:
+    infixTypeRest(inContextBound):
+      refinedTypeRest:
+        withTypeRest:
+          annotTypeRest:
+            simpleTypeRest(tuple)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (identifier)
+        (colon_argument
+          (indented_block
+            (call_expression
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)))
+              (colon_argument
+                (indented_block
+                  (call_expression
+                    (identifier)
+                    (colon_argument
+                      (indented_block
+                        (call_expression
+                          (identifier)
+                          (colon_argument
+                            (indented_block
+                              (call_expression
+                                (identifier)
+                                (colon_argument
+                                  (indented_block
+                                    (call_expression
+                                      (identifier)
+                                      (arguments
+                                        (identifier)))))))))))))))))))))
+
+================================================================================
+Ascribed match expression (`}: @unchecked`)
+================================================================================
+
+def f =
+  val (a, b) = info match {
+    case Poly(tps, cinfo) => (tps, cinfo)
+    case cinfo => (Nil, cinfo)
+  }: @unchecked
+  a
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (tuple_pattern
+          (identifier)
+          (identifier))
+        (ascription_expression
+          (match_expression
+            (identifier)
+            (case_block
+              (case_clause
+                (case_class_pattern
+                  (type_identifier)
+                  (identifier)
+                  (identifier))
+                (tuple_expression
+                  (identifier)
+                  (identifier)))
+              (case_clause
+                (identifier)
+                (tuple_expression
+                  (identifier)
+                  (identifier)))))
+          (annotation
+            (type_identifier))))
+      (identifier))))
+
+================================================================================
+Parenthesized for with do, yield on the next line, and a bare indented body
+================================================================================
+
+def f =
+  for ((a, b) <- xs) do
+    g(a)
+  for (x <- xs)
+    val y = h(x)
+    k(y)
+  for (param <- params; idx <- indices(param))
+  yield param.name
+  for (typearg <- tree.typeargs)
+  do
+    h(typearg)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (for_expression
+        (enumerators
+          (enumerator
+            (tuple_pattern
+              (identifier)
+              (identifier))
+            (identifier)))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (identifier)))
+        (indented_block
+          (val_definition
+            (identifier)
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier))))
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (identifier))
+          (enumerator
+            (identifier)
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier)))))
+        (field_expression
+          (identifier)
+          (identifier)))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier))))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier))))))))
+
+================================================================================
+Leading infix operator continuing inside colon-argument regions
+================================================================================
+
+def f: Boolean =
+  trace(msg, show = true):
+    noNotes:
+      elems.exists(g)
+  || !x.isTerminal
+    && ifNotTried(x):
+      val xelems = x.elems
+      xelems.forall(h)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (type_identifier)
+    (indented_block
+      (call_expression
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)
+            (assignment_expression
+              (identifier)
+              (boolean_literal))))
+        (colon_argument
+          (indented_block
+            (call_expression
+              (identifier)
+              (colon_argument
+                (indented_block
+                  (call_expression
+                    (infix_expression
+                      (infix_expression
+                        (call_expression
+                          (field_expression
+                            (identifier)
+                            (identifier))
+                          (arguments
+                            (identifier)))
+                        (operator_identifier)
+                        (prefix_expression
+                          (field_expression
+                            (identifier)
+                            (identifier))))
+                      (operator_identifier)
+                      (call_expression
+                        (identifier)
+                        (arguments
+                          (identifier))))
+                    (colon_argument
+                      (indented_block
+                        (val_definition
+                          (identifier)
+                          (field_expression
+                            (identifier)
+                            (identifier)))
+                        (call_expression
+                          (field_expression
+                            (identifier)
+                            (identifier))
+                          (arguments
+                            (identifier)))))))))))))))
+
+================================================================================
+Dedented leading infix operator closing into an enclosing conditional
+================================================================================
+
+def f =
+  if xs.indexSatisfying(from = index): imp =>
+      imp.selectors.exists(p)
+  < nextImport then
+    action()
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (if_expression
+        (infix_expression
+          (call_expression
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (assignment_expression
+                  (identifier)
+                  (identifier))))
+            (colon_argument
+              (identifier)
+              (indented_block
+                (call_expression
+                  (field_expression
+                    (field_expression
+                      (identifier)
+                      (identifier))
+                    (identifier))
+                  (arguments
+                    (identifier))))))
+          (operator_identifier)
+          (identifier))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments)))))))
+
+================================================================================
+Leading infix continuation after a line whose statement ends with a comment
+================================================================================
+
+def allowed =
+  m.isDeprecated
+  || sym.info.typeSymbol.match        // more ubiquity
+     case dd.DummyImplicitClass => true
+     case tps =>
+       tps.isMarkerTrait // no members
+       ||                // but consider NotGiven
+       tps.hasAnnotation(x)
+  || sym.info.isSingleton // DSL friendly
+  || sym.info.isRefined // can't be expressed
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (field_expression
+          (identifier)
+          (identifier))
+        (operator_identifier)
+        (match_expression
+          (field_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (identifier))
+          (comment)
+          (indented_cases
+            (case_clause
+              (stable_identifier
+                (identifier)
+                (identifier))
+              (boolean_literal))
+            (case_clause
+              (identifier)
+              (postfix_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
+                (comment)
+                (operator_identifier))
+              (comment)
+              (infix_expression
+                (infix_expression
+                  (call_expression
+                    (field_expression
+                      (identifier)
+                      (identifier))
+                    (arguments
+                      (identifier)))
+                  (operator_identifier)
+                  (field_expression
+                    (field_expression
+                      (identifier)
+                      (identifier))
+                    (identifier)))
+                (comment)
+                (operator_identifier)
+                (field_expression
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (identifier))))
+            (comment)))))))
+
+================================================================================
+Block comment closed by same-line code inside a braced body
+================================================================================
+
+class Foo {
+  def a: Int = 1
+
+ /** doc
+  *
+  */ override def apply(f: From) = super.apply(f)
+
+  def flip: Int = 2
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal))
+      (block_comment)
+      (function_definition
+        (modifiers)
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier))))
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal)))))
+
+================================================================================
+Identifier starting with a keyword prefix at line start (`match_`)
+================================================================================
+
+def f = {
+  val match_ = {
+    treeCopy.Match(match0, match0.cases)
+  }
+  match_ setType B1.tpe
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (block
+      (val_definition
+        (identifier)
+        (block
+          (call_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (arguments
+              (identifier)
+              (field_expression
+                (identifier)
+                (identifier))))))
+      (infix_expression
+        (identifier)
+        (identifier)
+        (field_expression
+          (identifier)
+          (identifier))))))
+
+================================================================================
+Fewer-braces colon followed by a trailing comment
+================================================================================
+
+def f =
+  xs.foldLeft(z): // combine
+    (acc, x) =>
+      acc + x
+  ys.map: /* elementwise */
+    y =>
+      y * 2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier)))
+        (comment)
+        (colon_argument
+          (indented_block
+            (lambda_expression
+              (bindings
+                (binding
+                  (identifier))
+                (binding
+                  (identifier)))
+              (indented_block
+                (infix_expression
+                  (identifier)
+                  (operator_identifier)
+                  (identifier)))))))
+      (call_expression
+        (field_expression
+          (identifier)
+          (identifier))
+        (block_comment)
+        (colon_argument
+          (indented_block
+            (lambda_expression
+              (identifier)
+              (indented_block
+                (infix_expression
+                  (identifier)
+                  (operator_identifier)
+                  (integer_literal))))))))))
+
+================================================================================
+Leading operator statements with trailing comments keep their block
+================================================================================
+
+def f =
+  ??? // TODO
+  println("x")
+
+def g =
+  ??? /* TODO */
+  h()
+
+def i =
+  p || // c
+  q
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (operator_identifier)
+      (comment)
+      (call_expression
+        (identifier)
+        (arguments
+          (string)))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (operator_identifier)
+      (block_comment)
+      (call_expression
+        (identifier)
+        (arguments))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (comment)
+        (identifier)))))
+
+================================================================================
+Dedented block comment before a continuation line
+================================================================================
+
+def f =
+  xs
+ /* c */ .map(g)
+
+def h =
+  val a = x
+ /* c */ || y
+  a
+
+class A {
+  def g: Int = 1
+  def f = if (c) 1
+ /* x */ else 2
+}
+
+val a = 1
+/* c */ val b = 2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (field_expression
+          (identifier)
+          (block_comment)
+          (identifier))
+        (arguments
+          (identifier)))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (identifier)
+        (infix_expression
+          (identifier)
+          (block_comment)
+          (operator_identifier)
+          (identifier)))
+      (identifier)))
+  (class_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal))
+      (function_definition
+        (identifier)
+        (if_expression
+          (parenthesized_expression
+            (identifier))
+          (integer_literal)
+          (block_comment)
+          (integer_literal)))))
+  (val_definition
+    (identifier)
+    (integer_literal))
+  (block_comment)
+  (val_definition
+    (identifier)
+    (integer_literal)))
+
+================================================================================
+Indented bodies starting with keyword-prefixed identifiers
+================================================================================
+
+def f =
+  cdo(1)
+  eyield(2)
+  e+ x
+  g()
+
+def m =
+  xs
+  m|| x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (identifier)
+        (arguments
+          (integer_literal)))
+      (call_expression
+        (identifier)
+        (arguments
+          (integer_literal)))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (identifier))
+      (call_expression
+        (identifier)
+        (arguments))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (identifier)
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (identifier)))))
+
+================================================================================
+Comma closing an indented block: closer on a later line, char literal, brace lambda
+================================================================================
+
+val r = foo(
+  xs.map: x =>
+    g(x), h(y)
+)
+
+val s = foo(
+  xs.map: x =>
+    g(x), h('(') )
+
+def t = runTestCommon() { _ =>
+  import a.b, c.d }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (arguments
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (colon_argument
+            (identifier)
+            (indented_block
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier))))))
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (arguments
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (colon_argument
+            (identifier)
+            (indented_block
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier))))))
+        (call_expression
+          (identifier)
+          (arguments
+            (character_literal))))))
+  (function_definition
+    (identifier)
+    (call_expression
+      (call_expression
+        (identifier)
+        (arguments))
+      (block
+        (lambda_expression
+          (wildcard)
+          (indented_block
+            (import_declaration
+              (identifier)
+              (identifier)
+              (identifier)
+              (identifier))))))))
+
+================================================================================
+Comment between match and its case clauses
+================================================================================
+
+def f =
+  x match
+  /* c */ case a => b
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (block_comment)
+          (case_clause
+            (identifier)
+            (identifier)))))))
+
+================================================================================
+Top-level match with cases at width zero and a following statement
+================================================================================
+
+x match
+case 1 => a
+case 2 => b
+val z = 1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (match_expression
+    (identifier)
+    (indented_cases
+      (case_clause
+        (integer_literal)
+        (identifier))
+      (case_clause
+        (integer_literal)
+        (identifier))))
+  (val_definition
+    (identifier)
+    (integer_literal)))
+
+================================================================================
+Operator at end of line before an annotated definition
+================================================================================
+
+trait R {
+  val optPos = "pos" --?
+  @deprecated val g = 1
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (postfix_expression
+          (string)
+          (operator_identifier)))
+      (val_definition
+        (annotation
+          (type_identifier))
+        (identifier)
+        (integer_literal)))))
+
+================================================================================
+Backquoted then on a leading infix continuation line
+================================================================================
+
+def f =
+  val cond =
+      x.exists(p)
+  && q.`then`
+  cond
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (identifier)))
+            (operator_identifier)
+            (field_expression
+              (identifier)
+              (identifier)))))
+      (identifier))))
+
+================================================================================
+Colon template body starting with a backquoted DSL statement
+================================================================================
+
+class T extends F:
+  `empty list` should work
+  more()
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (extends_clause
+      (type_identifier))
+    (template_body
+      (infix_expression
+        (identifier)
+        (identifier)
+        (identifier))
+      (call_expression
+        (identifier)
+        (arguments)))))
