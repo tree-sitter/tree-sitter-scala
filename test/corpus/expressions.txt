@@ -2165,7 +2165,7 @@ bar(a, xs: _*)
 
 ================================================================================
 Catch case with a multi-statement indented body
-================================
+================================================================================
 
 // https://github.com/tree-sitter/tree-sitter-scala/issues/542
 try
@@ -2200,3 +2200,29 @@ finally
         (call_expression
           (identifier)
           (arguments))))))
+
+================================================================================
+Lambda with an empty body
+================================================================================
+
+object A {
+  def g = persist(evt) { _ =>
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (call_expression
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))
+          (block
+            (lambda_expression
+              (wildcard))))))))
