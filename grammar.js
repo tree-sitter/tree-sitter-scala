@@ -282,20 +282,9 @@ module.exports = grammar({
       choice(
         prec.left(
           PREC.control,
-          seq(
-            ":",
-            $._indent,
-            optional($.self_type),
-            $._enum_block,
-            $._outdent,
-          ),
+          seq(":", $._indent, optional($.self_type), $._enum_block, $._outdent),
         ),
-        seq(
-          "{",
-          optional($.self_type),
-          optional($._enum_block),
-          "}",
-        ),
+        seq("{", optional($.self_type), optional($._enum_block), "}"),
       ),
 
     enum_case_definitions: $ =>
