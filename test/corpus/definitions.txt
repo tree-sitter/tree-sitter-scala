@@ -2084,3 +2084,127 @@ class F(tracked val x: C):
           (tracked_modifier))
         (identifier)
         (type_identifier)))))
+
+================================================================================
+Self type with empty body
+================================================================================
+
+trait A { self: Node => }
+
+trait B { self: Meta.type => }
+
+trait C { this: X =>
+}
+
+---
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier))))
+  (trait_definition
+    (identifier)
+    (template_body
+      (self_type
+        (identifier)
+        (singleton_type
+          (identifier)))))
+  (trait_definition
+    (identifier)
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier)))))
+
+================================================================================
+Colon template body with a self type and an empty body
+================================================================================
+
+trait OriginWarning(val origin: String):
+  self: Warning =>
+object OriginWarning:
+  val NoOrigin = "..."
+
+transparent trait Pure extends Any:
+  this: Pure =>
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier)))
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier))))
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (string))))
+  (trait_definition
+    (modifiers
+      (transparent_modifier))
+    (identifier)
+    (extends_clause
+      (type_identifier))
+    (template_body
+      (self_type
+        (identifier)
+        (type_identifier)))))
+
+================================================================================
+Enum with a self type and a modifier on a case
+================================================================================
+
+enum SymbolKind derives CanEqual:
+  kind =>
+
+  case Val, Var
+  private case External(override val toLowerCase: String) extends FileExtension(toLowerCase)
+  def isVar: Boolean = kind == Var
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (enum_definition
+    (identifier)
+    (derives_clause
+      (type_identifier))
+    (enum_body
+      (self_type
+        (identifier))
+      (enum_case_definitions
+        (simple_enum_case
+          (identifier))
+        (simple_enum_case
+          (identifier)))
+      (enum_case_definitions
+        (modifiers
+          (access_modifier))
+        (full_enum_case
+          (identifier)
+          (class_parameters
+            (class_parameter
+              (modifiers)
+              (identifier)
+              (type_identifier)))
+          (extends_clause
+            (type_identifier)
+            (arguments
+              (identifier)))))
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))))))
