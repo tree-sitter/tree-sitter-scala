@@ -2086,6 +2086,51 @@ class F(tracked val x: C):
         (type_identifier)))))
 
 ================================================================================
+Braced body member indented shallower than its siblings
+================================================================================
+
+object hlist {
+  trait A {
+    type T
+  }
+
+ trait B[L] extends A {
+    type Out
+  }
+
+  trait C {
+    def x: Int
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (trait_definition
+        (identifier)
+        (template_body
+          (type_definition
+            (type_identifier))))
+      (trait_definition
+        (identifier)
+        (type_parameters
+          (identifier))
+        (extends_clause
+          (type_identifier))
+        (template_body
+          (type_definition
+            (type_identifier))))
+      (trait_definition
+        (identifier)
+        (template_body
+          (function_declaration
+            (identifier)
+            (type_identifier)))))))
+
+================================================================================
 Self type with empty body
 ================================================================================
 
@@ -2096,7 +2141,7 @@ trait B { self: Meta.type => }
 trait C { this: X =>
 }
 
----
+--------------------------------------------------------------------------------
 
 (compilation_unit
   (trait_definition

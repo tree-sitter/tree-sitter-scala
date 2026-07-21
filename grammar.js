@@ -579,6 +579,10 @@ module.exports = grammar({
         ),
         optional($._block),
         $._outdent,
+        // A member indented shallower than its siblings pops the indent
+        // region before the closing brace; the remaining members are still
+        // part of the same braced body (scalac ignores indentation here).
+        optional($._block),
       ),
 
     /*
