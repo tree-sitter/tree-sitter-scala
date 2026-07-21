@@ -783,7 +783,8 @@ def main(): Unit =
           (typed_pattern
             (identifier)
             (type_identifier))
-          (identifier))))))
+          (indented_block
+            (identifier)))))))
 
 ================================================================================
 Match expressions
@@ -2161,3 +2162,41 @@ bar(a, xs: _*)
       (identifier)
       (vararg
         (identifier)))))
+
+================================================================================
+Catch case with a multi-statement indented body
+================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/542
+try
+  ???
+catch case ex: Throwable =>
+  val test = 123
+  println(test)
+finally
+  cleanup()
+
+---
+
+(compilation_unit
+  (comment)
+  (try_expression
+    (indented_block
+      (operator_identifier))
+    (catch_clause
+      (typed_pattern
+        (identifier)
+        (type_identifier))
+      (indented_block
+        (val_definition
+          (identifier)
+          (integer_literal))
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)))))
+    (finally_clause
+      (indented_block
+        (call_expression
+          (identifier)
+          (arguments))))))

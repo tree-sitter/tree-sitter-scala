@@ -1488,7 +1488,13 @@ module.exports = grammar({
       ),
 
     _expr_case_clause: $ =>
-      prec.left(seq("case", $._case_pattern, field("body", $.expression))),
+      prec.left(
+        seq(
+          "case",
+          $._case_pattern,
+          field("body", choice($.expression, $.indented_block)),
+        ),
+      ),
 
     finally_clause: $ => prec.right(seq("finally", $._indentable_expression)),
 
