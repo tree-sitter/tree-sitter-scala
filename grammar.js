@@ -1398,8 +1398,16 @@ module.exports = grammar({
         $.field_expression,
         $.generic_function,
         $.call_expression,
+        $.method_value,
         alias($._dot_match_expression, $.match_expression),
       ),
+
+    /**
+     * SimpleExpr ::= SimpleExpr1 '_'  (SLS 6.7 Method Values, `f _`)
+     * A simple expression, so it can be an infix operand.
+     */
+    method_value: $ =>
+      prec.left(PREC.call, seq($._simple_expression, $.wildcard)),
 
     _single_lambda_param: $ =>
       prec.right(
