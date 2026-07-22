@@ -20,6 +20,14 @@ const PREC = {
   binding: 10,
 };
 
+// `⇒` (U+21D2) is the alternate Scala 2 spelling of `=>` (SLS 1.1, dropped in
+// Scala 3). It is not lexable as an operator_identifier (the single-opchar
+// class excludes it), so the extra token cannot collide with user operators.
+const fatArrow = () => choice("=>", alias("⇒", "=>"));
+
+// `=>` or the context-function arrow `?=>`.
+const anyArrow = () => choice(fatArrow(), "?=>");
+
 module.exports = grammar({
   name: "scala",
 
@@ -394,7 +402,7 @@ module.exports = grammar({
     arrow_renamed_identifier: $ =>
       seq(
         field("name", $._identifier),
-        "=>",
+        fatArrow(),
         field("alias", choice($._identifier, $.wildcard)),
       ),
 
@@ -629,7 +637,7 @@ module.exports = grammar({
           seq(
             choice($._identifier, $.wildcard),
             optional($._self_type_ascription),
-            "=>",
+            fatArrow(),
           ),
         ),
       ),
@@ -817,7 +825,7 @@ module.exports = grammar({
         ),
       ),
 
-    _given_sig: $ => seq($._given_conditional, "=>"),
+    _given_sig: $ => seq($._given_conditional, fatArrow()),
 
     _given_conditional: $ =>
       choice(alias($.parameters, $.given_conditional), $.type_parameters),
@@ -1238,7 +1246,7 @@ module.exports = grammar({
       ),
 
     _arrow_then_type: $ =>
-      prec.right(seq(choice("=>", "?=>"), field("return_type", $._type))),
+      prec.right(seq(anyArrow(), field("return_type", $._type))),
 
     // Deprioritize against typed_pattern._type.
     parameter_types: $ =>
@@ -1260,7 +1268,7 @@ module.exports = grammar({
 
     repeated_parameter_type: $ => seq(field("type", $._type), $._asterisk),
 
-    lazy_parameter_type: $ => seq("=>", field("type", $._param_value_type)),
+    lazy_parameter_type: $ => seq(fatArrow(), field("type", $._param_value_type)),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
@@ -1425,12 +1433,12 @@ module.exports = grammar({
       prec.right(
         "lambda",
         seq(
-          optional(seq(field("type_parameters", $.type_parameters), "=>")),
+          optional(seq(field("type_parameters", $.type_parameters), fatArrow())),
           field(
             "parameters",
             choice($.bindings, $.wildcard, $._single_lambda_param),
           ),
-          choice("=>", "?=>"),
+          anyArrow(),
           $._indentable_expression,
         ),
       ),
@@ -1451,7 +1459,7 @@ module.exports = grammar({
             "parameters",
             choice($.bindings, $.wildcard, $._single_lambda_param),
           ),
-          choice("=>", "?=>"),
+          anyArrow(),
           optional($._block),
         ),
       ),
@@ -1568,7 +1576,7 @@ module.exports = grammar({
     _case_pattern: $ =>
       prec.dynamic(
         1,
-        seq(field("pattern", $._pattern), optional($.guard), "=>"),
+        seq(field("pattern", $._pattern), optional($.guard), fatArrow()),
       ),
 
     guard: $ =>
@@ -1626,7 +1634,7 @@ module.exports = grammar({
           optional(
             field(
               "lambda_start",
-              seq(choice($.bindings, $._identifier, $.wildcard), "=>"),
+              seq(choice($.bindings, $._identifier, $.wildcard), fatArrow()),
             ),
           ),
           choice($.indented_block, $.indented_cases),
@@ -2183,7 +2191,7 @@ module.exports = grammar({
         seq(
           optional("case"),
           $._pattern,
-          choice("<-", "="),
+          choice("<-", "←", "="),
           $.expression,
           optional($.guard),
         ),
