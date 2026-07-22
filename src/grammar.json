@@ -935,8 +935,22 @@
           }
         },
         {
-          "type": "STRING",
-          "value": "=>"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "=>"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "⇒"
+              },
+              "named": false,
+              "value": "=>"
+            }
+          ]
         },
         {
           "type": "FIELD",
@@ -2173,8 +2187,22 @@
               ]
             },
             {
-              "type": "STRING",
-              "value": "=>"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "=>"
+                },
+                {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "STRING",
+                    "value": "⇒"
+                  },
+                  "named": false,
+                  "value": "=>"
+                }
+              ]
             }
           ]
         }
@@ -3084,8 +3112,22 @@
           "name": "_given_conditional"
         },
         {
-          "type": "STRING",
-          "value": "=>"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "=>"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "⇒"
+              },
+              "named": false,
+              "value": "=>"
+            }
+          ]
         }
       ]
     },
@@ -5165,8 +5207,22 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "STRING",
-                "value": "=>"
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "=>"
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "⇒"
+                    },
+                    "named": false,
+                    "value": "=>"
+                  }
+                ]
               },
               {
                 "type": "STRING",
@@ -5324,8 +5380,22 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "STRING",
-          "value": "=>"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "=>"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "⇒"
+              },
+              "named": false,
+              "value": "=>"
+            }
+          ]
         },
         {
           "type": "FIELD",
@@ -6146,8 +6216,22 @@
                     }
                   },
                   {
-                    "type": "STRING",
-                    "value": "=>"
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "STRING",
+                        "value": "=>"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "⇒"
+                        },
+                        "named": false,
+                        "value": "=>"
+                      }
+                    ]
                   }
                 ]
               },
@@ -6181,8 +6265,22 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "STRING",
-                "value": "=>"
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "=>"
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "⇒"
+                    },
+                    "named": false,
+                    "value": "=>"
+                  }
+                ]
               },
               {
                 "type": "STRING",
@@ -6228,8 +6326,22 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "STRING",
-                "value": "=>"
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "=>"
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "⇒"
+                    },
+                    "named": false,
+                    "value": "=>"
+                  }
+                ]
               },
               {
                 "type": "STRING",
@@ -6782,8 +6894,22 @@
             ]
           },
           {
-            "type": "STRING",
-            "value": "=>"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "=>"
+              },
+              {
+                "type": "ALIAS",
+                "content": {
+                  "type": "STRING",
+                  "value": "⇒"
+                },
+                "named": false,
+                "value": "=>"
+              }
+            ]
           }
         ]
       }
@@ -6986,8 +7112,22 @@
                       ]
                     },
                     {
-                      "type": "STRING",
-                      "value": "=>"
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "STRING",
+                          "value": "=>"
+                        },
+                        {
+                          "type": "ALIAS",
+                          "content": {
+                            "type": "STRING",
+                            "value": "⇒"
+                          },
+                          "named": false,
+                          "value": "=>"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -9086,6 +9226,10 @@
                 {
                   "type": "STRING",
                   "value": "<-"
+                },
+                {
+                  "type": "STRING",
+                  "value": "←"
                 },
                 {
                   "type": "STRING",
