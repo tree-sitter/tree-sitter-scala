@@ -149,7 +149,7 @@
   "extends"
   "derives"
   "finally"
-;; `forSome` existential types not implemented yet
+  "forSome"
 ;; `macro` not implemented yet
   "object"
   "override"
