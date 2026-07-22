@@ -2228,13 +2228,49 @@ object A {
               (wildcard))))))))
 
 ================================================================================
+Soft keyword `end` as identifier in expressions
+================================================================================
+
+def f = {
+  val end = 1
+  println(s"took: ${end - start}ms")
+  end - start
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (block
+      (val_definition
+        (identifier)
+        (integer_literal))
+      (call_expression
+        (identifier)
+        (arguments
+          (interpolated_string_expression
+            (identifier)
+            (interpolated_string
+              (interpolation
+                (block
+                  (infix_expression
+                    (identifier)
+                    (operator_identifier)
+                    (identifier))))))))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (identifier)))))
+
+================================================================================
 Soft keyword `inline` as identifier in expressions
 ================================================================================
 
 val a = !inline || b
 val c = inline && b
 
----
+--------------------------------------------------------------------------------
 
 (compilation_unit
   (val_definition

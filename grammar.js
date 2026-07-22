@@ -609,7 +609,13 @@ module.exports = grammar({
             "given",
             "extension",
             "val",
-            alias($._identifier, "_end_ident"),
+            // Only alphanumeric (or back-quoted) names: allowing operator
+            // identifiers here would swallow `end` used as a plain
+            // identifier before an infix operator (`${end - start}`).
+            alias(
+              choice($._alpha_identifier, $._backquoted_id),
+              "_end_ident",
+            ),
           ),
         ),
       ),
