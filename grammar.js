@@ -1082,6 +1082,13 @@ module.exports = grammar({
         $.literal_type,
         $._structural_type,
         $.type_lambda,
+        $.existential_type,
+      ),
+
+    // Scala 2 existential type (SLS §3.2.12): `P[T] forSome { type T }`
+    existential_type: $ =>
+      prec.left(
+        seq(field("type", $._infix_type_choice), "forSome", $._refinement),
       ),
 
     _annotated_type: $ => prec.right(choice($.annotated_type, $._simple_type)),

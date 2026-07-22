@@ -807,3 +807,49 @@ val c: C(42)
       (type_identifier)
       (arguments
         (integer_literal)))))
+
+================================================================================
+Existential types (Scala 2)
+================================================================================
+
+object O {
+  type E = P[T] forSome { type T }
+  def f(x: Map[K, V] forSome { type K; type V <: K }): Int = 1
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (type_definition
+        (type_identifier)
+        (existential_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (type_identifier)))
+          (refinement
+            (type_definition
+              (type_identifier)))))
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (existential_type
+              (generic_type
+                (type_identifier)
+                (type_arguments
+                  (type_identifier)
+                  (type_identifier)))
+              (refinement
+                (type_definition
+                  (type_identifier))
+                (type_definition
+                  (type_identifier)
+                  (upper_bound
+                    (type_identifier)))))))
+        (type_identifier)
+        (integer_literal)))))
