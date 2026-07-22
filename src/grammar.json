@@ -2118,8 +2118,17 @@
               {
                 "type": "ALIAS",
                 "content": {
-                  "type": "SYMBOL",
-                  "name": "_identifier"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_alpha_identifier"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "_backquoted_id"
+                    }
+                  ]
                 },
                 "named": false,
                 "value": "_end_ident"
@@ -3451,8 +3460,8 @@
       ]
     },
     "inline_modifier": {
-      "type": "PREC",
-      "value": "mod",
+      "type": "PREC_DYNAMIC",
+      "value": 1,
       "content": {
         "type": "STRING",
         "value": "inline"
@@ -4433,8 +4442,37 @@
         {
           "type": "SYMBOL",
           "name": "type_lambda"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "existential_type"
         }
       ]
+    },
+    "existential_type": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "type",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_infix_type_choice"
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "forSome"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_refinement"
+          }
+        ]
+      }
     },
     "_annotated_type": {
       "type": "PREC_RIGHT",
@@ -6010,6 +6048,10 @@
           "name": "call_expression"
         },
         {
+          "type": "SYMBOL",
+          "name": "method_value"
+        },
+        {
           "type": "ALIAS",
           "content": {
             "type": "SYMBOL",
@@ -6019,6 +6061,23 @@
           "value": "match_expression"
         }
       ]
+    },
+    "method_value": {
+      "type": "PREC_LEFT",
+      "value": 8,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_simple_expression"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "wildcard"
+          }
+        ]
+      }
     },
     "_single_lambda_param": {
       "type": "PREC_RIGHT",
@@ -9074,7 +9133,40 @@
             },
             {
               "type": "PATTERN",
-              "value": ".*"
+              "value": "[^\\n]*"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "REPEAT",
+                      "content": {
+                        "type": "SEQ",
+                        "members": [
+                          {
+                            "type": "STRING",
+                            "value": "\n"
+                          },
+                          {
+                            "type": "PATTERN",
+                            "value": "[^\\n]*"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "\n!#"
+                    }
+                  ]
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
             }
           ]
         }
@@ -9223,6 +9315,10 @@
     [
       "tuple_type",
       "parameter_types"
+    ],
+    [
+      "inline_modifier",
+      "_soft_identifier"
     ],
     [
       "binding",
