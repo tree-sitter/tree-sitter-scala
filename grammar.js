@@ -1265,7 +1265,8 @@ module.exports = grammar({
 
     repeated_parameter_type: $ => seq(field("type", $._type), $._asterisk),
 
-    lazy_parameter_type: $ => seq(fatArrow(), field("type", $._param_value_type)),
+    lazy_parameter_type: $ =>
+      seq(fatArrow(), field("type", $._param_value_type)),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
@@ -1430,7 +1431,9 @@ module.exports = grammar({
       prec.right(
         "lambda",
         seq(
-          optional(seq(field("type_parameters", $.type_parameters), fatArrow())),
+          optional(
+            seq(field("type_parameters", $.type_parameters), fatArrow()),
+          ),
           field(
             "parameters",
             choice($.bindings, $.wildcard, $._single_lambda_param),
