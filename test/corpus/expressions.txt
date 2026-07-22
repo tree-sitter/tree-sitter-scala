@@ -2226,3 +2226,27 @@ object A {
           (block
             (lambda_expression
               (wildcard))))))))
+
+================================================================================
+Soft keyword `inline` as identifier in expressions
+================================================================================
+
+val a = !inline || b
+val c = inline && b
+
+---
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (infix_expression
+      (prefix_expression
+        (identifier))
+      (operator_identifier)
+      (identifier)))
+  (val_definition
+    (identifier)
+    (infix_expression
+      (identifier)
+      (operator_identifier)
+      (identifier))))
