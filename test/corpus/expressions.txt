@@ -2288,6 +2288,67 @@ val c = inline && b
       (identifier))))
 
 ================================================================================
+Unicode fat arrow (Scala 2)
+================================================================================
+
+import a.{b ⇒ c}
+
+object A {
+  val x = xs.map { case (k, v) ⇒ k }
+  val y = xs.map(v ⇒ v)
+  def f(g: ⇒ Int): Int ⇒ Int = h ⇒ g
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (import_declaration
+    (identifier)
+    (namespace_selectors
+      (arrow_renamed_identifier
+        (identifier)
+        (identifier))))
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (case_block
+            (case_clause
+              (tuple_pattern
+                (identifier)
+                (identifier))
+              (identifier)))))
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (lambda_expression
+              (identifier)
+              (identifier)))))
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (lazy_parameter_type
+              (type_identifier))))
+        (function_type
+          (parameter_types
+            (type_identifier))
+          (type_identifier))
+        (lambda_expression
+          (identifier)
+          (identifier))))))
+
+================================================================================
 Method values (eta expansion underscore)
 ================================================================================
 

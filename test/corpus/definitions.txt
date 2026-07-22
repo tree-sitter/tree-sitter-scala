@@ -2253,3 +2253,32 @@ enum SymbolKind derives CanEqual:
           (identifier)
           (operator_identifier)
           (identifier))))))
+
+================================================================================
+Unicode arrow in for comprehension generators
+================================================================================
+
+object A {
+  def f = for (i ← 1 to 2) println(i)
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (for_expression
+          (enumerators
+            (enumerator
+              (identifier)
+              (infix_expression
+                (integer_literal)
+                (identifier)
+                (integer_literal))))
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier))))))))
