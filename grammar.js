@@ -2183,7 +2183,22 @@ module.exports = grammar({
         repeat1($.guard),
       ),
 
-    _shebang: $ => alias(token(seq("#!", /.*/)), $.comment),
+    // Either a plain `#!...` first line, or the Scala 2 script header form
+    // whose shell preamble runs until a closing `!#` line:
+    //   #!/bin/sh
+    //   exec scala "$0" "$@"
+    //   !#
+    _shebang: $ =>
+      alias(
+        token(
+          seq(
+            "#!",
+            /[^\n]*/,
+            optional(seq(repeat(seq("\n", /[^\n]*/)), "\n!#")),
+          ),
+        ),
+        $.comment,
+      ),
 
     comment: $ => seq(token("//"), choice($.using_directive, $._comment_text)),
     _comment_text: $ => token(prec(PREC.comment, /.*/)),
