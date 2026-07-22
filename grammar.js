@@ -78,6 +78,7 @@ module.exports = grammar({
 
   conflicts: $ => [
     [$.tuple_type, $.parameter_types],
+    [$.inline_modifier, $._soft_identifier],
     [$.binding, $._simple_expression],
     [$.binding, $._type_identifier],
     [$.while_expression, $._simple_expression],
@@ -282,20 +283,9 @@ module.exports = grammar({
       choice(
         prec.left(
           PREC.control,
-          seq(
-            ":",
-            $._indent,
-            optional($.self_type),
-            $._enum_block,
-            $._outdent,
-          ),
+          seq(":", $._indent, optional($.self_type), $._enum_block, $._outdent),
         ),
-        seq(
-          "{",
-          optional($.self_type),
-          optional($._enum_block),
-          "}",
-        ),
+        seq("{", optional($.self_type), optional($._enum_block), "}"),
       ),
 
     enum_case_definitions: $ =>
@@ -918,7 +908,10 @@ module.exports = grammar({
 
     access_qualifier: $ => seq("[", $._identifier, "]"),
 
-    inline_modifier: $ => prec("mod", "inline"),
+    // Unlike other soft modifiers `inline` is also valid at expression start,
+    // so a static "mod" win would misparse `inline || x`; fork instead and
+    // prefer the modifier only when both readings complete (`inline if`).
+    inline_modifier: $ => prec.dynamic(1, "inline"),
     infix_modifier: $ => prec("mod", "infix"),
     into_modifier: $ => prec("mod", "into"),
     open_modifier: $ => prec("mod", "open"),
