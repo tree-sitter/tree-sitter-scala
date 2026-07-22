@@ -2286,3 +2286,42 @@ val c = inline && b
       (identifier)
       (operator_identifier)
       (identifier))))
+
+================================================================================
+Method values (eta expansion underscore)
+================================================================================
+
+val h = f _
+def g(s: S) = (iso.reverseGet _ compose iso.get)(s) <==> s
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (method_value
+      (identifier)
+      (wildcard)))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (infix_expression
+      (call_expression
+        (parenthesized_expression
+          (infix_expression
+            (method_value
+              (field_expression
+                (identifier)
+                (identifier))
+              (wildcard))
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier))))
+        (arguments
+          (identifier)))
+      (operator_identifier)
+      (identifier))))
