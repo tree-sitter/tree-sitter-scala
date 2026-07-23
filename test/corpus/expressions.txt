@@ -2422,3 +2422,41 @@ inline def e(inline m: String): Unit =
               (boolean_literal))
             (quote_expression
               (identifier))))))))
+
+================================================================================
+Empty statements before a statement
+================================================================================
+
+object A {
+  def f = {
+    val x = 1
+    ;{
+      val y = 2
+    }
+  }
+  ;def g = 1
+  def h = { ;; }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (block
+          (val_definition
+            (identifier)
+            (integer_literal))
+          (block
+            (val_definition
+              (identifier)
+              (integer_literal)))))
+      (function_definition
+        (identifier)
+        (integer_literal))
+      (function_definition
+        (identifier)
+        (block)))))
