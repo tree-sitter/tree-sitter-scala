@@ -1044,10 +1044,7 @@ module.exports = grammar({
     _block_statements: $ =>
       prec.left(
         seq(
-          sep1(
-            $._semis,
-            choice($.expression, $._definition, $._end_marker),
-          ),
+          sep1($._semis, choice($.expression, $._definition, $._end_marker)),
           optional($._semis),
         ),
       ),
