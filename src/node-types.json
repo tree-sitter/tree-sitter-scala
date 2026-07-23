@@ -4367,7 +4367,75 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "boolean_literal",
+            "named": true
+          },
+          {
+            "type": "capture_pattern",
+            "named": true
+          },
+          {
+            "type": "case_class_pattern",
+            "named": true
+          },
+          {
+            "type": "character_literal",
+            "named": true
+          },
+          {
+            "type": "floating_point_literal",
+            "named": true
+          },
+          {
+            "type": "given_pattern",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "infix_pattern",
+            "named": true
+          },
+          {
+            "type": "integer_literal",
+            "named": true
+          },
+          {
+            "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "named_tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "null_literal",
+            "named": true
+          },
+          {
+            "type": "operator_identifier",
+            "named": true
+          },
+          {
+            "type": "quote_expression",
+            "named": true
+          },
+          {
+            "type": "stable_identifier",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "wildcard",
             "named": true
           }
         ]
@@ -4391,7 +4459,75 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "boolean_literal",
+            "named": true
+          },
+          {
+            "type": "capture_pattern",
+            "named": true
+          },
+          {
+            "type": "case_class_pattern",
+            "named": true
+          },
+          {
+            "type": "character_literal",
+            "named": true
+          },
+          {
+            "type": "floating_point_literal",
+            "named": true
+          },
+          {
+            "type": "given_pattern",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "infix_pattern",
+            "named": true
+          },
+          {
+            "type": "integer_literal",
+            "named": true
+          },
+          {
+            "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "named_tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "null_literal",
+            "named": true
+          },
+          {
+            "type": "operator_identifier",
+            "named": true
+          },
+          {
+            "type": "quote_expression",
+            "named": true
+          },
+          {
+            "type": "stable_identifier",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "wildcard",
             "named": true
           }
         ]
@@ -8354,11 +8490,79 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "boolean_literal",
+            "named": true
+          },
+          {
+            "type": "capture_pattern",
+            "named": true
+          },
+          {
+            "type": "case_class_pattern",
+            "named": true
+          },
+          {
+            "type": "character_literal",
+            "named": true
+          },
+          {
+            "type": "floating_point_literal",
+            "named": true
+          },
+          {
+            "type": "given_pattern",
+            "named": true
+          },
+          {
+            "type": "identifier",
             "named": true
           },
           {
             "type": "identifiers",
+            "named": true
+          },
+          {
+            "type": "infix_pattern",
+            "named": true
+          },
+          {
+            "type": "integer_literal",
+            "named": true
+          },
+          {
+            "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "named_tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "null_literal",
+            "named": true
+          },
+          {
+            "type": "operator_identifier",
+            "named": true
+          },
+          {
+            "type": "quote_expression",
+            "named": true
+          },
+          {
+            "type": "stable_identifier",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "wildcard",
             "named": true
           }
         ]
@@ -8596,11 +8800,79 @@
         "required": true,
         "types": [
           {
-            "type": "_pattern",
+            "type": "boolean_literal",
+            "named": true
+          },
+          {
+            "type": "capture_pattern",
+            "named": true
+          },
+          {
+            "type": "case_class_pattern",
+            "named": true
+          },
+          {
+            "type": "character_literal",
+            "named": true
+          },
+          {
+            "type": "floating_point_literal",
+            "named": true
+          },
+          {
+            "type": "given_pattern",
+            "named": true
+          },
+          {
+            "type": "identifier",
             "named": true
           },
           {
             "type": "identifiers",
+            "named": true
+          },
+          {
+            "type": "infix_pattern",
+            "named": true
+          },
+          {
+            "type": "integer_literal",
+            "named": true
+          },
+          {
+            "type": "interpolated_string_expression",
+            "named": true
+          },
+          {
+            "type": "named_tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "null_literal",
+            "named": true
+          },
+          {
+            "type": "operator_identifier",
+            "named": true
+          },
+          {
+            "type": "quote_expression",
+            "named": true
+          },
+          {
+            "type": "stable_identifier",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "wildcard",
             "named": true
           }
         ]
