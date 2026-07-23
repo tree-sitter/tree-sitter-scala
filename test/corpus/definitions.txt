@@ -59,6 +59,52 @@ class $A$B$ {
         (type_identifier)))))
 
 ================================================================================
+Union types in val and var definitions and declarations
+================================================================================
+
+trait T {
+  val a: AnyRef | Null = null
+  var b: Link[?] | Null
+  val c: Int | String
+  val h :: t = xs
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_identifier))
+        (null_literal))
+      (var_declaration
+        (identifier)
+        (infix_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (type_identifier)))
+          (operator_identifier)
+          (type_identifier)))
+      (val_declaration
+        (identifier)
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_identifier)))
+      (val_definition
+        (infix_pattern
+          (identifier)
+          (operator_identifier)
+          (identifier))
+        (identifier)))))
+
+================================================================================
 Operator identifiers
 ================================================================================
 
