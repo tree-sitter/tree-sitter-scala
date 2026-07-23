@@ -2386,3 +2386,39 @@ def g(s: S) = (iso.reverseGet _ compose iso.get)(s) <==> s
           (identifier)))
       (operator_identifier)
       (identifier))))
+
+================================================================================
+Quoted keyword literals (Scala 3)
+================================================================================
+
+inline def e(inline m: String): Unit =
+  ${ impl('m, 'null, 'true, 'false, 'this) }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (modifiers
+      (inline_modifier))
+    (identifier)
+    (parameters
+      (parameter
+        (inline_modifier)
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (indented_block
+      (splice_expression
+        (call_expression
+          (identifier)
+          (arguments
+            (quote_expression
+              (identifier))
+            (quote_expression
+              (null_literal))
+            (quote_expression
+              (boolean_literal))
+            (quote_expression
+              (boolean_literal))
+            (quote_expression
+              (identifier))))))))
