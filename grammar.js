@@ -146,7 +146,7 @@ module.exports = grammar({
     [$.binding, $._simple_expression, $._type_identifier],
     [$.class_parameter, $._type_identifier],
     // '{'  _single_lambda_param  '=>'  expression  •  '}'  …
-    [$._block, $._indentable_expression],
+    [$._block_statements, $._indentable_expression],
     [$.match_expression, $._simple_expression],
     // _  :  Type  •  '=>'  …
     [$.self_type, $._simple_expression],
@@ -1028,14 +1028,27 @@ module.exports = grammar({
         seq(field("name", $._identifier), ":", field("type", $._param_type)),
       ),
 
+    // Any separator may be followed by extra empty statements (`;`), so
+    // `}\n;{ ... }` parses like scalac. A semicolon-only block (`{ ;; }`)
+    // is kept as its own branch.
     _block: $ =>
+      prec.left(
+        choice(
+          seq(repeat1(";"), optional($._block_statements)),
+          $._block_statements,
+        ),
+      ),
+
+    _semis: $ => seq($._semicolon, repeat(";")),
+
+    _block_statements: $ =>
       prec.left(
         seq(
           sep1(
-            $._semicolon,
-            choice($.expression, $._definition, $._end_marker, ";"),
+            $._semis,
+            choice($.expression, $._definition, $._end_marker),
           ),
-          optional($._semicolon),
+          optional($._semis),
         ),
       ),
 
