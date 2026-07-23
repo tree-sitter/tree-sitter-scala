@@ -1809,7 +1809,13 @@ module.exports = grammar({
         PREC.macro,
         seq(
           "'",
-          choice(seq("{", $._block, "}"), seq("[", $._type, "]"), $.identifier),
+          choice(
+            seq("{", $._block, "}"),
+            seq("[", $._type, "]"),
+            $.identifier,
+            $.null_literal,
+            $.boolean_literal,
+          ),
         ),
       ),
 
