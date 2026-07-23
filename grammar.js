@@ -107,6 +107,8 @@ module.exports = grammar({
     [$._full_enum_def],
     // _start_val  identifier  ','  identifier  •  ':'  …
     [$.identifiers, $.val_declaration],
+    [$.val_declaration, $._definition_pattern],
+    [$.var_declaration, $._definition_pattern],
     // 'enum'  operator_identifier  _automatic_semicolon  '('  ')'  •  ':'  …
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
@@ -119,8 +121,6 @@ module.exports = grammar({
     [$._variant_type_parameter, $.type_lambda],
     // 'given'  '('  operator_identifier  ':'  _type  •  ','  …
     [$.name_and_type, $.parameter],
-    [$._simple_expression, $.binding, $.tuple_pattern],
-    [$._simple_expression, $.tuple_pattern],
     [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition, $._simple_expression],
@@ -678,7 +678,7 @@ module.exports = grammar({
     val_definition: $ =>
       seq(
         $._start_val,
-        field("pattern", choice($._pattern, $.identifiers)),
+        field("pattern", choice($._definition_pattern, $.identifiers)),
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._indentable_expression),
@@ -705,7 +705,7 @@ module.exports = grammar({
     var_definition: $ =>
       seq(
         $._start_var,
-        field("pattern", choice($._pattern, $.identifiers)),
+        field("pattern", choice($._definition_pattern, $.identifiers)),
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._indentable_expression),
@@ -1297,6 +1297,17 @@ module.exports = grammar({
 
     _pattern: $ =>
       choice(
+        $._definition_pattern,
+        $.alternative_pattern,
+        $.typed_pattern,
+        $.repeat_pattern,
+      ),
+
+    // SLS 4.1: the pattern of a val/var definition is a Pattern2, so no
+    // top-level alternatives or ascription. `val a: A | B` then reads `|`
+    // as a union type instead of an alternative pattern.
+    _definition_pattern: $ =>
+      choice(
         $._identifier,
         $.stable_identifier,
         $.interpolated_string_expression,
@@ -1305,13 +1316,10 @@ module.exports = grammar({
         $.named_tuple_pattern,
         $.case_class_pattern,
         $.infix_pattern,
-        $.alternative_pattern,
-        $.typed_pattern,
         $.given_pattern,
         $.quote_expression,
         $.literal,
         $.wildcard,
-        $.repeat_pattern,
       ),
 
     case_class_pattern: $ =>
@@ -1325,13 +1333,15 @@ module.exports = grammar({
         ")",
       ),
 
+    // Operands are _definition_pattern: a full _pattern would re-admit the
+    // excluded items through the left recursion.
     infix_pattern: $ =>
       prec.left(
         PREC.infix,
         seq(
-          field("left", $._pattern),
+          field("left", $._definition_pattern),
           field("operator", $._identifier),
-          field("right", $._pattern),
+          field("right", $._definition_pattern),
         ),
       ),
 
