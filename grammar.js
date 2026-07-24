@@ -95,6 +95,9 @@ module.exports = grammar({
   conflicts: $ => [
     [$.tuple_type, $.parameter_types],
     [$.inline_modifier, $._soft_identifier],
+    // 'extension' • '{' is either an extension definition with a braced body
+    // or the soft identifier `extension` (a Scala 2 id) called with a block.
+    [$.extension_definition, $._soft_identifier],
     [$.binding, $._simple_expression],
     [$.binding, $._type_identifier],
     [$.while_expression, $._simple_expression],
@@ -367,7 +370,7 @@ module.exports = grammar({
       prec.left(
         choice(
           seq(
-            field("path", sep1(".", $._identifier)),
+            field("path", sep1(".", $._namespace_path_segment)),
             optional(
               seq(
                 ".",
@@ -385,6 +388,11 @@ module.exports = grammar({
           $.as_renamed_identifier,
         ),
       ),
+
+    // Scala 3 keywords that are valid identifiers in Scala 2 sources and thus
+    // may appear as package names in import/export paths (e.g. `import io.circe.export.Exported`).
+    _namespace_path_segment: $ =>
+      choice($._identifier, alias(choice("enum", "export"), $.identifier)),
 
     namespace_wildcard: $ => prec.left(1, choice("*", "_", "given")),
 
@@ -1893,6 +1901,7 @@ module.exports = grammar({
           "tracked",
           "transparent",
           "end",
+          "extension",
         ),
       ),
 

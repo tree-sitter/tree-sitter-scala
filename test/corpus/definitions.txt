@@ -2328,3 +2328,27 @@ object A {
             (identifier)
             (arguments
               (identifier))))))))
+
+================================================================================
+Scala 3 keywords as import path segments
+================================================================================
+
+import io.circe.export.Exported
+import sttp.tapir.generated.reuse.enum.TapirGeneratedEndpoints.Status
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (import_declaration
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier))
+  (import_declaration
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)
+    (identifier)))
