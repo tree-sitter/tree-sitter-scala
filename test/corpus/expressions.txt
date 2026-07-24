@@ -2724,3 +2724,59 @@ def f =
           (annotation
             (type_identifier))))
       (identifier))))
+
+================================================================================
+Soft keyword extension used as an identifier
+================================================================================
+
+object A {
+  def journal: ActorRef =
+    extension.journalFor(null)
+  def f = x match {
+    case 1 =>
+      extension.remove(name)
+      Behaviors.same
+  }
+  val s = s"snapshot-${extension}"
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (indented_block
+          (call_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (arguments
+              (null_literal)))))
+      (function_definition
+        (identifier)
+        (match_expression
+          (identifier)
+          (case_block
+            (case_clause
+              (integer_literal)
+              (call_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
+                (arguments
+                  (identifier)))
+              (field_expression
+                (identifier)
+                (identifier))))))
+      (val_definition
+        (identifier)
+        (interpolated_string_expression
+          (identifier)
+          (interpolated_string
+            (interpolation
+              (block
+                (identifier)))))))))

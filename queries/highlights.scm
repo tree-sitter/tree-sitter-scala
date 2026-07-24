@@ -167,9 +167,12 @@
   "using"
   "end"
   "implicit"
-  "extension"
   "with"
 ] @keyword
+
+; `extension` is a soft keyword. Highlight it only where it starts an
+; extension definition, not when used as a plain identifier.
+(extension_definition "extension" @keyword)
 
 [
   "abstract"
