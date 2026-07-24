@@ -2780,3 +2780,49 @@ object A {
             (interpolation
               (block
                 (identifier)))))))))
+
+================================================================================
+Bare dollar identifier called with arguments
+================================================================================
+
+object A {
+  def f = {
+    $(s"$selector *[name=$fieldName]").fill.`with`(fieldValue)
+    $(selector).submit()
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (block
+          (call_expression
+            (field_expression
+              (field_expression
+                (call_expression
+                  (identifier)
+                  (arguments
+                    (interpolated_string_expression
+                      (identifier)
+                      (interpolated_string
+                        (interpolation
+                          (identifier))
+                        (interpolation
+                          (identifier))))))
+                (identifier))
+              (identifier))
+            (arguments
+              (identifier)))
+          (call_expression
+            (field_expression
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)))
+              (identifier))
+            (arguments)))))))

@@ -1844,17 +1844,15 @@ module.exports = grammar({
     // ExprsInParens     ::=  ExprInParens {‘,’ ExprInParens}
     _exprs_in_parens: $ => trailingCommaSep1($.expression),
 
+    // The opening is a single two-character token so that a bare `$` used as
+    // an ordinary identifier (e.g. `$(selector)`) still lexes as an
+    // identifier. A `$ident` splice already lexes as one identifier anyway.
     splice_expression: $ =>
       prec.left(
         PREC.macro,
-        seq(
-          "$",
-          choice(
-            seq("{", $._block, "}"),
-            seq("[", $._type, "]"),
-            // TODO: This would never hit, since identifier permits $ sign
-            $.identifier,
-          ),
+        choice(
+          seq("${", $._block, "}"),
+          seq("$[", $._type, "]"),
         ),
       ),
 
