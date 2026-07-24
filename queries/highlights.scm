@@ -118,6 +118,10 @@
 
 (infix_expression operator: (identifier) @operator)
 (infix_expression operator: (operator_identifier) @operator)
+; An operator taking a colon argument parses as a postfix expression call.
+(call_expression
+  function: (postfix_expression (identifier) @operator .)
+  arguments: (colon_argument))
 (infix_type operator: (operator_identifier) @operator)
 (infix_type operator: (operator_identifier) @operator)
 
