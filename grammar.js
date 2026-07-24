@@ -28,13 +28,13 @@ const fatArrow = () => choice("=>", alias("⇒", "=>"));
 // `=>` or the context-function arrow `?=>`.
 const anyArrow = () => choice(fatArrow(), "?=>");
 
-const ascriptionArrowTail = ($) =>
+const ascriptionArrowTail = $ =>
   seq(anyArrow(), field("return_type", $._param_type));
 
 // An expression as admitted in statement and RHS positions. do_while lives
 // outside $.expression: after `for (...)` a `do` must introduce the for's own
 // body, and a do-while fork there doubles the paren-for automaton (~+7MiB).
-const statementExpression = ($) => choice($.expression, $.do_while_expression);
+const statementExpression = $ => choice($.expression, $.do_while_expression);
 
 module.exports = grammar({
   name: "scala",
@@ -1055,11 +1055,7 @@ module.exports = grammar({
         seq(
           sep1(
             $._semis,
-            choice(
-              statementExpression($),
-              $._definition,
-              $._end_marker,
-            ),
+            choice(statementExpression($), $._definition, $._end_marker),
           ),
           optional($._semis),
         ),
@@ -1067,11 +1063,7 @@ module.exports = grammar({
 
     _indentable_expression: $ =>
       prec.right(
-        choice(
-          $.indented_block,
-          $.indented_cases,
-          statementExpression($),
-        ),
+        choice($.indented_block, $.indented_cases, statementExpression($)),
       ),
 
     block: $ =>
@@ -1764,10 +1756,7 @@ module.exports = grammar({
           field("operator", $._identifier),
           // No colon-argument choice here: postfix_expression already covers
           // `a op:` bodies, and it shadowed postfix ascriptions.
-          field(
-            "right",
-            choice($.prefix_expression, $._simple_expression),
-          ),
+          field("right", choice($.prefix_expression, $._simple_expression)),
         ),
       ),
 
