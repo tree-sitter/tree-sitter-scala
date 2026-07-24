@@ -28,6 +28,9 @@ const fatArrow = () => choice("=>", alias("⇒", "=>"));
 // `=>` or the context-function arrow `?=>`.
 const anyArrow = () => choice(fatArrow(), "?=>");
 
+const ascriptionArrowTail = ($) =>
+  seq(anyArrow(), field("return_type", $._param_type));
+
 // An expression as admitted in statement and RHS positions. do_while lives
 // outside $.expression: after `for (...)` a `do` must introduce the for's own
 // body, and a do-while fork there doubles the paren-for automaton (~+7MiB).
@@ -97,6 +100,7 @@ module.exports = grammar({
     [$.while_expression, $._simple_expression],
     [$.if_expression],
     [$.match_expression],
+    [$._type_identifier, $.ascription_expression],
     [$._given_constructor, $._type_identifier],
     [$.instance_expression],
     // In case of: 'extension'  _indent  '{'  'case'  operator_identifier  'if'  operator_identifier  •  '=>'  …
@@ -1718,12 +1722,30 @@ module.exports = grammar({
     /**
      * PostfixExpr [Ascription]
      */
+    // The arrow tail lives here (not via $.function_type) because after `:`
+    // the function-type reading loses statically to self-type/lambda readings.
+    // The dynamic penalty keeps `{ x: Int => body }` a lambda, like scalac.
     ascription_expression: $ =>
       prec.left(
         seq(
-          $._postfix_expression_choice,
+          choice($._postfix_expression_choice, $.match_expression),
           ":",
-          choice($._param_type, $.annotation),
+          choice(
+            seq(
+              field("type", $._param_type),
+              repeat(prec(1, prec.dynamic(-1, ascriptionArrowTail($)))),
+            ),
+            // The alias shares the `identifier '=>'` token path with
+            // colon_argument's lambda start (shift/shift, not shift/reduce).
+            prec.dynamic(
+              -1,
+              seq(
+                field("type", alias($._identifier, $.type_identifier)),
+                repeat1(ascriptionArrowTail($)),
+              ),
+            ),
+            $.annotation,
+          ),
         ),
       ),
 
@@ -1740,13 +1762,11 @@ module.exports = grammar({
             ),
           ),
           field("operator", $._identifier),
+          // No colon-argument choice here: postfix_expression already covers
+          // `a op:` bodies, and it shadowed postfix ascriptions.
           field(
             "right",
-            choice(
-              $.prefix_expression,
-              $._simple_expression,
-              seq(":", $.colon_argument),
-            ),
+            choice($.prefix_expression, $._simple_expression),
           ),
         ),
       ),

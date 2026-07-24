@@ -215,9 +215,10 @@ class C:
               (identifier)
               (arguments
                 (string))))))
-      (infix_expression
-        (identifier)
-        (identifier)
+      (call_expression
+        (postfix_expression
+          (identifier)
+          (identifier))
         (colon_argument
           (indented_block
             (val_definition
@@ -2597,3 +2598,129 @@ def f =
             (identifier)
             (arguments
               (identifier))))))))
+
+================================================================================
+Ascription to function types
+================================================================================
+
+object A {
+  val a = (this.unsubscribe: ActorRef => Unit)
+  val b = (fooMock.overloaded[Double]: Double => String).expects(1.0)
+  val c = PriorityGenerator({ case 1 => 2 }: Any => Int)
+  val d = (1 second: Duration)
+  val e = (identity _ : Int => Int)
+  val f = (handler: String => Context ?=> String)
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (ascription_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (type_identifier)
+            (type_identifier))))
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (parenthesized_expression
+              (ascription_expression
+                (generic_function
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (type_arguments
+                    (type_identifier)))
+                (type_identifier)
+                (type_identifier)))
+            (identifier))
+          (arguments
+            (floating_point_literal))))
+      (val_definition
+        (identifier)
+        (call_expression
+          (identifier)
+          (arguments
+            (ascription_expression
+              (case_block
+                (case_clause
+                  (integer_literal)
+                  (integer_literal)))
+              (type_identifier)
+              (type_identifier)))))
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (ascription_expression
+            (postfix_expression
+              (integer_literal)
+              (identifier))
+            (type_identifier))))
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (ascription_expression
+            (method_value
+              (identifier)
+              (wildcard))
+            (type_identifier)
+            (type_identifier))))
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (lambda_expression
+            (identifier)
+            (type_identifier)
+            (lambda_expression
+              (identifier)
+              (identifier))))))))
+
+================================================================================
+Ascribed match expression (`}: @unchecked`)
+================================================================================
+
+def f =
+  val (a, b) = info match {
+    case Poly(tps, cinfo) => (tps, cinfo)
+    case cinfo => (Nil, cinfo)
+  }: @unchecked
+  a
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (tuple_pattern
+          (identifier)
+          (identifier))
+        (ascription_expression
+          (match_expression
+            (identifier)
+            (case_block
+              (case_clause
+                (case_class_pattern
+                  (type_identifier)
+                  (identifier)
+                  (identifier))
+                (tuple_expression
+                  (identifier)
+                  (identifier)))
+              (case_clause
+                (identifier)
+                (tuple_expression
+                  (identifier)
+                  (identifier)))))
+          (annotation
+            (type_identifier))))
+      (identifier))))
