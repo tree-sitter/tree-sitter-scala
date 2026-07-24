@@ -386,3 +386,73 @@ yield ()
           (arguments
             (integer_literal)))))
     (unit)))
+
+================================================================================
+Capture patterns inside string interpolation patterns
+================================================================================
+
+object A {
+  def f = t match {
+    case q"${name0 @ CompanianAliases(Name(_))}.$_" => 1
+    case p"/items/${idString @ int(id)}" => 2
+  }
+  val t = q"$JsPath \ $cn"
+  val s"${RootPackageName @ _}/" = RootPackage
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (match_expression
+          (identifier)
+          (case_block
+            (case_clause
+              (interpolated_string_expression
+                (identifier)
+                (interpolated_string
+                  (interpolation
+                    (capture_pattern
+                      (identifier)
+                      (case_class_pattern
+                        (type_identifier)
+                        (case_class_pattern
+                          (type_identifier)
+                          (wildcard)))))
+                  (interpolation
+                    (identifier))))
+              (integer_literal))
+            (case_clause
+              (interpolated_string_expression
+                (identifier)
+                (interpolated_string
+                  (interpolation
+                    (capture_pattern
+                      (identifier)
+                      (case_class_pattern
+                        (type_identifier)
+                        (identifier))))))
+              (integer_literal)))))
+      (val_definition
+        (identifier)
+        (interpolated_string_expression
+          (identifier)
+          (interpolated_string
+            (interpolation
+              (identifier))
+            (escape_sequence)
+            (interpolation
+              (identifier)))))
+      (val_definition
+        (interpolated_string_expression
+          (identifier)
+          (interpolated_string
+            (interpolation
+              (capture_pattern
+                (identifier)
+                (wildcard)))))
+        (identifier)))))
