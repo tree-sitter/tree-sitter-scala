@@ -196,10 +196,6 @@
         "named": true
       },
       {
-        "type": "do_while_expression",
-        "named": true
-      },
-      {
         "type": "field_expression",
         "named": true
       },
@@ -615,8 +611,8 @@
     "type": "ascription_expression",
     "named": true,
     "fields": {
-      "type": {
-        "multiple": false,
+      "return_type": {
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -648,6 +644,10 @@
             "named": true
           },
           {
+            "type": "lazy_parameter_type",
+            "named": true
+          },
+          {
             "type": "literal_type",
             "named": true
           },
@@ -661,6 +661,96 @@
           },
           {
             "type": "projected_type",
+            "named": true
+          },
+          {
+            "type": "repeated_parameter_type",
+            "named": true
+          },
+          {
+            "type": "singleton_type",
+            "named": true
+          },
+          {
+            "type": "stable_type_identifier",
+            "named": true
+          },
+          {
+            "type": "structural_type",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "type_lambda",
+            "named": true
+          },
+          {
+            "type": "wildcard",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
+            "type": "compound_type",
+            "named": true
+          },
+          {
+            "type": "existential_type",
+            "named": true
+          },
+          {
+            "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "generic_type",
+            "named": true
+          },
+          {
+            "type": "infix_type",
+            "named": true
+          },
+          {
+            "type": "lazy_parameter_type",
+            "named": true
+          },
+          {
+            "type": "literal_type",
+            "named": true
+          },
+          {
+            "type": "match_type",
+            "named": true
+          },
+          {
+            "type": "named_tuple_type",
+            "named": true
+          },
+          {
+            "type": "projected_type",
+            "named": true
+          },
+          {
+            "type": "repeated_parameter_type",
             "named": true
           },
           {
@@ -755,10 +845,6 @@
           "named": true
         },
         {
-          "type": "lazy_parameter_type",
-          "named": true
-        },
-        {
           "type": "match_expression",
           "named": true
         },
@@ -788,10 +874,6 @@
         },
         {
           "type": "quote_expression",
-          "named": true
-        },
-        {
-          "type": "repeated_parameter_type",
           "named": true
         },
         {
@@ -927,6 +1009,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "do_while_expression",
+            "named": true
+          },
           {
             "type": "expression",
             "named": true
@@ -1080,6 +1166,10 @@
       "types": [
         {
           "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "do_while_expression",
           "named": true
         },
         {
@@ -1346,6 +1436,10 @@
             "named": false
           },
           {
+            "type": "do_while_expression",
+            "named": true
+          },
+          {
             "type": "end",
             "named": false
           },
@@ -1450,6 +1544,10 @@
       "multiple": false,
       "required": false,
       "types": [
+        {
+          "type": "do_while_expression",
+          "named": true
+        },
         {
           "type": "expression",
           "named": true
@@ -1869,6 +1967,10 @@
           "named": true
         },
         {
+          "type": "do_while_expression",
+          "named": true
+        },
+        {
           "type": "expression",
           "named": true
         }
@@ -2281,6 +2383,10 @@
       "types": [
         {
           "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "do_while_expression",
           "named": true
         },
         {
@@ -2703,6 +2809,10 @@
             "named": false
           },
           {
+            "type": "do_while_expression",
+            "named": true
+          },
+          {
             "type": "end",
             "named": false
           },
@@ -2909,6 +3019,10 @@
       "required": true,
       "types": [
         {
+          "type": "do_while_expression",
+          "named": true
+        },
+        {
           "type": "expression",
           "named": true
         },
@@ -2931,6 +3045,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "do_while_expression",
+            "named": true
+          },
           {
             "type": "expression",
             "named": true
@@ -3157,6 +3275,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "do_while_expression",
+            "named": true
+          },
           {
             "type": "expression",
             "named": true
@@ -3602,6 +3724,10 @@
         "required": false,
         "types": [
           {
+            "type": "do_while_expression",
+            "named": true
+          },
+          {
             "type": "expression",
             "named": true
           },
@@ -3976,6 +4102,10 @@
         "required": false,
         "types": [
           {
+            "type": "do_while_expression",
+            "named": true
+          },
+          {
             "type": "expression",
             "named": true
           },
@@ -3993,6 +4123,10 @@
         "multiple": true,
         "required": true,
         "types": [
+          {
+            "type": "do_while_expression",
+            "named": true
+          },
           {
             "type": "expression",
             "named": true
@@ -4015,6 +4149,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "do_while_expression",
+            "named": true
+          },
           {
             "type": "expression",
             "named": true
@@ -4093,6 +4231,10 @@
       "types": [
         {
           "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "do_while_expression",
           "named": true
         },
         {
@@ -4242,13 +4384,9 @@
         ]
       },
       "right": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
-          {
-            "type": ":",
-            "named": false
-          },
           {
             "type": "block",
             "named": true
@@ -4267,10 +4405,6 @@
           },
           {
             "type": "character_literal",
-            "named": true
-          },
-          {
-            "type": "colon_argument",
             "named": true
           },
           {
@@ -4947,6 +5081,10 @@
       "types": [
         {
           "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "do_while_expression",
           "named": true
         },
         {
@@ -6650,6 +6788,10 @@
           "named": true
         },
         {
+          "type": "do_while_expression",
+          "named": true
+        },
+        {
           "type": "existential_type",
           "named": true
         },
@@ -6722,6 +6864,10 @@
       "types": [
         {
           "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "do_while_expression",
           "named": true
         },
         {
@@ -6843,6 +6989,10 @@
       "multiple": false,
       "required": false,
       "types": [
+        {
+          "type": "do_while_expression",
+          "named": true
+        },
         {
           "type": "expression",
           "named": true
@@ -7019,6 +7169,10 @@
           "named": true
         },
         {
+          "type": "do_while_expression",
+          "named": true
+        },
+        {
           "type": "existential_type",
           "named": true
         },
@@ -7159,6 +7313,10 @@
           "named": true
         },
         {
+          "type": "do_while_expression",
+          "named": true
+        },
+        {
           "type": "expression",
           "named": true
         },
@@ -7179,6 +7337,10 @@
       "types": [
         {
           "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "do_while_expression",
           "named": true
         },
         {
@@ -7313,6 +7475,10 @@
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "do_while_expression",
+            "named": true
+          },
           {
             "type": "expression",
             "named": true
@@ -8650,6 +8816,10 @@
         "required": true,
         "types": [
           {
+            "type": "do_while_expression",
+            "named": true
+          },
+          {
             "type": "expression",
             "named": true
           },
@@ -8960,6 +9130,10 @@
         "required": true,
         "types": [
           {
+            "type": "do_while_expression",
+            "named": true
+          },
+          {
             "type": "expression",
             "named": true
           },
@@ -9185,6 +9359,10 @@
         "required": true,
         "types": [
           {
+            "type": "do_while_expression",
+            "named": true
+          },
+          {
             "type": "expression",
             "named": true
           },
@@ -9205,6 +9383,10 @@
           {
             "type": "do",
             "named": false
+          },
+          {
+            "type": "do_while_expression",
+            "named": true
           },
           {
             "type": "expression",
@@ -9237,6 +9419,10 @@
       "types": [
         {
           "type": "_definition",
+          "named": true
+        },
+        {
+          "type": "do_while_expression",
           "named": true
         },
         {
