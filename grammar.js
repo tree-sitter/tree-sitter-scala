@@ -2059,7 +2059,18 @@ module.exports = grammar({
       alias($._interpolation_identifier, $.identifier),
 
     interpolation: $ =>
-      seq("$", choice($._aliased_interpolation_identifier, $.block)),
+      seq(
+        "$",
+        choice(
+          $._aliased_interpolation_identifier,
+          $.block,
+          // In pattern position an interpolation may hold a capture pattern,
+          // e.g. `case q"${name @ Ident(_)}" =>`. Restricted to
+          // capture_pattern to keep the pattern grammar out of expression
+          // interpolations.
+          prec.dynamic(-1, seq("{", $.capture_pattern, "}")),
+        ),
+      ),
 
     interpolated_string: $ =>
       choice(
@@ -2133,6 +2144,10 @@ module.exports = grammar({
             // language, so I think it makes sense to allow them. Maybe in the future we
             // should move them to a `deprecated` syntax node?
             /[0-3]?[0-7]{1,2}/,
+            // Any other escaped character. scalac accepts these at the lexer
+            // level in interpolated strings (their validity depends on the
+            // interpolator, e.g. quasiquotes accept a plain `\`).
+            /[^\r\n]/,
           ),
         ),
       ),
