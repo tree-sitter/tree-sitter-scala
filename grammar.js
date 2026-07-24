@@ -1955,7 +1955,7 @@ module.exports = grammar({
             // Technically speaking, Sm (Math symbols https://www.compart.com/en/unicode/category/Sm)
             // should be allowed as a single-character opchar, however, it includes `=`,
             // so we should to avoid that to prevent bad parsing of `=` as infix term or type.
-            /[\-!#%&*+\/\\<>?\u005e\u007c~\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\p{So}]/,
+            /[\-!#%&*+\/\\<>?\u005e\u007c~\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\u2200-\u22ff\p{So}]/,
             seq(
               // opchar minus slash
               /[\-!#%&*+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
