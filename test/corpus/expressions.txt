@@ -1678,6 +1678,85 @@ def f() = {
             (identifier)))))))
 
 ================================================================================
+Do-while in assignment and return positions
+================================================================================
+
+object O {
+  var w = 0
+  w = do step() while (cond)
+  def r: Unit = { return do step() while (cond) }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (var_definition
+        (identifier)
+        (integer_literal))
+      (assignment_expression
+        (identifier)
+        (do_while_expression
+          (call_expression
+            (identifier)
+            (arguments))
+          (parenthesized_expression
+            (identifier))))
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (block
+          (return_expression
+            (do_while_expression
+              (call_expression
+                (identifier)
+                (arguments))
+              (parenthesized_expression
+                (identifier)))))))))
+
+================================================================================
+Do-while in statement positions
+================================================================================
+
+do g() while (c)
+
+val v = do g() while (c)
+
+def f =
+  do g() while (c)
+  1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (do_while_expression
+    (call_expression
+      (identifier)
+      (arguments))
+    (parenthesized_expression
+      (identifier)))
+  (val_definition
+    (identifier)
+    (do_while_expression
+      (call_expression
+        (identifier)
+        (arguments))
+      (parenthesized_expression
+        (identifier))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (do_while_expression
+        (call_expression
+          (identifier)
+          (arguments))
+        (parenthesized_expression
+          (identifier)))
+      (integer_literal))))
+
+================================================================================
 For comprehensions
 ================================================================================
 
@@ -2460,3 +2539,61 @@ object A {
       (function_definition
         (identifier)
         (block)))))
+
+================================================================================
+Parenthesized for with do, and yield on the next line
+================================================================================
+
+def f =
+  for ((a, b) <- xs) do
+    g(a)
+  for (param <- params; idx <- indices(param))
+  yield param.name
+  for (typearg <- tree.typeargs)
+  do
+    h(typearg)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (for_expression
+        (enumerators
+          (enumerator
+            (tuple_pattern
+              (identifier)
+              (identifier))
+            (identifier)))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (identifier))
+          (enumerator
+            (identifier)
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier)))))
+        (field_expression
+          (identifier)
+          (identifier)))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier))))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier))))))))

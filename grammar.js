@@ -28,6 +28,11 @@ const fatArrow = () => choice("=>", alias("⇒", "=>"));
 // `=>` or the context-function arrow `?=>`.
 const anyArrow = () => choice(fatArrow(), "?=>");
 
+// An expression as admitted in statement and RHS positions. do_while lives
+// outside $.expression: after `for (...)` a `do` must introduce the for's own
+// body, and a do-while fork there doubles the paren-for automaton (~+7MiB).
+const statementExpression = ($) => choice($.expression, $.do_while_expression);
+
 module.exports = grammar({
   name: "scala",
 
@@ -242,7 +247,7 @@ module.exports = grammar({
       ),
 
     _top_level_definition: $ =>
-      choice($._definition, $._end_marker, $.expression),
+      choice($._definition, $._end_marker, statementExpression($)),
 
     _definition: $ =>
       choice(
@@ -1044,13 +1049,26 @@ module.exports = grammar({
     _block_statements: $ =>
       prec.left(
         seq(
-          sep1($._semis, choice($.expression, $._definition, $._end_marker)),
+          sep1(
+            $._semis,
+            choice(
+              statementExpression($),
+              $._definition,
+              $._end_marker,
+            ),
+          ),
           optional($._semis),
         ),
       ),
 
     _indentable_expression: $ =>
-      prec.right(choice($.indented_block, $.indented_cases, $.expression)),
+      prec.right(
+        choice(
+          $.indented_block,
+          $.indented_cases,
+          statementExpression($),
+        ),
+      ),
 
     block: $ =>
       seq(
@@ -1389,7 +1407,6 @@ module.exports = grammar({
         $.return_expression,
         $.throw_expression,
         $.while_expression,
-        $.do_while_expression,
         $.for_expression,
         $.macro_body,
         $._simple_expression,
@@ -1611,7 +1628,7 @@ module.exports = grammar({
         seq(
           field("left", choice($.prefix_expression, $._simple_expression)),
           "=",
-          field("right", choice($.expression, $.indented_block)),
+          field("right", choice(statementExpression($), $.indented_block)),
         ),
       ),
 
@@ -2120,7 +2137,8 @@ module.exports = grammar({
 
     unit: $ => prec(PREC.unit, seq("(", ")")),
 
-    return_expression: $ => prec.left(seq("return", optional($.expression))),
+    return_expression: $ =>
+      prec.left(seq("return", optional(statementExpression($)))),
 
     throw_expression: $ => prec.left(seq("throw", $.expression)),
 
@@ -2178,7 +2196,8 @@ module.exports = grammar({
               ),
             ),
             choice(
-              seq(field("body", $.expression)),
+              field("body", $.expression),
+              seq("do", field("body", $._indentable_expression)),
               seq("yield", field("body", $._indentable_expression)),
             ),
           ),
