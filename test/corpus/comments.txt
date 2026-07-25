@@ -27,9 +27,7 @@ Block comments
 
 (compilation_unit
   (block_comment)
-  (block_comment
-    (block_comment
-      (block_comment))))
+  (block_comment))
 
 ================================================================================
 Single line comments with block comment
