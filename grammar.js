@@ -887,8 +887,16 @@ module.exports = grammar({
           // but doing so increases the state of template_body to 4000
           $._structural_type,
           // This adds _simple_type, but not the above intentionally.
-          seq($._simple_type, field("arguments", $.arguments)),
-          seq($._annotated_type, field("arguments", $.arguments)),
+          // Constructor arguments attach only to a non-annotated simple type.
+          // After an annotation, argument lists belong to the annotation.
+          // scalac parses annotation arguments greedily in the same way.
+          seq(
+            $._simple_type,
+            field(
+              "arguments",
+              repeat1(prec("constructor_application", $.arguments)),
+            ),
+          ),
         ),
       ),
 
@@ -944,13 +952,7 @@ module.exports = grammar({
      * InheritClauses    ::=  ['extends' ConstrApps] ['derives' QualId {',' QualId}]
      */
     extends_clause: $ =>
-      prec.left(
-        seq(
-          "extends",
-          field("type", $._constructor_applications),
-          repeat($.arguments),
-        ),
-      ),
+      prec.left(seq("extends", field("type", $._constructor_applications))),
 
     derives_clause: $ =>
       prec.left(

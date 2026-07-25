@@ -641,6 +641,10 @@ class MyClass extends Potato() with Tomato
 
 class A extends B(c)(d)(e)
 
+class G extends H(a, b)(c) with I[T]
+
+class J extends K(a)(using b), L[M]
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -709,7 +713,32 @@ class A extends B(c)(d)(e)
       (arguments
         (identifier))
       (arguments
-        (identifier)))))
+        (identifier))))
+  (class_definition
+    (identifier)
+    (extends_clause
+      (type_identifier)
+      (arguments
+        (identifier)
+        (identifier))
+      (arguments
+        (identifier))
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier)))))
+  (class_definition
+    (identifier)
+    (extends_clause
+      (type_identifier)
+      (arguments
+        (identifier))
+      (arguments
+        (identifier))
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier))))))
 
 ================================================================================
 Subclass definitions (Scala 3 syntax)
