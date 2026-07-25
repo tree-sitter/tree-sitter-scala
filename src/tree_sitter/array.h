@@ -197,7 +197,6 @@ extern "C" {
 static inline void _array__erase(void* self_contents, uint32_t *size,
                                 size_t element_size, uint32_t index) {
   assert(index < *size);
-  if (index >= *size) return;
   char *contents = (char *)self_contents;
   memmove(contents + index * element_size, contents + (index + 1) * element_size,
           (*size - index - 1) * element_size);
@@ -258,11 +257,10 @@ static inline void *_array__splice(void *self_contents, uint32_t *size, uint32_t
                                  size_t element_size,
                                  uint32_t index, uint32_t old_count,
                                  uint32_t new_count, const void *elements) {
+  uint32_t new_size = *size + new_count - old_count;
   uint32_t old_end = index + old_count;
   uint32_t new_end = index + new_count;
   assert(old_end <= *size);
-  if (old_end > *size) return self_contents;
-  uint32_t new_size = *size - old_count + new_count;
 
   void *new_contents = _array__reserve(self_contents, capacity, element_size, new_size);
 
