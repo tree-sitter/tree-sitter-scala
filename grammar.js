@@ -1859,10 +1859,7 @@ module.exports = grammar({
     splice_expression: $ =>
       prec.left(
         PREC.macro,
-        choice(
-          seq("${", $._block, "}"),
-          seq("$[", $._type, "]"),
-        ),
+        choice(seq("${", $._block, "}"), seq("$[", $._type, "]")),
       ),
 
     quote_expression: $ =>
