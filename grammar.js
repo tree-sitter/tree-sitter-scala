@@ -64,6 +64,13 @@ module.exports = grammar({
     "extends",
     "derives",
     "with",
+    // Lexed externally so the leading `/*` token does not occupy a column in
+    // nearly every parse-table row. That costs about 0.6MiB of parser.c.
+    $.block_comment,
+    // Never returned by the scanner. External extras look valid in every
+    // state, so the states where `/*` is plain text offer this token as a
+    // dead alternative and the scanner skips block comments there.
+    $._suppress_block_comment,
     $.error_sentinel,
   ],
 
@@ -2293,7 +2300,13 @@ module.exports = grammar({
         $.comment,
       ),
 
-    comment: $ => seq(token("//"), choice($.using_directive, $._comment_text)),
+    // The dead $._suppress_block_comment alternative marks the after-`//`
+    // state for the external scanner. In `// /* x` the `/*` is comment text.
+    comment: $ =>
+      seq(
+        token("//"),
+        choice($.using_directive, $._comment_text, $._suppress_block_comment),
+      ),
     _comment_text: $ => token(prec(PREC.comment, /.*/)),
 
     using_directive: $ =>
@@ -2305,9 +2318,6 @@ module.exports = grammar({
       ),
     using_directive_key: $ => token(/[^\s]+/),
     using_directive_value: $ => token(/.*/),
-
-    block_comment: $ =>
-      seq(token("/*"), repeat(choice(token(/./), token("//"))), token("*/")),
   },
 });
 

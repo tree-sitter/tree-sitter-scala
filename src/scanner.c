@@ -33,6 +33,8 @@ enum TokenType {
   EXTENDS,
   DERIVES,
   WITH,
+  BLOCK_COMMENT,
+  SUPPRESS_BLOCK_COMMENT,
   ERROR_SENTINEL
 };
 
@@ -46,6 +48,7 @@ const char* token_name[] = {
   "SIMPLE_MULTILINE_STRING_START",
   "INTERPOLATED_STRING_MIDDLE",
   "INTERPOLATED_MULTILINE_STRING_MIDDLE",
+  "RAW_STRING_START",
   "RAW_STRING_MIDDLE",
   "RAW_STRING_MULTILINE_MIDDLE",
   "SINGLE_LINE_STRING_END",
@@ -56,6 +59,8 @@ const char* token_name[] = {
   "EXTENDS",
   "DERIVES",
   "WITH",
+  "BLOCK_COMMENT",
+  "SUPPRESS_BLOCK_COMMENT",
   "ERROR_SENTINEL"
 };
 
@@ -225,16 +230,37 @@ static bool scan_string_content(TSLexer *lexer, bool is_multiline, StringMode st
   }
 }
 
-static bool detect_comment_start(TSLexer *lexer) {
-  lexer->mark_end(lexer);
-  // Comments should not affect indentation
-  if (lexer->lookahead == '/') {
-    advance(lexer);
-    if (lexer->lookahead == '/' || lexer -> lookahead == '*') {
-      return true;
+// Consumes the body of a block comment (with nesting, SLS 1.4). The caller
+// has consumed the leading "/*". Stops just past the matching "*/" or at EOF.
+static void consume_block_comment_body(TSLexer *lexer) {
+  unsigned depth = 1;
+  while (depth > 0 && !lexer->eof(lexer)) {
+    if (lexer->lookahead == '/') {
+      advance(lexer);
+      if (lexer->lookahead == '*') {
+        advance(lexer);
+        depth++;
+      }
+    } else if (lexer->lookahead == '*') {
+      advance(lexer);
+      if (lexer->lookahead == '/') {
+        advance(lexer);
+        depth--;
+      }
+    } else {
+      advance(lexer);
     }
   }
-  return false;
+}
+
+// Lexes a whole block comment as the BLOCK_COMMENT token. The caller has
+// consumed the leading "/*".
+static bool lex_block_comment(TSLexer *lexer) {
+  consume_block_comment_body(lexer);
+  lexer->mark_end(lexer);
+  lexer->result_symbol = BLOCK_COMMENT;
+  LOG("    BLOCK_COMMENT\n");
+  return true;
 }
 
 static bool scan_word(TSLexer *lexer, const char* const word) {
@@ -380,8 +406,21 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
         indentation_size > *array_back(&scanner->indents)
       )
   ) {
-    if (detect_comment_start(lexer)) {
-      return false;
+    // Comments should not affect indentation, so give up on the INDENT. A
+    // block comment must be lexed here because the internal lexer no longer
+    // knows it.
+    lexer->mark_end(lexer);
+    if (lexer->lookahead == '/') {
+      advance(lexer);
+      if (lexer->lookahead == '*' && valid_symbols[BLOCK_COMMENT]) {
+        advance(lexer);
+        return lex_block_comment(lexer);
+      }
+      if (lexer->lookahead == '/' || lexer->lookahead == '*') {
+        return false;
+      }
+      // A lone '/' is not a comment. Fall through with the lexer advanced
+      // past it, matching the old detect_comment_start behavior.
     }
     array_push(&scanner->indents, indentation_size);
     lexer->result_symbol = INDENT;
@@ -401,8 +440,18 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       )
   ) {
     lexer->mark_end(lexer);
-    if (detect_comment_start(lexer)) {
-      return false;
+    // Comments should not affect indentation; see the INDENT branch above.
+    if (lexer->lookahead == '/') {
+      advance(lexer);
+      if (lexer->lookahead == '*' && valid_symbols[BLOCK_COMMENT]) {
+        advance(lexer);
+        return lex_block_comment(lexer);
+      }
+      if (lexer->lookahead == '/' || lexer->lookahead == '*') {
+        return false;
+      }
+      // A lone '/' falls through with the lexer advanced past it, matching
+      // the old detect_comment_start behavior.
     }
     scanner->last_indentation_size = indentation_size;
     scanner->last_newline_count = newline_count;
@@ -459,31 +508,28 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       if (lexer->lookahead == '/') {
         return false;
       }
-      if (lexer->lookahead == '*') {
+      if (lexer->lookahead == '*' && valid_symbols[BLOCK_COMMENT]) {
         advance(lexer);
-        while (!lexer->eof(lexer)) {
-          if (lexer->lookahead == '*') {
-            advance(lexer);
-            if (lexer->lookahead == '/') {
-              advance(lexer);
-              break;
-            }
-          } else {
-            advance(lexer);
-          }
+        // Peek through the comment. Code on the same line after it still
+        // needs the AUTOMATIC_SEMICOLON now, because the newline before the
+        // comment is lost once the comment token is consumed.
+        consume_block_comment_body(lexer);
+        while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+          advance(lexer);
         }
-        while (iswspace(lexer->lookahead)) {
-          if (lexer->lookahead == '\n' || lexer->lookahead == '\r') {
-            return false;
-          }
-          skip(lexer);
+        if (lexer->lookahead == '\n' || lexer->lookahead == '\r' ||
+            lexer->eof(lexer)) {
+          // Nothing follows on the line, so the decision can wait. Consume
+          // the comment as a token and let the next newline re-enter here.
+          lexer->mark_end(lexer);
+          lexer->result_symbol = BLOCK_COMMENT;
+          LOG("    BLOCK_COMMENT\n");
+          return true;
         }
-        // If some code is present at the same line after comment end,
-        // we should still produce AUTOMATIC_SEMICOLON, e.g. in
-        // val a = 1
-        // /* comment */ val b = 2
         return true;
       }
+      // A lone '/' falls through with the lexer advanced past it, matching
+      // the old flow.
     }
 
     if (valid_symbols[ELSE]) {
@@ -541,6 +587,27 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       newline_count++;
     }
     skip(lexer);
+  }
+
+  // Mid-line block comments with no layout decision pending. `/*` is plain
+  // text where SUPPRESS_BLOCK_COMMENT or a string-content state is valid.
+  // In error recovery all symbols look valid and lexing the comment is safe.
+  if (valid_symbols[BLOCK_COMMENT] && lexer->lookahead == '/' &&
+      (valid_symbols[ERROR_SENTINEL] ||
+       !(valid_symbols[SUPPRESS_BLOCK_COMMENT] ||
+         valid_symbols[SIMPLE_STRING_MIDDLE] ||
+         valid_symbols[INTERPOLATED_STRING_MIDDLE] ||
+         valid_symbols[RAW_STRING_MIDDLE] ||
+         valid_symbols[RAW_STRING_MULTILINE_MIDDLE] ||
+         valid_symbols[INTERPOLATED_MULTILINE_STRING_MIDDLE] ||
+         valid_symbols[MULTILINE_STRING_END]))) {
+    advance(lexer);
+    if (lexer->lookahead == '*') {
+      advance(lexer);
+      return lex_block_comment(lexer);
+    }
+    // A lone '/' or a line comment. Nothing else external can match here.
+    return false;
   }
 
   if (valid_symbols[SIMPLE_STRING_START] && lexer->lookahead == '"') {
