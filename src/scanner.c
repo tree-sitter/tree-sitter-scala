@@ -2,6 +2,7 @@
 #include "tree_sitter/array.h"
 #include "tree_sitter/parser.h"
 
+#include <string.h>
 #include <wctype.h>
 
 // #define DEBUG
@@ -141,6 +142,12 @@ static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
 
+static void advance_past_blanks(TSLexer *lexer) {
+  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+    advance(lexer);
+  }
+}
+
 // Used to detect leading infix operators on continuation lines.
 // See: https://www.scala-lang.org/api/3.x/docs/changed-features/operators.html
 static bool is_op_char(int32_t c) {
@@ -253,14 +260,17 @@ static void consume_block_comment_body(TSLexer *lexer) {
   }
 }
 
-// Lexes a whole block comment as the BLOCK_COMMENT token. The caller has
-// consumed the leading "/*".
-static bool lex_block_comment(TSLexer *lexer) {
-  consume_block_comment_body(lexer);
+static bool finish_block_comment(TSLexer *lexer) {
   lexer->mark_end(lexer);
   lexer->result_symbol = BLOCK_COMMENT;
   LOG("    BLOCK_COMMENT\n");
   return true;
+}
+
+// The caller has consumed the leading "/*".
+static bool lex_block_comment(TSLexer *lexer) {
+  consume_block_comment_body(lexer);
+  return finish_block_comment(lexer);
 }
 
 static bool scan_word(TSLexer *lexer, const char* const word) {
@@ -270,7 +280,105 @@ static bool scan_word(TSLexer *lexer, const char* const word) {
     }
     advance(lexer);
   }
-  return !iswalnum(lexer->lookahead);
+  // `match_` must not match the keyword `match`.
+  return !(iswalnum(lexer->lookahead) || lexer->lookahead == '_' ||
+           lexer->lookahead == '$');
+}
+
+// Reads one identifier-like word into `buf`. Returns -1 when the word
+// cannot be an ASCII keyword. The whole word is always consumed, so a
+// failed keyword check never leaves the lexer mid-identifier.
+static int read_word(TSLexer *lexer, char *buf, int cap) {
+  int len = 0;
+  bool not_keyword = false;
+  while (iswalnum(lexer->lookahead) || lexer->lookahead == '_' ||
+         lexer->lookahead == '$') {
+    if (lexer->lookahead > 127 || len >= cap - 1) {
+      not_keyword = true;
+    } else {
+      buf[len] = (char)lexer->lookahead;
+      len++;
+    }
+    advance(lexer);
+  }
+  buf[len] = '\0';
+  return not_keyword ? -1 : len;
+}
+
+static bool word_in(const char *word, const char *const words[],
+                    unsigned count) {
+  for (unsigned i = 0; i < count; i++) {
+    if (strcmp(word, words[i]) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// catch/finally can only continue the enclosing expression. `else` is
+// left out on purpose. Closing a region in front of a line-leading
+// `else` misfires inside dedented else-if ladders.
+static bool is_block_closing_keyword(TSLexer *lexer) {
+  switch (lexer->lookahead) {
+    case 'c': return scan_word(lexer, "catch");
+    case 'f': return scan_word(lexer, "finally");
+    default: return false;
+  }
+}
+
+// Result of looking for a comment at a layout boundary (INDENT/OUTDENT).
+typedef enum {
+  COMMENT_NONE,   // not a comment; the lexer may have advanced past a lone '/'
+  COMMENT_LEXED,  // a block comment was lexed as BLOCK_COMMENT: return true
+  COMMENT_ABORT,  // a comment starts here: give up on the layout token
+  COMMENT_SAME_LINE_CODE,  // comments skipped, code follows on the same
+                           // line and its column is the indentation
+} CommentAtLayout;
+
+// Comments must not affect indentation. Block comments have to be lexed
+// here because the internal lexer no longer knows them.
+static CommentAtLayout check_comment_at_layout(TSLexer *lexer,
+                                               const bool *valid_symbols) {
+  if (lexer->lookahead != '/') {
+    return COMMENT_NONE;
+  }
+  advance(lexer);
+  if (lexer->lookahead == '*' && valid_symbols[BLOCK_COMMENT]) {
+    advance(lexer);
+    for (;;) {
+      consume_block_comment_body(lexer);
+      advance_past_blanks(lexer);
+      if (lexer->eof(lexer) || lexer->lookahead == '\n' ||
+          lexer->lookahead == '\r') {
+        finish_block_comment(lexer);
+        return COMMENT_LEXED;
+      }
+      if (lexer->lookahead == '/') {
+        advance(lexer);
+        if (lexer->lookahead == '*') {
+          advance(lexer);
+          continue;  // another block comment on the same line
+        }
+        if (lexer->lookahead == '/') {
+          // The extent cannot be re-marked back, so consume the trailing
+          // line comment into the comment token.
+          while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
+            advance(lexer);
+          }
+          finish_block_comment(lexer);
+          return COMMENT_LEXED;
+        }
+        // A lone '/' is code. The off-by-one column is harmless.
+        return COMMENT_SAME_LINE_CODE;
+      }
+      return COMMENT_SAME_LINE_CODE;
+    }
+  }
+  if (lexer->lookahead == '/' || lexer->lookahead == '*') {
+    return COMMENT_ABORT;
+  }
+  // A lone '/' is not a comment. The lexer stays advanced past it.
+  return COMMENT_NONE;
 }
 
 // Returns true if the lookahead starts a leading infix operator — a symbolic
@@ -398,29 +506,67 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   }
   scanner->last_indentation_size = -1;
 
+  // An empty stack accepts any width.
+  bool indent_geometry =
+      scanner->indents.size == 0 ||
+      indentation_size > *array_back(&scanner->indents);
   if (
       valid_symbols[INDENT] &&
       newline_count > 0 &&
+      // An indented block cannot start with a closing delimiter, e.g. the
+      // `}` after an empty-bodied lambda: `foo { x =>` + newline + `}`.
+      lexer->lookahead != '}' &&
+      lexer->lookahead != ')' &&
+      lexer->lookahead != ']' &&
       (
-        scanner->indents.size == 0 ||
-        indentation_size > *array_back(&scanner->indents)
+        indent_geometry ||
+        // A comment at exactly the region width can hide a deeper line
+        // behind it. Probe it and let the code's column decide below.
+        (scanner->indents.size > 0 &&
+         indentation_size == *array_back(&scanner->indents) &&
+         lexer->lookahead == '/')
       )
   ) {
-    // Comments should not affect indentation, so give up on the INDENT. A
-    // block comment must be lexed here because the internal lexer no longer
-    // knows it.
     lexer->mark_end(lexer);
-    if (lexer->lookahead == '/') {
-      advance(lexer);
-      if (lexer->lookahead == '*' && valid_symbols[BLOCK_COMMENT]) {
-        advance(lexer);
-        return lex_block_comment(lexer);
+    switch (check_comment_at_layout(lexer, valid_symbols)) {
+      case COMMENT_LEXED: return true;
+      case COMMENT_ABORT: return false;
+      case COMMENT_SAME_LINE_CODE: {
+        // The line's content starts after the comment; its column is the
+        // effective indentation (`if x then` + `  /* c */ body`).
+        int16_t effective = (int16_t)lexer->get_column(lexer);
+        if (scanner->indents.size == 0 ||
+            effective > *array_back(&scanner->indents)) {
+          indentation_size = effective;
+          break;
+        }
+        // The code does not open a block after all, so lex the comment.
+        return finish_block_comment(lexer);
       }
-      if (lexer->lookahead == '/' || lexer->lookahead == '*') {
-        return false;
+      case COMMENT_NONE:
+        if (!indent_geometry) {
+          return false;  // entered only to probe a comment; this is code
+        }
+        break;
+    }
+    // An indented block cannot start with else/catch/finally. Read the
+    // word whole so a partial match cannot leave the lexer mid-identifier.
+    switch (lexer->lookahead) {
+      case 'e': case 'c': case 'f': {
+        static const char *const block_opening_stoppers[] = {
+            "else", "catch", "finally"};
+        char word[sizeof "finally"];
+        int len = read_word(lexer, word, (int)sizeof word);
+        if (len > 0 &&
+            word_in(word, block_opening_stoppers,
+                    sizeof(block_opening_stoppers) /
+                        sizeof(block_opening_stoppers[0]))) {
+          return false;
+        }
+        break;
       }
-      // A lone '/' is not a comment. Fall through with the lexer advanced
-      // past it, matching the old detect_comment_start behavior.
+      default:
+        break;
     }
     array_push(&scanner->indents, indentation_size);
     lexer->result_symbol = INDENT;
@@ -440,18 +586,26 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       )
   ) {
     lexer->mark_end(lexer);
-    // Comments should not affect indentation; see the INDENT branch above.
-    if (lexer->lookahead == '/') {
-      advance(lexer);
-      if (lexer->lookahead == '*' && valid_symbols[BLOCK_COMMENT]) {
-        advance(lexer);
-        return lex_block_comment(lexer);
+    switch (check_comment_at_layout(lexer, valid_symbols)) {
+      case COMMENT_LEXED: return true;
+      case COMMENT_ABORT: return false;
+      case COMMENT_SAME_LINE_CODE: {
+        // The line's content starts after the comment; its column is the
+        // effective indentation (` /** doc */ override def f...` inside a
+        // braced body must not close the region at the comment's column).
+        int16_t effective = (int16_t)lexer->get_column(lexer);
+        if (prev != -1 && effective < prev) {
+          indentation_size = effective;
+          break;
+        }
+        // Not an outdent after all. The automatic semicolon has its own
+        // suppression rules, so lex the comment and let the next scan
+        // decide, carrying the newline through the recovery below.
+        scanner->last_newline_count = newline_count;
+        scanner->last_column = effective;
+        return finish_block_comment(lexer);
       }
-      if (lexer->lookahead == '/' || lexer->lookahead == '*') {
-        return false;
-      }
-      // A lone '/' falls through with the lexer advanced past it, matching
-      // the old detect_comment_start behavior.
+      case COMMENT_NONE: break;
     }
     scanner->last_indentation_size = indentation_size;
     scanner->last_newline_count = newline_count;
@@ -474,14 +628,17 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     return true;
   }
 
-  // Recover newline_count from the outdent reset
+  // Recover newline_count from the outdent reset. Skipped when this scan
+  // crossed a newline itself, because the saved count belongs to an
+  // earlier line at the same column.
   bool is_eof = lexer->eof(lexer);
   if (
       (
         scanner->last_newline_count > 0 &&
         (is_eof && scanner->last_column == -1)
       ) ||
-      (!is_eof && lexer->get_column(lexer) == (uint32_t)scanner->last_column)
+      (!is_eof && newline_count == 0 &&
+       lexer->get_column(lexer) == (uint32_t)scanner->last_column)
   ) {
     newline_count += scanner->last_newline_count;
   }
@@ -510,76 +667,108 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       }
       if (lexer->lookahead == '*' && valid_symbols[BLOCK_COMMENT]) {
         advance(lexer);
-        // Peek through the comment. Code on the same line after it still
-        // needs the AUTOMATIC_SEMICOLON now, because the newline before the
-        // comment is lost once the comment token is consumed.
+        // The suppression rules must also see code after the comment
+        // (`/* c */ else 2` must not be split). Lex the comment and carry
+        // the pending newline to the next scan through the recovery above.
         consume_block_comment_body(lexer);
-        while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
-          advance(lexer);
+        advance_past_blanks(lexer);
+        if (!(lexer->lookahead == '\n' || lexer->lookahead == '\r' ||
+              lexer->eof(lexer))) {
+          scanner->last_newline_count = newline_count;
+          scanner->last_column = (int16_t)lexer->get_column(lexer);
         }
-        if (lexer->lookahead == '\n' || lexer->lookahead == '\r' ||
-            lexer->eof(lexer)) {
-          // Nothing follows on the line, so the decision can wait. Consume
-          // the comment as a token and let the next newline re-enter here.
-          lexer->mark_end(lexer);
-          lexer->result_symbol = BLOCK_COMMENT;
-          LOG("    BLOCK_COMMENT\n");
-          return true;
-        }
-        return true;
+        return finish_block_comment(lexer);
       }
       // A lone '/' falls through with the lexer advanced past it, matching
       // the old flow.
     }
 
-    if (valid_symbols[ELSE]) {
-      return !scan_word(lexer, "else");
-    }
-
-    if (valid_symbols[CATCH]) {
-      if (scan_word(lexer, "catch")) {
+    // Checked before the keyword scans so neither reads a position the
+    // other advanced past (`m|| x` after a failed `match` scan). A blank
+    // line still separates the statements.
+    if (is_op_char(lexer->lookahead) || lexer->lookahead == '`') {
+      if (newline_count == 1 && is_leading_infix_continuation(lexer)) {
         return false;
       }
-    }
-
-    if (valid_symbols[FINALLY]) {
-      if  (scan_word(lexer, "finally")) {
-        return false;
-      }
-    }
-
-    if (valid_symbols[EXTENDS]) {
-      if (scan_word(lexer, "extends")) {
-        return false;
-      }
-    }
-
-    if (valid_symbols[WITH]) {
-      if (scan_word(lexer, "with")) {
-        return false;
-      }
-    }
-
-    if (valid_symbols[DERIVES]) {
-      if (scan_word(lexer, "derives")) {
-        return false;
-      }
-    }
-
-    if (newline_count > 1) {
       return true;
     }
 
-    // Don't insert automatic semicolon before leading infix operators:
-    // - symbolic, e.g. || or &&
-    // - back-ticked, e.g. `in`
-    // Only suppress if the operator is followed by horizontal whitespace
-    // and then non-newline content on the same line, meaning it has an operand.
-    if (is_leading_infix_continuation(lexer)) {
-      return false;
+    // A keyword that continues the enclosing expression suppresses the
+    // semicolon, even when several are valid at once. The first-character
+    // dispatch keeps scan_word from consuming a shared prefix.
+    switch (lexer->lookahead) {
+      case 'e':
+        if (!valid_symbols[ELSE] && !valid_symbols[EXTENDS]) {
+          break;
+        }
+        advance(lexer);
+        if (valid_symbols[ELSE] && scan_word(lexer, "lse")) {
+          return false;
+        }
+        if (valid_symbols[EXTENDS] && scan_word(lexer, "xtends")) {
+          return false;
+        }
+        break;
+      case 'c':
+        if (valid_symbols[CATCH] && scan_word(lexer, "catch")) {
+          return false;
+        }
+        break;
+      case 'f':
+        if (valid_symbols[FINALLY] && scan_word(lexer, "finally")) {
+          return false;
+        }
+        break;
+      case 'w':
+        if (valid_symbols[WITH] && scan_word(lexer, "with")) {
+          return false;
+        }
+        break;
+      case 'd':
+        if (valid_symbols[DERIVES] && scan_word(lexer, "derives")) {
+          return false;
+        }
+        break;
+      case 'm':
+        // `match` is a reserved word that never starts a statement, so it
+        // always continues the previous expression.
+        if (scan_word(lexer, "match")) {
+          return false;
+        }
+        break;
+      default:
+        break;
     }
 
     return true;
+  }
+
+  // A catch/finally that is not directly shiftable must first close the
+  // open indented region. Skipped during error recovery, where every
+  // symbol looks valid.
+  if (
+      valid_symbols[OUTDENT] &&
+      !valid_symbols[ERROR_SENTINEL] &&
+      newline_count == 0 &&
+      prev != -1 &&
+      (
+        (lexer->lookahead == 'c' && !valid_symbols[CATCH]) ||
+        (lexer->lookahead == 'f' && !valid_symbols[FINALLY])
+      )
+  ) {
+    lexer->mark_end(lexer);
+    if (is_block_closing_keyword(lexer)) {
+      if (scanner->indents.size > 0) {
+        array_pop(&scanner->indents);
+      }
+      LOG("    pop\n");
+      LOG("    OUTDENT (mid-line closing keyword)\n");
+      lexer->result_symbol = OUTDENT;
+      return true;
+    }
+    // The lexer has advanced past an identifier starting with c/f.
+    // Nothing else external can match it, so give up.
+    return false;
   }
 
   while (iswspace(lexer->lookahead)) {

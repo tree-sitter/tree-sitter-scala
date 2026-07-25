@@ -2826,3 +2826,216 @@ object A {
                   (identifier)))
               (identifier))
             (arguments)))))))
+
+================================================================================
+Catch on the same indentation as the match cases in a try body
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/540
+try optag match
+  case  _                                     => null
+  catch case ex: ArithmeticException => null
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (comment)
+  (try_expression
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (wildcard)
+          (null_literal))))
+    (catch_clause
+      (typed_pattern
+        (identifier)
+        (type_identifier))
+      (null_literal))))
+
+================================================================================
+Line-leading match continuing a method chain
+================================================================================
+
+def f =
+  xs
+    .partition(deepTest)
+      // partition into full matches and head matches
+    match
+      case (Nil, partials) => partials
+      case givenImports => givenImports
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier)))
+        (comment)
+        (indented_cases
+          (case_clause
+            (tuple_pattern
+              (identifier)
+              (identifier))
+            (identifier))
+          (case_clause
+            (identifier)
+            (identifier)))))))
+
+================================================================================
+Leading infix continuation after a line whose statement ends with a comment
+================================================================================
+
+def allowed =
+  m.isDeprecated
+  || sym.info.typeSymbol.match        // more ubiquity
+     case dd.DummyImplicitClass => true
+     case tps =>
+       tps.isMarkerTrait // no members
+       ||                // but consider NotGiven
+       tps.hasAnnotation(x)
+  || sym.info.isSingleton // DSL friendly
+  || sym.info.isRefined // can't be expressed
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (field_expression
+          (identifier)
+          (identifier))
+        (operator_identifier)
+        (match_expression
+          (field_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (identifier))
+          (comment)
+          (indented_cases
+            (case_clause
+              (stable_identifier
+                (identifier)
+                (identifier))
+              (boolean_literal))
+            (case_clause
+              (identifier)
+              (postfix_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
+                (comment)
+                (operator_identifier))
+              (comment)
+              (infix_expression
+                (infix_expression
+                  (call_expression
+                    (field_expression
+                      (identifier)
+                      (identifier))
+                    (arguments
+                      (identifier)))
+                  (operator_identifier)
+                  (field_expression
+                    (field_expression
+                      (identifier)
+                      (identifier))
+                    (identifier)))
+                (comment)
+                (operator_identifier)
+                (field_expression
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (identifier))))
+            (comment)))))))
+
+================================================================================
+Block comment closed by same-line code inside a braced body
+================================================================================
+
+class Foo {
+  def a: Int = 1
+
+ /** doc
+  *
+  */ override def apply(f: From) = super.apply(f)
+
+  def flip: Int = 2
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal))
+      (block_comment)
+      (function_definition
+        (modifiers)
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier))))
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal)))))
+
+================================================================================
+Identifier starting with a keyword prefix at line start (`match_`)
+================================================================================
+
+def f = {
+  val match_ = {
+    treeCopy.Match(match0, match0.cases)
+  }
+  match_ setType B1.tpe
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (block
+      (val_definition
+        (identifier)
+        (block
+          (call_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (arguments
+              (identifier)
+              (field_expression
+                (identifier)
+                (identifier))))))
+      (infix_expression
+        (identifier)
+        (identifier)
+        (field_expression
+          (identifier)
+          (identifier))))))
+
