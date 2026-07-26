@@ -496,16 +496,46 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     skip(lexer);
   }
 
-  // Separate from OUTDENT because the scanner cannot distinguish a comma that
-  // terminates an indented block (e.g. `map: x => f(x),`) from one that is
-  // internal to it (e.g. `case EnumCase1, EnumCase2`). By using a distinct
-  // token, tree-sitter only makes it valid in grammar contexts where comma
-  // termination is expected (colon_argument, _indentable_expression).
+  // COMMA_OUTDENT is a distinct token so tree-sitter only makes it valid
+  // where comma termination is expected (colon_argument,
+  // _indentable_expression). A comma terminates the indented block only when
+  // it ends its line. A comma with more code after it on the same line
+  // continues the statement and is internal to the block (`import a.b, c.d`,
+  // `extends A, B`, enum `case A, B`). A trailing comment still ends the line.
   if (valid_symbols[COMMA_OUTDENT] && lexer->lookahead == ',' && prev != -1) {
+    lexer->mark_end(lexer);
+    // Error recovery makes every symbol valid, so keep the eager pop there.
+    if (!valid_symbols[ERROR_SENTINEL]) {
+      advance(lexer);
+      bool ends_line = false;
+      for (;;) {
+        advance_past_blanks(lexer);
+        if (lexer->eof(lexer) || lexer->lookahead == '\n' ||
+            lexer->lookahead == '\r') {
+          ends_line = true;
+          break;
+        }
+        if (lexer->lookahead != '/') {
+          break;
+        }
+        advance(lexer);
+        if (lexer->lookahead == '/') {
+          ends_line = true;  // line comment runs to the line end
+          break;
+        }
+        if (lexer->lookahead != '*') {
+          break;  // a lone '/' is code
+        }
+        advance(lexer);
+        consume_block_comment_body(lexer);
+      }
+      if (!ends_line) {
+        return false;
+      }
+    }
     if (scanner->indents.size > 0) {
       array_pop(&scanner->indents);
     }
-    lexer->mark_end(lexer);
     lexer->result_symbol = COMMA_OUTDENT;
     return true;
   }

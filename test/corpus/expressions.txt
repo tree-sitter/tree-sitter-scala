@@ -3129,3 +3129,49 @@ def f =
             (identifier)
             (identifier)))))))
 
+================================================================================
+Comma-separated parents in an extends clause inside an indented block
+================================================================================
+
+def transformType =
+  object reported extends TypeMap, IdentityCaptRefMap:
+    def apply(t: Type) = t
+  object toCapturing extends DeepTypeMap, SetupTypeMap {
+    override def toString = "x"
+  }
+  reported(tp)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (object_definition
+        (identifier)
+        (extends_clause
+          (type_identifier)
+          (type_identifier))
+        (template_body
+          (function_definition
+            (identifier)
+            (parameters
+              (parameter
+                (identifier)
+                (type_identifier)))
+            (identifier))))
+      (object_definition
+        (identifier)
+        (extends_clause
+          (type_identifier)
+          (type_identifier))
+        (template_body
+          (function_definition
+            (modifiers)
+            (identifier)
+            (string))))
+      (call_expression
+        (identifier)
+        (arguments
+          (identifier))))))
+
