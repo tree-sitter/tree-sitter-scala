@@ -10047,6 +10047,14 @@
     {
       "type": "SYMBOL",
       "name": "error_sentinel"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_colon_eol"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_operator_eol"
     }
   ],
   "inline": [
