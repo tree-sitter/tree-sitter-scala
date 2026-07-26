@@ -72,6 +72,12 @@ module.exports = grammar({
     // dead alternative and the scanner skips block comments there.
     $._suppress_block_comment,
     $.error_sentinel,
+    // Reserved for the follow-up scanner PR (a line-final `:` and a line-final
+    // symbolic operator). Declared here first so the generation bot enlarges
+    // parser.c before the scanner reads these slots. Placed last so every
+    // existing external keeps its index.
+    $._colon_eol,
+    $._operator_eol,
   ],
 
   inline: $ => [
