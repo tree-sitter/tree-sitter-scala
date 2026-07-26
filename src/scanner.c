@@ -148,6 +148,21 @@ static void advance_past_blanks(TSLexer *lexer) {
   }
 }
 
+// Marks an indent region whose `case` clauses align with their `match`/`catch`
+// (Scala 3 same-width case). Such a region also closes on a same-width line
+// that is not another `case` clause. The flag is packed into the int16 width.
+#define CASE_INDENT_FLAG ((int16_t)0x4000)
+
+static inline int16_t indent_width(int16_t entry) {
+  return entry == -1 ? -1 : (int16_t)(entry & 0x3FFF);
+}
+
+// Does a line at `width` sit exactly at the width of a flagged same-width
+// case region `prev`? Shared by every close site of such regions.
+static inline bool at_case_region_width(int16_t prev, int16_t width) {
+  return prev != -1 && (prev & CASE_INDENT_FLAG) && width == indent_width(prev);
+}
+
 // Used to detect leading infix operators on continuation lines.
 // See: https://www.scala-lang.org/api/3.x/docs/changed-features/operators.html
 static bool is_op_char(int32_t c) {
@@ -326,6 +341,24 @@ static bool is_block_closing_keyword(TSLexer *lexer) {
   }
 }
 
+// True when `class` or `object` follows `case`, marking a definition not a
+// clause. Reads the whole word so an identifier like `cobject` is not misread
+// as `c` plus `object` by chained scan_word calls. Advances the lexer.
+static bool is_case_definition_word(TSLexer *lexer) {
+  advance_past_blanks(lexer);
+  char word[sizeof "object"];
+  int len = read_word(lexer, word, (int)sizeof word);
+  return len > 0 &&
+         (strcmp(word, "class") == 0 || strcmp(word, "object") == 0);
+}
+
+// True when the line starts a `case` clause and not a `case class`/`case
+// object` definition. Advances the lexer. The caller must have called
+// mark_end already, or must return false.
+static bool is_case_clause_intro(TSLexer *lexer) {
+  return scan_word(lexer, "case") && !is_case_definition_word(lexer);
+}
+
 // Result of looking for a comment at a layout boundary (INDENT/OUTDENT).
 typedef enum {
   COMMENT_NONE,   // not a comment; the lexer may have advanced past a lone '/'
@@ -448,6 +481,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
 
   Scanner *scanner = (Scanner *)payload;
   int16_t prev = scanner->indents.size > 0 ? *array_back(&scanner->indents) : -1;
+  int16_t prev_width = indent_width(prev);
   int16_t newline_count = 0;
   int16_t indentation_size = 0;
 
@@ -476,6 +510,28 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     return true;
   }
 
+  // Closes a same-width case region mid-cascade after a deeper region popped and
+  // the line sits at this region's width. It stays open only for another `case`
+  // clause, and returning false is safe because `case` is the only token that can
+  // follow. The column check guards against a stale last_indentation_size when
+  // intervening states emit no external token.
+  if (valid_symbols[OUTDENT] && !valid_symbols[ERROR_SENTINEL] &&
+      scanner->last_indentation_size != -1 &&
+      at_case_region_width(prev, scanner->last_indentation_size) &&
+      (lexer->eof(lexer)
+           ? scanner->last_column == -1
+           : (int16_t)lexer->get_column(lexer) == scanner->last_column)) {
+    lexer->mark_end(lexer);
+    if (is_case_clause_intro(lexer)) {
+      return false;
+    }
+    array_pop(&scanner->indents);
+    LOG("    pop\n");
+    LOG("    OUTDENT (same-width case region, cascade)\n");
+    lexer->result_symbol = OUTDENT;
+    return true;
+  }
+
   // Before advancing the lexer, check if we can double outdent
   if (
       valid_symbols[OUTDENT] &&
@@ -492,7 +548,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
         (
           scanner->last_indentation_size != -1 &&
           prev != -1 &&
-          scanner->last_indentation_size < prev
+          scanner->last_indentation_size < prev_width
         )
       )
   ) {
@@ -506,10 +562,10 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   }
   scanner->last_indentation_size = -1;
 
-  // An empty stack accepts any width.
+  // True when the line is deeper than the current region. An empty stack has
+  // prev_width == -1, so any width counts as deeper.
   bool indent_geometry =
-      scanner->indents.size == 0 ||
-      indentation_size > *array_back(&scanner->indents);
+      indentation_size > prev_width;
   if (
       valid_symbols[INDENT] &&
       newline_count > 0 &&
@@ -522,9 +578,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
         indent_geometry ||
         // A comment at exactly the region width can hide a deeper line
         // behind it. Probe it and let the code's column decide below.
-        (scanner->indents.size > 0 &&
-         indentation_size == *array_back(&scanner->indents) &&
-         lexer->lookahead == '/')
+        (indentation_size == prev_width && lexer->lookahead == '/')
       )
   ) {
     lexer->mark_end(lexer);
@@ -535,8 +589,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
         // The line's content starts after the comment; its column is the
         // effective indentation (`if x then` + `  /* c */ body`).
         int16_t effective = (int16_t)lexer->get_column(lexer);
-        if (scanner->indents.size == 0 ||
-            effective > *array_back(&scanner->indents)) {
+        if (effective > prev_width) {
           indentation_size = effective;
           break;
         }
@@ -576,13 +629,18 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
 
   // This saves the indentation_size and newline_count so it can be used
   // in subsequent calls for multiple outdent or auto-semicolon.
+  // A same-width case region also closes on a line at its own width when
+  // that line does not start another `case` clause.
+  bool case_region_close =
+      newline_count > 0 && at_case_region_width(prev, indentation_size);
   if (valid_symbols[OUTDENT] &&
       (lexer->lookahead == 0 ||
       (
         newline_count > 0 &&
         prev != -1 &&
-        indentation_size < prev
-      )
+        indentation_size < prev_width
+      ) ||
+      case_region_close
       )
   ) {
     lexer->mark_end(lexer);
@@ -594,7 +652,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
         // effective indentation (` /** doc */ override def f...` inside a
         // braced body must not close the region at the comment's column).
         int16_t effective = (int16_t)lexer->get_column(lexer);
-        if (prev != -1 && effective < prev) {
+        if (effective < prev_width) {
           indentation_size = effective;
           break;
         }
@@ -617,6 +675,10 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
     // Don't close the indented block when the next line starts with a leading
     // infix operator: that operator continues the previous expression.
     if (lexer->lookahead != 0 && is_leading_infix_continuation(lexer)) {
+      return false;
+    }
+    // A same-width `case` line continues the case region instead.
+    if (case_region_close && is_case_clause_intro(lexer)) {
       return false;
     }
     if (scanner->indents.size > 0) {
@@ -862,6 +924,26 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
   // simple multiline string context.
   if (valid_symbols[MULTILINE_STRING_END]) {
     return scan_string_content(lexer, true, STRING_MODE_SIMPLE);
+  }
+
+  // Scala 3 lets a `match`/`catch`'s `case` clauses align with the enclosing
+  // region instead of indenting deeper. Open a flagged region so the OUTDENT
+  // logic above closes it on a same-width non-case line. Only states after
+  // `match`/`catch` or a case `=>` reach here, so no new grammar production is
+  // needed. Returning false is safe because lookahead 'c' lets no other external
+  // token fire.
+  if (valid_symbols[INDENT] && !valid_symbols[ERROR_SENTINEL] &&
+      newline_count > 0 && lexer->lookahead == 'c' &&
+      prev != -1 && indentation_size == prev_width) {
+    lexer->mark_end(lexer);
+    if (is_case_clause_intro(lexer)) {
+      array_push(&scanner->indents,
+                 (int16_t)(indentation_size | CASE_INDENT_FLAG));
+      lexer->result_symbol = INDENT;
+      LOG("    INDENT (same-width case region)\n");
+      return true;
+    }
+    return false;
   }
 
   return false;

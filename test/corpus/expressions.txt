@@ -3039,3 +3039,93 @@ def f = {
           (identifier)
           (identifier))))))
 
+================================================================================
+Braceless match with cases at the same indentation
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/264
+object A:
+  a match
+  case b =>
+  case c =>
+
+def foo =
+  name match
+  case n: Int =>
+    body1
+    body2
+  case _ =>
+    body3
+  done()
+
+---
+
+(compilation_unit
+  (comment)
+  (object_definition
+    (identifier)
+    (template_body
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (identifier))
+          (case_clause
+            (identifier))))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (typed_pattern
+              (identifier)
+              (type_identifier))
+            (identifier)
+            (identifier))
+          (case_clause
+            (wildcard)
+            (identifier))))
+      (call_expression
+        (identifier)
+        (arguments)))))
+
+================================================================================
+Nested braceless match inside same-indentation cases
+================================================================================
+
+def f =
+  x match
+  case A(p) =>
+    y match
+    case B => b
+    case _ => c
+  case None => d
+
+---
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (case_class_pattern
+              (type_identifier)
+              (identifier))
+            (match_expression
+              (identifier)
+              (indented_cases
+                (case_clause
+                  (identifier)
+                  (identifier))
+                (case_clause
+                  (wildcard)
+                  (identifier)))))
+          (case_clause
+            (identifier)
+            (identifier)))))))
+
