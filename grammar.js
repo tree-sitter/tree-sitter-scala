@@ -77,16 +77,8 @@ module.exports = grammar({
     // dead alternative and the scanner skips block comments there.
     $._suppress_block_comment,
     $.error_sentinel,
-    // Reserved for the follow-up scanner PR (a line-final `:` and a line-final
-    // symbolic operator). Declared here first so the generation bot enlarges
-    // parser.c before the scanner reads these slots. Placed last so every
-    // existing external keeps its index.
     $._colon_eol,
     $._operator_eol,
-    // Reserved for the follow-up scanner PR that lexes a floating point literal
-    // whose integer part uses digit separators. Declared here first so the
-    // generation bot enlarges parser.c before the scanner reads this slot.
-    // Placed last so every existing external keeps its index.
     $._floating_point_with_separators,
   ],
 
@@ -2053,6 +2045,7 @@ module.exports = grammar({
       choice(
         $.integer_literal,
         $.floating_point_literal,
+        alias($._floating_point_with_separators, $.floating_point_literal),
         $.boolean_literal,
         $.character_literal,
         $.string,
@@ -2075,15 +2068,20 @@ module.exports = grammar({
       token(
         seq(
           optional(/[-]/),
+          // Digit separators ('_') in the integer part are lexed by the
+          // scanner (_floating_point_with_separators); the internal regex
+          // cannot, because its DFA drops the `.` transition after an
+          // underscore-containing group. The fraction and exponent keep their
+          // separators here since the group sits at the end of the pattern.
           choice(
             // digit {digit} ‘.’ digit {digit} [exponentPart] [floatType]
-            seq(/[\d]+\.[\d]+/, optional(/[eE][+-]?[\d]+/), optional(/[dfDF]/)),
+            seq(/[\d]+\.[\d](_?\d)*/, optional(/[eE][+-]?[\d](_?\d)*/), optional(/[dfDF]/)),
             // ‘.’ digit {digit} [exponentPart] [floatType]
-            seq(/\.[\d]+/, optional(/[eE][+-]?[\d]+/), optional(/[dfDF]/)),
+            seq(/\.[\d](_?\d)*/, optional(/[eE][+-]?[\d](_?\d)*/), optional(/[dfDF]/)),
             // digit {digit} exponentPart [floatType]
-            seq(/[\d]+/, /[eE][+-]?[\d]+/, optional(/[dfDF]/)),
+            seq(/[\d]+/, /[eE][+-]?[\d](_?\d)*/, optional(/[dfDF]/)),
             // digit {digit} [exponentPart] floatType
-            seq(/[\d]+/, optional(/[eE][+-]?[\d]+/), /[dfDF]/),
+            seq(/[\d]+/, optional(/[eE][+-]?[\d](_?\d)*/), /[dfDF]/),
           ),
         ),
       ),

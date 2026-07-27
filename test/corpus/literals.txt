@@ -460,6 +460,39 @@ val d1 = .314D
     (floating_point_literal)))
 
 ================================================================================
+Floating point literals with digit separators
+================================================================================
+
+val a = 1_000.5
+val b = 1_000.000_1
+val c = 3.14_159
+val d = 1_000.5e1_0
+val e = 1_000.5f
+val f = 1_000e10
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (floating_point_literal))
+  (val_definition
+    (identifier)
+    (floating_point_literal))
+  (val_definition
+    (identifier)
+    (floating_point_literal))
+  (val_definition
+    (identifier)
+    (floating_point_literal))
+  (val_definition
+    (identifier)
+    (floating_point_literal))
+  (val_definition
+    (identifier)
+    (floating_point_literal)))
+
+================================================================================
 Boolean literals
 ================================================================================
 

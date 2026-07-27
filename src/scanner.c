@@ -38,7 +38,8 @@ enum TokenType {
   SUPPRESS_BLOCK_COMMENT,
   ERROR_SENTINEL,
   COLON_EOL,
-  OPERATOR_EOL
+  OPERATOR_EOL,
+  FLOATING_POINT_WITH_SEPARATORS
 };
 
 const char* token_name[] = {
@@ -66,7 +67,8 @@ const char* token_name[] = {
   "SUPPRESS_BLOCK_COMMENT",
   "ERROR_SENTINEL",
   "COLON_EOL",
-  "OPERATOR_EOL"
+  "OPERATOR_EOL",
+  "FLOATING_POINT_WITH_SEPARATORS"
 };
 
 typedef struct {
@@ -657,6 +659,75 @@ static LineScan scan_rest_of_line(TSLexer *lexer) {
   return r;
 }
 
+// Consumes `digit (digit | '_' digit)*`. Sets *saw_sep if a separator appears.
+static bool consume_digit_group(TSLexer *lexer, bool *saw_sep) {
+  if (lexer->lookahead < '0' || lexer->lookahead > '9') {
+    return false;
+  }
+  advance(lexer);
+  for (;;) {
+    if (lexer->lookahead >= '0' && lexer->lookahead <= '9') {
+      advance(lexer);
+    } else if (lexer->lookahead == '_') {
+      advance(lexer);
+      if (lexer->lookahead < '0' || lexer->lookahead > '9') {
+        return false;
+      }
+      if (saw_sep) {
+        *saw_sep = true;
+      }
+      advance(lexer);
+    } else {
+      return true;
+    }
+  }
+}
+
+// Lexes a floating point literal whose integer part uses digit separators, e.g.
+// `1_000.5`. The internal regex cannot. After an underscore-containing group
+// its DFA loses the transition to the following `.`.
+static bool scan_float_with_separator(TSLexer *lexer) {
+  bool int_sep = false;
+  if (!consume_digit_group(lexer, &int_sep)) {
+    return false;
+  }
+  // Only the integer-part separator is ours. Without one the internal lexer
+  // lexes the number, so bail before walking the fraction and exponent.
+  if (!int_sep) {
+    return false;
+  }
+  bool is_float = false;
+  if (lexer->lookahead == '.') {
+    advance(lexer);
+    if (!consume_digit_group(lexer, NULL)) {
+      return false;
+    }
+    is_float = true;
+  }
+  if (lexer->lookahead == 'e' || lexer->lookahead == 'E') {
+    advance(lexer);
+    if (lexer->lookahead == '+' || lexer->lookahead == '-') {
+      advance(lexer);
+    }
+    if (!consume_digit_group(lexer, NULL)) {
+      return false;
+    }
+    is_float = true;
+  }
+  if (lexer->lookahead == 'd' || lexer->lookahead == 'D' ||
+      lexer->lookahead == 'f' || lexer->lookahead == 'F') {
+    advance(lexer);
+    is_float = true;
+  }
+  // A bare integer with separators (`1_000`) is the internal lexer's job.
+  if (!is_float) {
+    return false;
+  }
+  lexer->mark_end(lexer);
+  lexer->result_symbol = FLOATING_POINT_WITH_SEPARATORS;
+  return true;
+}
+
 static inline void debug_indents(Scanner *scanner) {
   LOG("    indents(%d): ", scanner->indents.size);
   for (unsigned i = 0; i < scanner->indents.size; i++) {
@@ -1118,6 +1189,13 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       newline_count++;
     }
     skip(lexer);
+  }
+
+  // A floating point literal whose integer part uses digit separators.
+  if (valid_symbols[FLOATING_POINT_WITH_SEPARATORS] &&
+      !valid_symbols[ERROR_SENTINEL] && lexer->lookahead >= '0' &&
+      lexer->lookahead <= '9') {
+    return scan_float_with_separator(lexer);
   }
 
   // A symbolic infix operator that ends its line continues the expression on
