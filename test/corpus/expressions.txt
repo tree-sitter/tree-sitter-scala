@@ -249,6 +249,61 @@ class C:
             (identifier)))))))
 
 ================================================================================
+Colon argument with a context function lambda
+================================================================================
+
+class C:
+  me.foldUse(g): _ ?=>
+    xs.filter(h)
+  .topN(max)
+
+  xs.foldUse(g): ctx ?=>
+    val t = 1
+    t
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (call_expression
+        (field_expression
+          (call_expression
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (identifier)))
+            (colon_argument
+              (wildcard)
+              (indented_block
+                (call_expression
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (arguments
+                    (identifier))))))
+          (identifier))
+        (arguments
+          (identifier)))
+      (call_expression
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier)))
+        (colon_argument
+          (identifier)
+          (indented_block
+            (val_definition
+              (identifier)
+              (integer_literal))
+            (identifier)))))))
+
+================================================================================
 Trailing comma after for comprehension in lambda parameter of a function
 ================================================================================
 
