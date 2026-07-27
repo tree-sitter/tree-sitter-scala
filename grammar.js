@@ -2326,7 +2326,9 @@ module.exports = grammar({
           optional("case"),
           $._pattern,
           choice("<-", "←", "="),
-          $.expression,
+          // A generator or `=` binding can bind a braceless indented block, as
+          // the guard and the `for` body already do.
+          choice($.expression, $.indented_block),
           optional($.guard),
         ),
         repeat1($.guard),

@@ -1893,6 +1893,50 @@ def f() = {
               (identifier))))))))
 
 ================================================================================
+For comprehension enumerator with an indented block
+================================================================================
+
+def f =
+  for
+    u <-
+      val a = g()
+      a.h
+    _ =
+      p()
+      q()
+  yield u
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (indented_block
+              (val_definition
+                (identifier)
+                (call_expression
+                  (identifier)
+                  (arguments)))
+              (field_expression
+                (identifier)
+                (identifier))))
+          (enumerator
+            (wildcard)
+            (indented_block
+              (call_expression
+                (identifier)
+                (arguments))
+              (call_expression
+                (identifier)
+                (arguments)))))
+        (identifier)))))
+
+================================================================================
 For comprehensions (Scala 3 syntax)
 ================================================================================
 
