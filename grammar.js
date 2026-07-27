@@ -1715,7 +1715,9 @@ module.exports = grammar({
                   $._identifier,
                   $.wildcard,
                 ),
-                fatArrow(),
+                // anyArrow so a context-function lambda `x ?=>` also starts a
+                // colon argument, not only the plain `=>` form.
+                anyArrow(),
               ),
             ),
           ),
