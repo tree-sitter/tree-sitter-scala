@@ -28,6 +28,11 @@ const fatArrow = () => choice("=>", alias("⇒", "=>"));
 // `=>` or the context-function arrow `?=>`.
 const anyArrow = () => choice(fatArrow(), "?=>");
 
+// Accepts a `:` in both spellings. The scanner lexes a line-final lone colon
+// as the external COLON_EOL token (scalac's COLONeol), so every consumer of
+// such a colon must handle it.
+const colonEol = ($) => choice(":", alias($._colon_eol, ":"));
+
 const ascriptionArrowTail = $ =>
   seq(anyArrow(), field("return_type", $._param_type));
 
@@ -181,6 +186,11 @@ module.exports = grammar({
     [$.vararg, $.operator_identifier],
     // _simple_expression  '('  expression  •  ','  …
     [$._exprs_in_parens],
+    // _simple_expression  ':'  '('  name_and_type  ')'  •  '=>'
+    // The parenthesized list is either the lambda parameters of a colon
+    // argument or a named tuple type on the ascription reading. What follows
+    // `=>` decides, an INDENT or a same-line type.
+    [$.named_tuple_type, $._colon_bindings],
     // _simple_expression  ':'  '('  wildcard  •  ','  …
     [$._annotated_type, $.binding],
     // '['  identifier  ':'  '{'  wildcard  •  ':'  …
@@ -316,7 +326,7 @@ module.exports = grammar({
       choice(
         prec.left(
           PREC.control,
-          seq(":", $._indent, optional($.self_type), $._enum_block, $._outdent),
+          seq(colonEol($), $._indent, optional($.self_type), $._enum_block, $._outdent),
         ),
         seq("{", optional($.self_type), optional($._enum_block), "}"),
       ),
@@ -568,7 +578,7 @@ module.exports = grammar({
       prec.left(
         PREC.control,
         seq(
-          ":",
+          colonEol($),
           $._indent,
           choice(
             seq(optional($.self_type), $._block),
@@ -879,7 +889,7 @@ module.exports = grammar({
         PREC.compound,
         seq(
           $._constructor_application,
-          choice(":", "with"),
+          choice(colonEol($), "with"),
           field("body", $.with_template_body),
         ),
       ),
@@ -1057,7 +1067,10 @@ module.exports = grammar({
     name_and_type: $ =>
       prec.left(
         PREC.control,
-        seq(field("name", $._identifier), ":", field("type", $._param_type)),
+        // Inside parens scalac turns COLONeol off, but the scanner still emits
+        // it, so the typed reading must accept both spellings. Keep in sync
+        // with $.binding, whose token path this rule shares.
+        seq(field("name", $._identifier), colonEol($), field("type", $._param_type)),
       ),
 
     // Any separator may be followed by extra empty statements (`;`), so
@@ -1615,7 +1628,8 @@ module.exports = grammar({
     binding: $ =>
       seq(
         choice(field("name", $._identifier), $.wildcard),
-        optional(seq(":", field("type", $._param_type))),
+        // colonEol here mirrors name_and_type, the shared-token twin of this rule.
+        optional(seq(colonEol($), field("type", $._param_type))),
       ),
 
     bindings: $ => seq("(", trailingCommaSep($.binding), ")"),
@@ -1673,7 +1687,7 @@ module.exports = grammar({
           PREC.colon_call,
           seq(
             field("function", $._postfix_expression_choice),
-            ":",
+            colonEol($),
             field("arguments", $.colon_argument),
           ),
         ),
@@ -1690,11 +1704,28 @@ module.exports = grammar({
           optional(
             field(
               "lambda_start",
-              seq(choice($.bindings, $._identifier, $.wildcard), fatArrow()),
+              seq(
+                choice(
+                  alias($._colon_bindings, $.bindings),
+                  $._identifier,
+                  $.wildcard,
+                ),
+                fatArrow(),
+              ),
             ),
           ),
           choice($.indented_block, $.indented_cases),
         ),
+      ),
+
+    // Parenthesized lambda parameters of a colon argument. Typed parameters go
+    // through name_and_type (aliased to binding) so they share a token path
+    // with named_tuple_type, avoiding the reduce conflict that killed the lambda.
+    _colon_bindings: $ =>
+      seq(
+        "(",
+        trailingCommaSep(choice($.binding, alias($.name_and_type, $.binding))),
+        ")",
       ),
 
     field_expression: $ =>
@@ -1776,9 +1807,14 @@ module.exports = grammar({
               $._simple_expression,
             ),
           ),
-          field("operator", $._identifier),
-          // No colon-argument choice here: postfix_expression already covers
-          // `a op:` bodies, and it shadowed postfix ascriptions.
+          // A symbolic operator that ends its line continues the expression on
+          // the next line (SLS 1.2), so the external _operator_eol joins the
+          // choice. No colon-argument choice belongs here. postfix_expression
+          // already covers `a op:` bodies and it shadowed postfix ascriptions.
+          field(
+            "operator",
+            choice($._identifier, alias($._operator_eol, $.operator_identifier)),
+          ),
           field("right", choice($.prefix_expression, $._simple_expression)),
         ),
       ),
@@ -2239,7 +2275,10 @@ module.exports = grammar({
               ),
             ),
             choice(
-              field("body", $.expression),
+              // The bare body also admits an indented block, since Scala 3
+              // allows a multi-statement `for (...)` body with no `do`. It uses
+              // plain $.expression so a next-line `do`/`yield` never starts it.
+              field("body", choice($.indented_block, $.expression)),
               seq("do", field("body", $._indentable_expression)),
               seq("yield", field("body", $._indentable_expression)),
             ),

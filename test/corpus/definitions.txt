@@ -2381,3 +2381,22 @@ import sttp.tapir.generated.reuse.enum.TapirGeneratedEndpoints.Status
     (identifier)
     (identifier)
     (identifier)))
+
+================================================================================
+Parenthesized typed lambda parameter wrapped across the newline
+================================================================================
+
+val f = (x:
+    Int) => x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (lambda_expression
+      (bindings
+        (binding
+          (identifier)
+          (type_identifier)))
+      (identifier))))

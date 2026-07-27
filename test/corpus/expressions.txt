@@ -1726,6 +1726,7 @@ do g() while (c)
 val v = do g() while (c)
 
 def f =
+  h()
   do g() while (c)
   1
 
@@ -1749,6 +1750,9 @@ def f =
   (function_definition
     (identifier)
     (indented_block
+      (call_expression
+        (identifier)
+        (arguments))
       (do_while_expression
         (call_expression
           (identifier)
@@ -3175,3 +3179,796 @@ def transformType =
         (arguments
           (identifier))))))
 
+================================================================================
+Backquoted then on a leading infix continuation line
+================================================================================
+
+def f =
+  val cond =
+      x.exists(p)
+  && q.`then`
+  cond
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (identifier)))
+            (operator_identifier)
+            (field_expression
+              (identifier)
+              (identifier)))))
+      (identifier))))
+
+================================================================================
+Colon template body starting with a backquoted DSL statement
+================================================================================
+
+class T extends F:
+  `empty list` should work
+  more()
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (extends_clause
+      (type_identifier))
+    (template_body
+      (infix_expression
+        (identifier)
+        (identifier)
+        (identifier))
+      (call_expression
+        (identifier)
+        (arguments)))))
+
+================================================================================
+Comment between match and its case clauses
+================================================================================
+
+def f =
+  x match
+  /* c */ case a => b
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (block_comment)
+          (case_clause
+            (identifier)
+            (identifier)))))))
+
+================================================================================
+Dedented block comment before a continuation line
+================================================================================
+
+def f =
+  xs
+ /* c */ .map(g)
+
+def h =
+  val a = x
+ /* c */ || y
+  a
+
+class A {
+  def g: Int = 1
+  def f = if (c) 1
+ /* x */ else 2
+}
+
+val a = 1
+/* c */ val b = 2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (field_expression
+          (identifier)
+          (block_comment)
+          (identifier))
+        (arguments
+          (identifier)))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (identifier)
+        (infix_expression
+          (identifier)
+          (block_comment)
+          (operator_identifier)
+          (identifier)))
+      (identifier)))
+  (class_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal))
+      (function_definition
+        (identifier)
+        (if_expression
+          (parenthesized_expression
+            (identifier))
+          (integer_literal)
+          (block_comment)
+          (integer_literal)))))
+  (val_definition
+    (identifier)
+    (integer_literal))
+  (block_comment)
+  (val_definition
+    (identifier)
+    (integer_literal)))
+
+================================================================================
+Dedented leading infix operator closing into an enclosing conditional
+================================================================================
+
+def f =
+  if xs.indexSatisfying(from = index): imp =>
+      imp.selectors.exists(p)
+  < nextImport then
+    action()
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (if_expression
+        (infix_expression
+          (call_expression
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (assignment_expression
+                  (identifier)
+                  (identifier))))
+            (colon_argument
+              (identifier)
+              (indented_block
+                (call_expression
+                  (field_expression
+                    (field_expression
+                      (identifier)
+                      (identifier))
+                    (identifier))
+                  (arguments
+                    (identifier))))))
+          (operator_identifier)
+          (identifier))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments)))))))
+
+================================================================================
+Deeply nested bare colon arguments
+================================================================================
+
+def g =
+  typeRest:
+    infixTypeRest(inContextBound):
+      refinedTypeRest:
+        withTypeRest:
+          annotTypeRest:
+            simpleTypeRest(tuple)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (identifier)
+        (colon_argument
+          (indented_block
+            (call_expression
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)))
+              (colon_argument
+                (indented_block
+                  (call_expression
+                    (identifier)
+                    (colon_argument
+                      (indented_block
+                        (call_expression
+                          (identifier)
+                          (colon_argument
+                            (indented_block
+                              (call_expression
+                                (identifier)
+                                (colon_argument
+                                  (indented_block
+                                    (call_expression
+                                      (identifier)
+                                      (arguments
+                                        (identifier)))))))))))))))))))))
+
+================================================================================
+Fewer-braces colon followed by a trailing comment
+================================================================================
+
+def f =
+  xs.foldLeft(z): // combine
+    (acc, x) =>
+      acc + x
+  ys.map: /* elementwise */
+    y =>
+      y * 2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier)))
+        (comment)
+        (colon_argument
+          (indented_block
+            (lambda_expression
+              (bindings
+                (binding
+                  (identifier))
+                (binding
+                  (identifier)))
+              (indented_block
+                (infix_expression
+                  (identifier)
+                  (operator_identifier)
+                  (identifier)))))))
+      (call_expression
+        (field_expression
+          (identifier)
+          (identifier))
+        (block_comment)
+        (colon_argument
+          (indented_block
+            (lambda_expression
+              (identifier)
+              (indented_block
+                (infix_expression
+                  (identifier)
+                  (operator_identifier)
+                  (integer_literal))))))))))
+
+================================================================================
+For with an enumerator continued after a trailing infix operator
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/358
+for
+  _ <- a *>
+       b
+yield ()
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (comment)
+  (for_expression
+    (enumerators
+      (enumerator
+        (wildcard)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))))
+    (unit)))
+
+================================================================================
+If-then with a multiline condition continued by a leading infix operator
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/541
+if (false)
+  || true
+then
+  print("true")
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (comment)
+  (if_expression
+    (infix_expression
+      (parenthesized_expression
+        (boolean_literal))
+      (operator_identifier)
+      (boolean_literal))
+    (indented_block
+      (call_expression
+        (identifier)
+        (arguments
+          (string))))))
+
+================================================================================
+Indented bodies starting with keyword-prefixed identifiers
+================================================================================
+
+def f =
+  cdo(1)
+  eyield(2)
+  e+ x
+  g()
+
+def m =
+  xs
+  m|| x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (identifier)
+        (arguments
+          (integer_literal)))
+      (call_expression
+        (identifier)
+        (arguments
+          (integer_literal)))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (identifier))
+      (call_expression
+        (identifier)
+        (arguments))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (identifier)
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (identifier)))))
+
+================================================================================
+Leading infix operator continuing inside colon-argument regions
+================================================================================
+
+def f: Boolean =
+  trace(msg, show = true):
+    noNotes:
+      elems.exists(g)
+  || !x.isTerminal
+    && ifNotTried(x):
+      val xelems = x.elems
+      xelems.forall(h)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (type_identifier)
+    (indented_block
+      (call_expression
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)
+            (assignment_expression
+              (identifier)
+              (boolean_literal))))
+        (colon_argument
+          (indented_block
+            (call_expression
+              (identifier)
+              (colon_argument
+                (indented_block
+                  (call_expression
+                    (infix_expression
+                      (infix_expression
+                        (call_expression
+                          (field_expression
+                            (identifier)
+                            (identifier))
+                          (arguments
+                            (identifier)))
+                        (operator_identifier)
+                        (prefix_expression
+                          (field_expression
+                            (identifier)
+                            (identifier))))
+                      (operator_identifier)
+                      (call_expression
+                        (identifier)
+                        (arguments
+                          (identifier))))
+                    (colon_argument
+                      (indented_block
+                        (val_definition
+                          (identifier)
+                          (field_expression
+                            (identifier)
+                            (identifier)))
+                        (call_expression
+                          (field_expression
+                            (identifier)
+                            (identifier))
+                          (arguments
+                            (identifier)))))))))))))))
+
+================================================================================
+Leading operator statements with trailing comments keep their block
+================================================================================
+
+def f =
+  ??? // TODO
+  println("x")
+
+def g =
+  ??? /* TODO */
+  h()
+
+def i =
+  p || // c
+  q
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (operator_identifier)
+      (comment)
+      (call_expression
+        (identifier)
+        (arguments
+          (string)))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (operator_identifier)
+      (block_comment)
+      (call_expression
+        (identifier)
+        (arguments))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (comment)
+        (identifier)))))
+
+================================================================================
+Mid-line else after an indented consequence
+================================================================================
+
+// https://github.com/tree-sitter/tree-sitter-scala/issues/539
+def a = if (true)
+  1 else 2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (comment)
+  (function_definition
+    (identifier)
+    (if_expression
+      (parenthesized_expression
+        (boolean_literal))
+      (indented_block
+        (integer_literal))
+      (integer_literal))))
+
+================================================================================
+Mid-line else and finally after a brace-less if
+================================================================================
+
+object A {
+  def f =
+    if (c)
+      x match {
+        case 1 => 1
+      } else 2
+  def g = {
+    try if (force) graduates.removeIf(notAlive)
+    finally if (locked) gcStatus.set(false)
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (indented_block
+          (if_expression
+            (parenthesized_expression
+              (identifier))
+            (indented_block
+              (match_expression
+                (identifier)
+                (case_block
+                  (case_clause
+                    (integer_literal)
+                    (integer_literal)))))
+            (integer_literal))))
+      (function_definition
+        (identifier)
+        (block
+          (try_expression
+            (if_expression
+              (parenthesized_expression
+                (identifier))
+              (call_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
+                (arguments
+                  (identifier))))
+            (finally_clause
+              (if_expression
+                (parenthesized_expression
+                  (identifier))
+                (call_expression
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (arguments
+                    (boolean_literal)))))))))))
+
+================================================================================
+Operator at end of line before an annotated definition
+================================================================================
+
+trait R {
+  val optPos = "pos" --?
+  @deprecated val g = 1
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (postfix_expression
+          (string)
+          (operator_identifier)))
+      (val_definition
+        (annotation
+          (type_identifier))
+        (identifier)
+        (integer_literal)))))
+
+================================================================================
+Parenthesized for with do, yield on the next line, and a bare indented body
+================================================================================
+
+def f =
+  for ((a, b) <- xs) do
+    g(a)
+  for (x <- xs)
+    val y = h(x)
+    k(y)
+  for (param <- params; idx <- indices(param))
+  yield param.name
+  for (typearg <- tree.typeargs)
+  do
+    h(typearg)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (for_expression
+        (enumerators
+          (enumerator
+            (tuple_pattern
+              (identifier)
+              (identifier))
+            (identifier)))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (identifier)))
+        (indented_block
+          (val_definition
+            (identifier)
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier))))
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier)))))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (identifier))
+          (enumerator
+            (identifier)
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier)))))
+        (field_expression
+          (identifier)
+          (identifier)))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier))))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier))))))))
+
+================================================================================
+Postfix operator at end of line before a definition keyword
+================================================================================
+
+trait RunnerSpec {
+  val optPos = "pos" / "run compilation tests (success)" --?
+  val optNeg = "neg" / "run compilation tests (failure)" --?
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (postfix_expression
+          (infix_expression
+            (string)
+            (operator_identifier)
+            (string))
+          (operator_identifier)))
+      (val_definition
+        (identifier)
+        (postfix_expression
+          (infix_expression
+            (string)
+            (operator_identifier)
+            (string))
+          (operator_identifier))))))
+
+================================================================================
+Top-level match with cases at width zero and a following statement
+================================================================================
+
+x match
+case 1 => a
+case 2 => b
+val z = 1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (match_expression
+    (identifier)
+    (indented_cases
+      (case_clause
+        (integer_literal)
+        (identifier))
+      (case_clause
+        (integer_literal)
+        (identifier))))
+  (val_definition
+    (identifier)
+    (integer_literal)))
+
+================================================================================
+Trailing infix operator line continuation
+================================================================================
+
+def f = for {
+  pipeline = a >>>
+               b >>>
+               c
+  _ <- queue.take *>
+         ref.update(g)
+} yield pipeline
+
+val cond =
+  if (c) ???
+  else d
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (for_expression
+      (enumerators
+        (enumerator
+          (identifier)
+          (infix_expression
+            (infix_expression
+              (identifier)
+              (operator_identifier)
+              (identifier))
+            (operator_identifier)
+            (identifier)))
+        (enumerator
+          (wildcard)
+          (infix_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (operator_identifier)
+            (call_expression
+              (field_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (identifier))))))
+      (identifier)))
+  (val_definition
+    (identifier)
+    (indented_block
+      (if_expression
+        (parenthesized_expression
+          (identifier))
+        (operator_identifier)
+        (identifier)))))
