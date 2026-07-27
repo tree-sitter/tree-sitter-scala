@@ -31,7 +31,7 @@ const anyArrow = () => choice(fatArrow(), "?=>");
 // Accepts a `:` in both spellings. The scanner lexes a line-final lone colon
 // as the external COLON_EOL token (scalac's COLONeol), so every consumer of
 // such a colon must handle it.
-const colonEol = ($) => choice(":", alias($._colon_eol, ":"));
+const colonEol = $ => choice(":", alias($._colon_eol, ":"));
 
 const ascriptionArrowTail = $ =>
   seq(anyArrow(), field("return_type", $._param_type));
@@ -331,7 +331,13 @@ module.exports = grammar({
       choice(
         prec.left(
           PREC.control,
-          seq(colonEol($), $._indent, optional($.self_type), $._enum_block, $._outdent),
+          seq(
+            colonEol($),
+            $._indent,
+            optional($.self_type),
+            $._enum_block,
+            $._outdent,
+          ),
         ),
         seq("{", optional($.self_type), optional($._enum_block), "}"),
       ),
@@ -1075,7 +1081,11 @@ module.exports = grammar({
         // Inside parens scalac turns COLONeol off, but the scanner still emits
         // it, so the typed reading must accept both spellings. Keep in sync
         // with $.binding, whose token path this rule shares.
-        seq(field("name", $._identifier), colonEol($), field("type", $._param_type)),
+        seq(
+          field("name", $._identifier),
+          colonEol($),
+          field("type", $._param_type),
+        ),
       ),
 
     // Any separator may be followed by extra empty statements (`;`), so
@@ -1820,7 +1830,10 @@ module.exports = grammar({
           // already covers `a op:` bodies and it shadowed postfix ascriptions.
           field(
             "operator",
-            choice($._identifier, alias($._operator_eol, $.operator_identifier)),
+            choice(
+              $._identifier,
+              alias($._operator_eol, $.operator_identifier),
+            ),
           ),
           field("right", choice($.prefix_expression, $._simple_expression)),
         ),
