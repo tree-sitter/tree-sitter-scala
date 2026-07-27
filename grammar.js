@@ -83,6 +83,11 @@ module.exports = grammar({
     // existing external keeps its index.
     $._colon_eol,
     $._operator_eol,
+    // Reserved for the follow-up scanner PR that lexes a floating point literal
+    // whose integer part uses digit separators. Declared here first so the
+    // generation bot enlarges parser.c before the scanner reads this slot.
+    // Placed last so every existing external keeps its index.
+    $._floating_point_with_separators,
   ],
 
   inline: $ => [
