@@ -2095,9 +2095,17 @@ module.exports = grammar({
           // separators here since the group sits at the end of the pattern.
           choice(
             // digit {digit} ‘.’ digit {digit} [exponentPart] [floatType]
-            seq(/[\d]+\.[\d](_?\d)*/, optional(/[eE][+-]?[\d](_?\d)*/), optional(/[dfDF]/)),
+            seq(
+              /[\d]+\.[\d](_?\d)*/,
+              optional(/[eE][+-]?[\d](_?\d)*/),
+              optional(/[dfDF]/),
+            ),
             // ‘.’ digit {digit} [exponentPart] [floatType]
-            seq(/\.[\d](_?\d)*/, optional(/[eE][+-]?[\d](_?\d)*/), optional(/[dfDF]/)),
+            seq(
+              /\.[\d](_?\d)*/,
+              optional(/[eE][+-]?[\d](_?\d)*/),
+              optional(/[dfDF]/),
+            ),
             // digit {digit} exponentPart [floatType]
             seq(/[\d]+/, /[eE][+-]?[\d](_?\d)*/, optional(/[dfDF]/)),
             // digit {digit} [exponentPart] floatType
