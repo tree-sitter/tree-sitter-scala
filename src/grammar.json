@@ -8533,6 +8533,15 @@
           "name": "floating_point_literal"
         },
         {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_floating_point_with_separators"
+          },
+          "named": true,
+          "value": "floating_point_literal"
+        },
+        {
           "type": "SYMBOL",
           "name": "boolean_literal"
         },
@@ -8637,14 +8646,14 @@
                 "members": [
                   {
                     "type": "PATTERN",
-                    "value": "[\\d]+\\.[\\d]+"
+                    "value": "[\\d]+\\.[\\d](_?\\d)*"
                   },
                   {
                     "type": "CHOICE",
                     "members": [
                       {
                         "type": "PATTERN",
-                        "value": "[eE][+-]?[\\d]+"
+                        "value": "[eE][+-]?[\\d](_?\\d)*"
                       },
                       {
                         "type": "BLANK"
@@ -8670,44 +8679,19 @@
                 "members": [
                   {
                     "type": "PATTERN",
-                    "value": "\\.[\\d]+"
+                    "value": "\\.[\\d](_?\\d)*"
                   },
                   {
                     "type": "CHOICE",
                     "members": [
                       {
                         "type": "PATTERN",
-                        "value": "[eE][+-]?[\\d]+"
+                        "value": "[eE][+-]?[\\d](_?\\d)*"
                       },
                       {
                         "type": "BLANK"
                       }
                     ]
-                  },
-                  {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "PATTERN",
-                        "value": "[dfDF]"
-                      },
-                      {
-                        "type": "BLANK"
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "SEQ",
-                "members": [
-                  {
-                    "type": "PATTERN",
-                    "value": "[\\d]+"
-                  },
-                  {
-                    "type": "PATTERN",
-                    "value": "[eE][+-]?[\\d]+"
                   },
                   {
                     "type": "CHOICE",
@@ -8731,11 +8715,36 @@
                     "value": "[\\d]+"
                   },
                   {
+                    "type": "PATTERN",
+                    "value": "[eE][+-]?[\\d](_?\\d)*"
+                  },
+                  {
                     "type": "CHOICE",
                     "members": [
                       {
                         "type": "PATTERN",
-                        "value": "[eE][+-]?[\\d]+"
+                        "value": "[dfDF]"
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "PATTERN",
+                    "value": "[\\d]+"
+                  },
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "PATTERN",
+                        "value": "[eE][+-]?[\\d](_?\\d)*"
                       },
                       {
                         "type": "BLANK"
@@ -9721,8 +9730,17 @@
               ]
             },
             {
-              "type": "SYMBOL",
-              "name": "expression"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "expression"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "indented_block"
+                }
+              ]
             },
             {
               "type": "CHOICE",

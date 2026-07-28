@@ -2559,6 +2559,10 @@
         {
           "type": "guard",
           "named": true
+        },
+        {
+          "type": "indented_block",
+          "named": true
         }
       ]
     }
