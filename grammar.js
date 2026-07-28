@@ -93,6 +93,16 @@ module.exports = grammar({
     $._param_value_type,
     $._simple_type,
     $.literal,
+    // Small hidden rules that reduce to a token almost immediately. Inlining
+    // removes the reduce step and merges states, shrinking parser.c by ~2MB.
+    $._asterisk,
+    $._super_identifier,
+    $._this_identifier,
+    $._non_null_literal,
+    $._braced_template_body,
+    $._indented_template_body,
+    $._structural_type,
+    $._refinement,
   ],
 
   // Doc: https://tree-sitter.github.io/tree-sitter/creating-parsers, search "precedences"
@@ -1764,7 +1774,7 @@ module.exports = grammar({
           "new",
           seq(
             "new",
-            field("early_defs", $._early_defs),
+            field("early_defs", $.early_defs),
             "with",
             $._constructor_application,
           ),
@@ -1772,7 +1782,17 @@ module.exports = grammar({
         seq("new", $._constructor_application),
       ),
 
-    _early_defs: $ => alias($._braced_template_body, $.early_defs),
+    // A visible copy of _braced_template_body. It cannot alias that rule
+    // because the rule is inlined, which would empty the aliased node.
+    early_defs: $ =>
+      prec.left(
+        PREC.control,
+        seq(
+          "{",
+          optional(choice($._braced_template_body1, $._braced_template_body2)),
+          "}",
+        ),
+      ),
 
     /**
      * PostfixExpr [Ascription]
