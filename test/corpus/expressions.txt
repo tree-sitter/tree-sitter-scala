@@ -2703,6 +2703,49 @@ def f =
               (identifier))))))))
 
 ================================================================================
+Lambda with a function-typed parameter
+================================================================================
+
+val f = (g: Int => Int) => g(1)
+val h = xs.map((acc: Int => Int, x) => acc)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    pattern: (identifier)
+    value: (lambda_expression
+      parameters: (bindings
+        (binding
+          name: (identifier)
+          type: (function_type
+            parameter_types: (parameter_types
+              (type_identifier))
+            return_type: (type_identifier))))
+      (call_expression
+        function: (identifier)
+        arguments: (arguments
+          (integer_literal)))))
+  (val_definition
+    pattern: (identifier)
+    value: (call_expression
+      function: (field_expression
+        value: (identifier)
+        field: (identifier))
+      arguments: (arguments
+        (lambda_expression
+          parameters: (bindings
+            (binding
+              name: (identifier)
+              type: (function_type
+                parameter_types: (parameter_types
+                  (type_identifier))
+                return_type: (type_identifier)))
+            (binding
+              name: (identifier)))
+          (identifier))))))
+
+================================================================================
 Ascription to function types
 ================================================================================
 

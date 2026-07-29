@@ -125,6 +125,12 @@ module.exports = grammar({
     [$.extension_definition, $._soft_identifier],
     [$.binding, $._simple_expression],
     [$.binding, $._type_identifier],
+    // A parenthesized type before `=>` can extend into a function type or stop
+    // so the arrow belongs to the enclosing lambda, pattern, or colon argument.
+    // The conflicts keep both readings alive so precedence picks per context.
+    [$._type, $.parameter_types],
+    [$.parameter_types, $._colon_bindings],
+    [$.parameter_types, $.bindings],
     [$.while_expression, $._simple_expression],
     [$.if_expression],
     [$.match_expression],
@@ -1311,28 +1317,30 @@ module.exports = grammar({
         seq("case", $._infix_type_choice, field("body", $._arrow_then_type)),
       ),
 
+    // A plain type wins where both readings are legal (ascription, pattern,
+    // colon argument). In a lambda parameter clause a plain type leaves the
+    // arrow dangling, so the function type is the only survivor there.
     function_type: $ =>
-      prec.left(
-        choice(
-          seq(field("type_parameters", $.type_parameters), $._arrow_then_type),
-          seq(field("parameter_types", $.parameter_types), $._arrow_then_type),
+      prec.dynamic(
+        -1,
+        prec.left(
+          choice(
+            seq(field("type_parameters", $.type_parameters), $._arrow_then_type),
+            seq(field("parameter_types", $.parameter_types), $._arrow_then_type),
+          ),
         ),
       ),
 
     _arrow_then_type: $ =>
       prec.right(seq(anyArrow(), field("return_type", $._type))),
 
-    // Deprioritize against typed_pattern._type.
     parameter_types: $ =>
-      prec(
-        -1,
-        choice(
-          $._annotated_type,
-          // Prioritize a parenthesized param list over a single tuple_type.
-          prec.dynamic(1, seq("(", trailingCommaSep($._param_type), ")")),
-          $.compound_type,
-          $.infix_type,
-        ),
+      choice(
+        $._annotated_type,
+        // Prioritize a parenthesized param list over a single tuple_type.
+        prec.dynamic(1, seq("(", trailingCommaSep($._param_type), ")")),
+        $.compound_type,
+        $.infix_type,
       ),
 
     _param_type: $ => choice($.lazy_parameter_type, $._param_value_type),
@@ -1513,19 +1521,24 @@ module.exports = grammar({
         seq(optional("implicit"), $._identifier, optional(seq(":", $._type))),
       ),
 
+    // Keeps a braced `{ x: T => ... }` a lambda instead of a fewer-braces colon
+    // argument on `x`.
     lambda_expression: $ =>
-      prec.right(
-        "lambda",
-        seq(
-          optional(
-            seq(field("type_parameters", $.type_parameters), fatArrow()),
+      prec.dynamic(
+        1,
+        prec.right(
+          "lambda",
+          seq(
+            optional(
+              seq(field("type_parameters", $.type_parameters), fatArrow()),
+            ),
+            field(
+              "parameters",
+              choice($.bindings, $.wildcard, $._single_lambda_param),
+            ),
+            anyArrow(),
+            $._indentable_expression,
           ),
-          field(
-            "parameters",
-            choice($.bindings, $.wildcard, $._single_lambda_param),
-          ),
-          anyArrow(),
-          $._indentable_expression,
         ),
       ),
 
@@ -1649,7 +1662,9 @@ module.exports = grammar({
         optional(seq(colonEol($), field("type", $._param_type))),
       ),
 
-    bindings: $ => seq("(", trailingCommaSep($.binding), ")"),
+    // Keeps `(f: A => B) => ...` a lambda parameter clause, not a parenthesized
+    // expression joined by an infix `=>`.
+    bindings: $ => prec.dynamic(2, seq("(", trailingCommaSep($.binding), ")")),
 
     case_block: $ =>
       choice(prec(-1, seq("{", "}")), seq("{", repeat1($.case_clause), "}")),
@@ -1740,11 +1755,16 @@ module.exports = grammar({
     // Parenthesized lambda parameters of a colon argument. Typed parameters go
     // through name_and_type (aliased to binding) so they share a token path
     // with named_tuple_type, avoiding the reduce conflict that killed the lambda.
+    // Keeps `foo: () => x` a colon argument with an empty parameter clause, not
+    // an ascription of `foo` to `() => x`.
     _colon_bindings: $ =>
-      seq(
-        "(",
-        trailingCommaSep(choice($.binding, alias($.name_and_type, $.binding))),
-        ")",
+      prec.dynamic(
+        3,
+        seq(
+          "(",
+          trailingCommaSep(choice($.binding, alias($.name_and_type, $.binding))),
+          ")",
+        ),
       ),
 
     field_expression: $ =>
