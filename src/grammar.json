@@ -7532,7 +7532,7 @@
                 "name": "early_defs",
                 "content": {
                   "type": "SYMBOL",
-                  "name": "_early_defs"
+                  "name": "early_defs"
                 }
               },
               {
@@ -7561,14 +7561,43 @@
         }
       ]
     },
-    "_early_defs": {
-      "type": "ALIAS",
+    "early_defs": {
+      "type": "PREC_LEFT",
+      "value": 1,
       "content": {
-        "type": "SYMBOL",
-        "name": "_braced_template_body"
-      },
-      "named": true,
-      "value": "early_defs"
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "{"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_braced_template_body1"
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "_braced_template_body2"
+                  }
+                ]
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          },
+          {
+            "type": "STRING",
+            "value": "}"
+          }
+        ]
+      }
     },
     "ascription_expression": {
       "type": "PREC_LEFT",
@@ -10305,7 +10334,15 @@
     "_infix_type_choice",
     "_param_value_type",
     "_simple_type",
-    "literal"
+    "literal",
+    "_asterisk",
+    "_super_identifier",
+    "_this_identifier",
+    "_non_null_literal",
+    "_braced_template_body",
+    "_indented_template_body",
+    "_structural_type",
+    "_refinement"
   ],
   "supertypes": [
     "expression",
