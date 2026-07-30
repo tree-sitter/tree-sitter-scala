@@ -80,6 +80,9 @@ module.exports = grammar({
     $._colon_eol,
     $._operator_eol,
     $._floating_point_with_separators,
+    // Emitted only where a marker can attach and the line is `end` plus a
+    // tag word, so `end` stays an ordinary identifier elsewhere.
+    $._end_keyword,
   ],
 
   inline: $ => [
