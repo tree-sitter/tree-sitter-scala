@@ -561,6 +561,27 @@ def another() {
         (identifier)))))
 
 ================================================================================
+If with a parenthesized condition and a next-line then (Scala 3 syntax)
+================================================================================
+
+def g =
+  if (a)
+  then x
+  else y
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (if_expression
+        (parenthesized_expression
+          (identifier))
+        (identifier)
+        (identifier)))))
+
+================================================================================
 If expressions (Scala 3 syntax)
 ================================================================================
 
@@ -606,7 +627,8 @@ class C:
             (identifier)
             (call_expression
               (identifier)
-              (arguments)))
+              (arguments))
+            (end_marker))
           (if_expression
             (indented_block
               (val_definition
@@ -2447,6 +2469,116 @@ def f = {
         (identifier)))))
 
 ================================================================================
+End markers on control expressions (Scala 3 syntax)
+================================================================================
+
+def p() =
+  if a then
+    b
+  end if
+  while a do
+    b
+  end while
+  for x <- xs do
+    x
+  end for
+  try
+    a
+  catch
+    case e => b
+  end try
+end p
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters)
+    (indented_block
+      (if_expression
+        (identifier)
+        (indented_block
+          (identifier))
+        (end_marker))
+      (while_expression
+        (identifier)
+        (indented_block
+          (identifier))
+        (end_marker))
+      (for_expression
+        (enumerators
+          (enumerator
+            (identifier)
+            (identifier)))
+        (indented_block
+          (identifier))
+        (end_marker))
+      (try_expression
+        (indented_block
+          (identifier))
+        (catch_clause
+          (indented_cases
+            (case_clause
+              (identifier)
+              (identifier))))
+        (end_marker)))
+    (end_marker)))
+
+================================================================================
+Braced typed lambda and a colon-argument lambda
+================================================================================
+
+val a = forAll { int: Int =>
+  int.asJson
+}
+
+val b = OWrites: c =>
+  Json.obj(c)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (block
+        (lambda_expression
+          (identifier)
+          (type_identifier)
+          (indented_block
+            (field_expression
+              (identifier)
+              (identifier)))))))
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (colon_argument
+        (identifier)
+        (indented_block
+          (call_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (arguments
+              (identifier))))))))
+
+================================================================================
+Standalone end is not a marker (Scala 3 syntax)
+================================================================================
+
+end Foo
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (postfix_expression
+    (identifier)
+    (identifier)))
+
+================================================================================
 Soft keyword `inline` as identifier in expressions
 ================================================================================
 
@@ -2822,12 +2954,11 @@ object A {
       (val_definition
         (identifier)
         (parenthesized_expression
-          (lambda_expression
+          (ascription_expression
             (identifier)
             (type_identifier)
-            (lambda_expression
-              (identifier)
-              (identifier))))))))
+            (type_identifier)
+            (type_identifier)))))))
 
 ================================================================================
 Ascribed match expression (`}: @unchecked`)
@@ -4114,3 +4245,118 @@ val cond =
           (identifier))
         (operator_identifier)
         (identifier)))))
+
+================================================================================
+Then condition holding a match (Scala 3 syntax)
+================================================================================
+
+val r =
+  if xs match
+    case Nil => false
+    case _ => true
+  then "y"
+  else "n"
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (indented_block
+      (if_expression
+        (match_expression
+          (identifier)
+          (indented_cases
+            (case_clause
+              (identifier)
+              (boolean_literal))
+            (case_clause
+              (wildcard)
+              (boolean_literal))))
+        (string)
+        (string)))))
+
+================================================================================
+While with a match condition and a line-leading do (Scala 3 syntax)
+================================================================================
+
+def w() =
+  while (sArr(last): @switch) match
+      case Sym => true
+      case _ => false
+  do last -= 1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters)
+    (indented_block
+      (while_expression
+        (match_expression
+          (parenthesized_expression
+            (ascription_expression
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)))
+              (annotation
+                (type_identifier))))
+          (indented_cases
+            (case_clause
+              (identifier)
+              (boolean_literal))
+            (case_clause
+              (wildcard)
+              (boolean_literal))))
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (integer_literal))))))
+
+================================================================================
+Parenthesized while with a next-line body
+================================================================================
+
+def g() = {
+  while (c)
+    step()
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters)
+    (block
+      (while_expression
+        (parenthesized_expression
+          (identifier))
+        (call_expression
+          (identifier)
+          (arguments))))))
+
+================================================================================
+Curried typed lambda in braces (Scala 3 syntax)
+================================================================================
+
+val h = { x: Int => y: Int => x + y }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (block
+      (lambda_expression
+        (identifier)
+        (type_identifier)
+        (ascription_expression
+          (identifier)
+          (type_identifier)
+          (infix_type
+            (type_identifier)
+            (operator_identifier)
+            (type_identifier)))))))

@@ -1060,5 +1060,9 @@ end Merge
           (class_parameter
             (identifier)
             (type_identifier)))
-        (template_body)))))
+        (template_body
+          (postfix_expression
+            (identifier)
+            (identifier)))))
+    (end_marker)))
 

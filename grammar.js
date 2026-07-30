@@ -41,6 +41,16 @@ const ascriptionArrowTail = $ =>
 // body, and a do-while fork there doubles the paren-for automaton (~+7MiB).
 const statementExpression = $ => choice($.expression, $.do_while_expression);
 
+// A Scala 3 end marker as the last child of the construct it closes. The
+// leading semicolon keeps `end` out of every expression follow set, and
+// the weight beats the statement reading of the marker line. The tails are
+// shared rules so every construct reuses the same post-semicolon states.
+const endMarkerTail = ($, marker, weight) =>
+  prec.dynamic(
+    weight,
+    seq($._automatic_semicolon, alias(marker, $.end_marker)),
+  );
+
 module.exports = grammar({
   name: "scala",
 
@@ -112,8 +122,6 @@ module.exports = grammar({
   // These names can be used in the prec functions to define precedence relative only to other names in the array, rather than globally.
   precedences: $ => [
     ["mod", "soft_id"],
-    ["end", "soft_id"],
-    ["end", "this_id"],
     ["new", "structural_type"],
     ["self_type", "lambda"],
     ["annotation", "applied_constructor_type"],
@@ -140,11 +148,33 @@ module.exports = grammar({
     [$._type_identifier, $.ascription_expression],
     [$._given_constructor, $._type_identifier],
     [$.instance_expression],
+    // `end` after a new-with-template closes either the instance or an
+    // enclosing construct.
+    [$._constructor_application, $.instance_expression],
+    // A semicolon after a body is either a statement separator or the one
+    // in front of an end marker. Fork until the tag decides.
+    [$.try_expression],
+    [$._if_body],
+    // Same separator-or-marker fork as above.
+    [$.function_definition],
+    [$.val_definition],
+    [$._dot_match_expression],
+    [$.var_definition],
+    [$.package_clause],
+    [$._object_definition],
+    [$.given_definition],
+    [$.extension_definition],
+    [$.while_expression],
+    [$.for_expression],
+    [$.enum_definition],
     // In case of: 'extension'  _indent  '{'  'case'  operator_identifier  'if'  operator_identifier  •  '=>'  …
     // we treat `operator_identifier` as `simple_expression`
     [$._simple_expression, $.lambda_expression],
-    // operator_identifier  •  ':'  …
     [$._simple_expression, $._single_lambda_param],
+    // '['  identifier  ':'  '{'  identifier. A braced context bound reuses
+    // the template machinery, so self type and statement readings coexist.
+    [$._single_lambda_param, $.self_type, $._type_identifier],
+    [$._single_lambda_param, $._type_identifier],
     // 'class'  _class_constructor  •  _automatic_semicolon  …
     [$._class_definition],
     // 'class'  operator_identifier  •  _automatic_semicolon  …
@@ -169,26 +199,14 @@ module.exports = grammar({
     [$.name_and_type, $.parameter],
     [$._simple_expression, $._type_identifier],
     // 'if'  parenthesized_expression  •  '{'  …
-    [$._if_condition, $._simple_expression],
+    [$._if_condition_paren, $._simple_expression],
     [$.block, $._braced_template_body1],
     [$._simple_expression, $._type_identifier],
-    // '['  operator_identifier  ':'  '{'  operator_identifier  •  '=>'  …
-    [$._single_lambda_param, $.self_type, $._type_identifier],
-    // '['  operator_identifier  ':'  '{'  operator_identifier  •  '?=>'  …
-    [$._single_lambda_param, $._type_identifier],
-    // '('  operator_identifier  •  ':'  …
-    [$._simple_expression, $._single_lambda_param, $.binding],
-    // 'given'  '{'  operator_identifier  •  ':'  …
-    [$._simple_expression, $._single_lambda_param, $.self_type],
-    // '['  operator_identifier  ':'  '{'  operator_identifier  •  ':'  …
-    [
-      $._simple_expression,
-      $._single_lambda_param,
-      $.self_type,
-      $._type_identifier,
-    ],
-    // 'given'  '{'  operator_identifier  ':'  _type  •  '=>'  …
-    [$._single_lambda_param, $._self_type_ascription],
+    // '{'  identifier  •  ':' starts the braced typed lambda, the block
+    // lambda param, and a statement alike.
+    [$._simple_expression, $._braced_typed_lambda],
+    [$.self_type, $._simple_expression, $._braced_typed_lambda],
+    [$._self_type_ascription, $._braced_typed_lambda],
     [$.binding, $._simple_expression, $._type_identifier],
     [$.class_parameter, $._type_identifier],
     // '{'  _single_lambda_param  '=>'  expression  •  '}'  …
@@ -209,6 +227,9 @@ module.exports = grammar({
     [$.named_tuple_type, $._colon_bindings],
     // _simple_expression  ':'  '('  wildcard  •  ','  …
     [$._annotated_type, $.binding],
+    // '['  identifier  ':'  '{'  identifier  •  ':'  — a braced context
+    // bound reuses the self-type head shapes.
+    [$.self_type, $._type_identifier, $._simple_expression],
     // '['  identifier  ':'  '{'  wildcard  •  ':'  …
     [$.self_type, $._annotated_type, $._simple_expression],
     // '['  identifier  ':'  '{'  '('  wildcard  •  ':'  …
@@ -292,8 +313,7 @@ module.exports = grammar({
         optional(trailingSep1($._semicolon, $._top_level_definition)),
       ),
 
-    _top_level_definition: $ =>
-      choice($._definition, $._end_marker, statementExpression($)),
+    _top_level_definition: $ => choice($._definition, statementExpression($)),
 
     _definition: $ =>
       choice(
@@ -325,6 +345,7 @@ module.exports = grammar({
         field("extend", optional($.extends_clause)),
         field("derive", optional($.derives_clause)),
         field("body", $.enum_body),
+        optional($._end_marker_named_tail),
       ),
 
     _enum_block: $ =>
@@ -380,16 +401,19 @@ module.exports = grammar({
       ),
 
     package_clause: $ =>
-      prec.right(
-        seq(
-          "package",
-          field("name", $.package_identifier),
-          // This is slightly more permissive than the EBNF in that it allows any
-          // kind of declaration inside of the package blocks. As we're more
-          // concerned with the structure rather than the validity of the program
-          // we'll allow it.
-          field("body", optional($.template_body)),
+      seq(
+        prec.right(
+          seq(
+            "package",
+            field("name", $.package_identifier),
+            // This is slightly more permissive than the EBNF in that it allows
+            // any kind of declaration inside of the package blocks. As we're
+            // more concerned with the structure rather than the validity of
+            // the program we'll allow it.
+            field("body", optional($.template_body)),
+          ),
         ),
+        optional($._end_marker_named_tail),
       ),
 
     package_identifier: $ => prec.right(sep1(".", $._identifier)),
@@ -485,13 +509,16 @@ module.exports = grammar({
       ),
 
     _object_definition: $ =>
-      prec.left(
-        seq(
-          field("name", $._identifier),
-          field("extend", optional($.extends_clause)),
-          field("derive", optional($.derives_clause)),
-          field("body", optional($._definition_body)),
+      seq(
+        prec.left(
+          seq(
+            field("name", $._identifier),
+            field("extend", optional($.extends_clause)),
+            field("derive", optional($.derives_clause)),
+            field("body", optional($._definition_body)),
+          ),
         ),
+        optional($._end_marker_named_tail),
       ),
 
     class_definition: $ =>
@@ -509,10 +536,16 @@ module.exports = grammar({
         field("extend", optional($.extends_clause)),
         field("derive", optional($.derives_clause)),
         field("body", optional($._definition_body)),
+        optional($._end_marker_named_tail),
       ),
 
+    // The weight keeps a next-line braced template attached to its
+    // definition instead of becoming a block statement.
     _definition_body: $ =>
-      seq(optional($._automatic_semicolon), field("body", $.template_body)),
+      prec.dynamic(
+        1,
+        seq(optional($._automatic_semicolon), field("body", $.template_body)),
+      ),
 
     /**
      * ClassConstr       ::=  [ClsTypeParamClause] [ConstrMods] ClsParamClauses
@@ -663,34 +696,38 @@ module.exports = grammar({
         seq("{", optional($._block), "}"),
       ),
 
-    _end_marker: $ =>
-      prec.left(
-        "end",
-        seq(
-          "end",
-          choice(
-            "if",
-            "while",
-            "for",
-            "match",
-            "try",
-            "new",
-            "this",
-            "given",
-            "extension",
-            "val",
-            // Only alphanumeric (or back-quoted) names: allowing operator
-            // identifiers here would swallow `end` used as a plain
-            // identifier before an infix operator (`${end - start}`).
-            alias(choice($._alpha_identifier, $._backquoted_id), "_end_ident"),
-          ),
+    // One hidden variant per tag set, both shown as (end_marker). Real
+    // rules because an alias around a token-only seq shows nothing.
+    _end_marker_named: $ =>
+      seq(
+        $._end_keyword,
+        choice(
+          "val",
+          "given",
+          "this",
+          // No operator identifiers. They would swallow `end` used as a
+          // plain identifier (`${end - start}`).
+          alias(choice($._alpha_identifier, $._backquoted_id), "_end_ident"),
         ),
+      ),
+    _end_marker_named_tail: $ => endMarkerTail($, $._end_marker_named, 1),
+
+    // The extra weight sends `end extension` to the extension itself
+    // rather than naming a definition inside it.
+    _end_marker_kw_tail: $ => endMarkerTail($, $._end_marker_kw, 2),
+
+    _end_marker_kw: $ =>
+      seq(
+        $._end_keyword,
+        choice("extension", "if", "while", "for", "match", "try", "new"),
       ),
 
     // Dynamic precedences added here to win over $.call_expression
     self_type: $ =>
+      // 2 beats the block lambda reading of `{ this: I => ... }`, which
+      // carries dynamic 1.
       prec.dynamic(
-        1,
+        2,
         prec(
           "self_type",
           seq(
@@ -744,6 +781,7 @@ module.exports = grammar({
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._indentable_expression),
+        optional($._end_marker_named_tail),
       ),
 
     val_declaration: $ =>
@@ -771,6 +809,7 @@ module.exports = grammar({
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._indentable_expression),
+        optional($._end_marker_named_tail),
       ),
 
     _start_var: $ => seq(repeat($.annotation), optional($.modifiers), "var"),
@@ -806,6 +845,7 @@ module.exports = grammar({
           seq("=", field("body", $._indentable_expression)),
           field("body", $.block),
         ),
+        optional($._end_marker_named_tail),
       ),
 
     function_declaration: $ => $._function_declaration,
@@ -845,20 +885,28 @@ module.exports = grammar({
      *   Extension         ::=  'extension' [DefTypeParamClause] {UsingParamClause}
      *                          '(' DefParam ')' {UsingParamClause} ExtMethods
      */
+    // The weight beats the reading of `extension (x)` as a call of the
+    // soft identifier `extension`.
     extension_definition: $ =>
-      prec.left(
+      prec.dynamic(
+        1,
         seq(
-          "extension",
-          field("type_parameters", optional($.type_parameters)),
-          field("parameters", repeat($.parameters)),
-          field(
-            "body",
-            choice(
-              $._extension_template_body,
-              $.function_definition,
-              $.function_declaration,
+          prec.left(
+            seq(
+              "extension",
+              field("type_parameters", optional($.type_parameters)),
+              field("parameters", repeat($.parameters)),
+              field(
+                "body",
+                choice(
+                  $._extension_template_body,
+                  $.function_definition,
+                  $.function_declaration,
+                ),
+              ),
             ),
           ),
+          optional($._end_marker_kw_tail),
         ),
       ),
 
@@ -867,21 +915,24 @@ module.exports = grammar({
      * GivenSig          ::=  [id] [DefTypeParamClause] {UsingParamClause} ':'
      */
     given_definition: $ =>
-      prec.left(
-        seq(
-          repeat($.annotation),
-          optional($.modifiers),
-          "given",
-          optional($._given_constructor),
-          repeat($._given_sig),
-          choice(
-            field("return_type", $._structural_instance),
-            seq(
-              field("return_type", $._annotated_type),
-              optional(seq("=", field("body", $._indentable_expression))),
+      seq(
+        prec.left(
+          seq(
+            repeat($.annotation),
+            optional($.modifiers),
+            "given",
+            optional($._given_constructor),
+            repeat($._given_sig),
+            choice(
+              field("return_type", $._structural_instance),
+              seq(
+                field("return_type", $._annotated_type),
+                optional(seq("=", field("body", $._indentable_expression))),
+              ),
             ),
           ),
         ),
+        optional($._end_marker_named_tail),
       ),
 
     _given_sig: $ => seq($._given_conditional, fatArrow()),
@@ -1115,10 +1166,7 @@ module.exports = grammar({
     _block_statements: $ =>
       prec.left(
         seq(
-          sep1(
-            $._semis,
-            choice(statementExpression($), $._definition, $._end_marker),
-          ),
+          sep1($._semis, choice(statementExpression($), $._definition)),
           optional($._semis),
         ),
       ),
@@ -1143,12 +1191,7 @@ module.exports = grammar({
     indented_block: $ =>
       prec.left(
         PREC.control,
-        seq(
-          $._indent,
-          $._block,
-          choice($._outdent, $._comma_outdent),
-          optional($._end_marker),
-        ),
+        seq($._indent, $._block, choice($._outdent, $._comma_outdent)),
       ),
 
     indented_cases: $ =>
@@ -1328,14 +1371,8 @@ module.exports = grammar({
         -1,
         prec.left(
           choice(
-            seq(
-              field("type_parameters", $.type_parameters),
-              $._arrow_then_type,
-            ),
-            seq(
-              field("parameter_types", $.parameter_types),
-              $._arrow_then_type,
-            ),
+            seq(field("type_parameters", $.type_parameters), $._arrow_then_type),
+            seq(field("parameter_types", $.parameter_types), $._arrow_then_type),
           ),
         ),
       ),
@@ -1526,9 +1563,7 @@ module.exports = grammar({
       prec.left(PREC.call, seq($._simple_expression, $.wildcard)),
 
     _single_lambda_param: $ =>
-      prec.right(
-        seq(optional("implicit"), $._identifier, optional(seq(":", $._type))),
-      ),
+      prec.right(seq(optional("implicit"), $._identifier)),
 
     // Keeps a braced `{ x: T => ... }` a lambda instead of a fewer-braces colon
     // argument on `x`.
@@ -1543,6 +1578,9 @@ module.exports = grammar({
             ),
             field(
               "parameters",
+              // No unparenthesized typed parameter here. It is only legal
+              // inside braces, and `OWrites: c => body` must stay a colon
+              // argument.
               choice($.bindings, $.wildcard, $._single_lambda_param),
             ),
             anyArrow(),
@@ -1562,13 +1600,43 @@ module.exports = grammar({
     _block_lambda_expression: $ =>
       prec.right(
         "lambda",
-        seq(
-          field(
-            "parameters",
-            choice($.bindings, $.wildcard, $._single_lambda_param),
+        choice(
+          seq(
+            field(
+              "parameters",
+              choice($.bindings, $.wildcard, $._single_lambda_param),
+            ),
+            anyArrow(),
+            optional(
+              choice(
+                $._block,
+                // Curried form ending in a typed lambda, as in
+                // `{ _ => source: Source[ByteString, Any] => body }`.
+                alias($._braced_typed_lambda, $.lambda_expression),
+              ),
+            ),
           ),
-          anyArrow(),
-          optional($._block),
+          $._braced_typed_lambda,
+        ),
+      ),
+
+    // `{ x: T => body }` is legal only as a block result. The weight beats
+    // the reading of `x: T` as a statement taking a colon argument.
+    _braced_typed_lambda: $ =>
+      prec.dynamic(
+        1,
+        prec.right(
+          "lambda",
+          seq(
+            field(
+              "parameters",
+              prec.right(
+                seq(optional("implicit"), $._identifier, ":", $._type),
+              ),
+            ),
+            anyArrow(),
+            $._indentable_expression,
+          ),
         ),
       ),
 
@@ -1580,28 +1648,54 @@ module.exports = grammar({
       seq(
         optional($.inline_modifier),
         "if",
-        field("condition", $._if_condition),
-        field("consequence", $._indentable_expression),
-        optional(
+        choice(
+          // No marker slot here. Paren-if marker heads multiply the block
+          // lambda forks over the GLR version limit in brace-heavy files,
+          // and real code only marks then-style ifs.
           seq(
-            optional(";"),
-            "else",
-            field("alternative", $._indentable_expression),
+            field("condition", $._if_condition_paren),
+            // The then-form twin makes the scanner emit a semicolon here.
+            optional($._automatic_semicolon),
+            $._if_body,
+          ),
+          seq(
+            field("condition", $._if_condition_then),
+            $._if_body,
+            optional($._end_marker_kw_tail),
           ),
         ),
       ),
 
-    // NOTE(susliko): _if_condition and its magic dynamic precedence were introduced as a fix to
+    _if_body: $ =>
+      seq(
+        field("consequence", $._indentable_expression),
+        optional(
+          // The weight keeps the else attached to this if when a losing
+          // statement reading of the else line ties with it.
+          prec.dynamic(
+            1,
+            seq(
+              optional(";"),
+              "else",
+              field("alternative", $._indentable_expression),
+            ),
+          ),
+        ),
+      ),
+
+    // NOTE(susliko): the magic dynamic precedence was introduced as a fix to
     // https://github.com/tree-sitter/tree-sitter-scala/issues/263 and
     // https://github.com/tree-sitter/tree-sitter-scala/issues/342
     // Neither do I understand why this works, nor have I found a better solution
-    _if_condition: $ =>
+    _if_condition_paren: $ => prec.dynamic(4, $.parenthesized_expression),
+
+    _if_condition_then: $ =>
+      // A marker slot of a construct inside the condition may emit a
+      // semicolon before the `then`. The weight beats the paren form, so
+      // `if (a)` + newline + `then x` keeps `then` as the keyword.
       prec.dynamic(
-        4,
-        choice(
-          $.parenthesized_expression,
-          seq($._indentable_expression, "then"),
-        ),
+        5,
+        seq($._indentable_expression, optional($._automatic_semicolon), "then"),
       ),
 
     /*
@@ -1618,7 +1712,16 @@ module.exports = grammar({
           optional($.inline_modifier),
           field("value", $.expression),
           "match",
-          field("body", choice($.case_block, $.indented_cases)),
+          // A braced case block takes no marker. Real code never writes
+          // one, and the marker heads it would add after every `}` of a
+          // case block press on the GLR version limit in map-heavy code.
+          choice(
+            field("body", $.case_block),
+            seq(
+              field("body", $.indented_cases),
+              optional($._end_marker_kw_tail),
+            ),
+          ),
         ),
         $._dot_match_expression,
       ),
@@ -1629,17 +1732,24 @@ module.exports = grammar({
         ".",
         token.immediate("match"),
         field("body", choice($.case_block, $.indented_cases)),
+        optional($._end_marker_kw_tail),
       ),
 
+    // The marker tail sits outside the precedence wrapper. Inside it, the
+    // right associativity would force `end f` onto the try instead of the
+    // enclosing definition.
     try_expression: $ =>
-      prec.right(
-        PREC.control,
-        seq(
-          "try",
-          field("body", $._indentable_expression),
-          optional($.catch_clause),
-          optional($.finally_clause),
+      seq(
+        prec.right(
+          PREC.control,
+          seq(
+            "try",
+            field("body", $._indentable_expression),
+            optional($.catch_clause),
+            optional($.finally_clause),
+          ),
         ),
+        optional($._end_marker_kw_tail),
       ),
 
     /*
@@ -1771,9 +1881,7 @@ module.exports = grammar({
         3,
         seq(
           "(",
-          trailingCommaSep(
-            choice($.binding, alias($.name_and_type, $.binding)),
-          ),
+          trailingCommaSep(choice($.binding, alias($.name_and_type, $.binding))),
           ")",
         ),
       ),
@@ -1795,12 +1903,21 @@ module.exports = grammar({
      */
     instance_expression: $ =>
       choice(
-        // This is weakened so ascription wins for new Array: Array
+        // 1 beats the colon-argument reading of `new C:` and still loses
+        // to the ascription of `new Array: Array`.
         prec.dynamic(
-          0,
-          seq("new", $._constructor_application, $.template_body),
+          1,
+          seq(
+            "new",
+            $._constructor_application,
+            $.template_body,
+            optional($._end_marker_kw_tail),
+          ),
         ),
-        prec("new", seq("new", $.template_body)),
+        prec(
+          "new",
+          seq("new", $.template_body, optional($._end_marker_kw_tail)),
+        ),
         prec(
           "new",
           seq(
@@ -1995,7 +2112,7 @@ module.exports = grammar({
         $._super_identifier,
       ),
 
-    _this_identifier: $ => prec("this_id", "this"),
+    _this_identifier: $ => "this",
     _super_identifier: $ => "super",
 
     // https://docs.scala-lang.org/scala3/reference/soft-modifier.html
@@ -2306,19 +2423,36 @@ module.exports = grammar({
       prec(
         PREC.while,
         choice(
+          // No marker slot here. It lets a trailing `match` capture the
+          // whole loop as its value in `while (c) e match { ... }`.
           prec.right(
             seq(
               "while",
               field("condition", $.parenthesized_expression),
+              // The do-form branch makes the scanner emit a semicolon
+              // here.
+              optional($._automatic_semicolon),
               field("body", $.expression),
             ),
           ),
-          prec.right(
-            seq(
-              "while",
-              field("condition", seq($._indentable_expression, "do")),
-              field("body", $._indentable_expression),
+          seq(
+            prec.right(
+              seq(
+                "while",
+                field(
+                  "condition",
+                  // A marker slot inside the condition may emit a
+                  // semicolon before the `do`.
+                  seq(
+                    $._indentable_expression,
+                    optional($._automatic_semicolon),
+                    "do",
+                  ),
+                ),
+                field("body", $._indentable_expression),
+              ),
             ),
+            optional($._end_marker_kw_tail),
           ),
         ),
       ),
@@ -2340,6 +2474,8 @@ module.exports = grammar({
      */
     for_expression: $ =>
       choice(
+        // No marker slot on the bracketed heads, for the same reason as the
+        // parenthesized while.
         prec.right(
           PREC.control,
           seq(
@@ -2361,16 +2497,19 @@ module.exports = grammar({
             ),
           ),
         ),
-        prec.right(
-          PREC.control,
-          seq(
-            "for",
-            field("enumerators", $.enumerators),
-            choice(
-              seq("do", field("body", $._indentable_expression)),
-              seq("yield", field("body", $._indentable_expression)),
+        seq(
+          prec.right(
+            PREC.control,
+            seq(
+              "for",
+              field("enumerators", $.enumerators),
+              choice(
+                seq("do", field("body", $._indentable_expression)),
+                seq("yield", field("body", $._indentable_expression)),
+              ),
             ),
           ),
+          optional($._end_marker_kw_tail),
         ),
       ),
 

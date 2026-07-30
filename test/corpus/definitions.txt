@@ -270,7 +270,8 @@ end d
       (identifier))
     (template_body
       (object_definition
-        (identifier)))))
+        (identifier)))
+    (end_marker)))
 
 ================================================================================
 Package object
@@ -757,7 +758,8 @@ end A
       (type_identifier)
       (type_identifier))
     (template_body
-      (integer_literal))))
+      (integer_literal))
+    (end_marker)))
 
 ================================================================================
 Class definitions with parameters
@@ -2058,7 +2060,123 @@ end Test
     (template_body
       (function_definition
         (identifier)
-        (integer_literal)))))
+        (integer_literal)))
+    (end_marker)))
+
+================================================================================
+End markers nested in definitions (Scala 3 syntax)
+================================================================================
+
+object C:
+  given C =
+    new C:
+      def f = "!"
+      end f
+    end new
+  end given
+end C
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (given_definition
+        (type_identifier)
+        (indented_block
+          (instance_expression
+            (type_identifier)
+            (template_body
+              (function_definition
+                (identifier)
+                (string)
+                (end_marker)))
+            (end_marker)))
+        (end_marker)))
+    (end_marker)))
+
+================================================================================
+End marker tags pick their construct (Scala 3 syntax)
+================================================================================
+
+def f = xs match
+  case a => a
+end f
+
+val m = xs match
+  case a => a
+end match
+
+extension (x: Int)
+  def inc = x + 1
+end extension
+
+var w =
+  1
+end val
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (identifier)
+          (identifier))))
+    (end_marker))
+  (val_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (identifier)
+          (identifier)))
+      (end_marker)))
+  (extension_definition
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (function_definition
+      (identifier)
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (integer_literal)))
+    (end_marker))
+  (var_definition
+    (identifier)
+    (indented_block
+      (integer_literal))
+    (end_marker)))
+
+================================================================================
+End marker after a single-line extension body (Scala 3 syntax)
+================================================================================
+
+extension (x: Int) def inc = x + 1
+end extension
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (extension_definition
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (function_definition
+      (identifier)
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (integer_literal)))
+    (end_marker)))
 
 ================================================================================
 Traits (Scala 3)
@@ -2400,3 +2518,79 @@ val f = (x:
           (identifier)
           (type_identifier)))
       (identifier))))
+
+================================================================================
+End marker for a secondary constructor (Scala 3 syntax)
+================================================================================
+
+class A(val x: Int):
+  def this() =
+    this(0)
+  end this
+end A
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier)))
+    (template_body
+      (function_definition
+        (identifier)
+        (parameters)
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments
+              (integer_literal))))
+        (end_marker)))
+    (end_marker)))
+
+================================================================================
+End marker after a dot match (Scala 3 syntax)
+================================================================================
+
+val n = x.match
+  case 2 => b
+end match
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (integer_literal)
+          (identifier)))
+      (end_marker))))
+
+================================================================================
+End marker after a body-less multiline class (Scala 3 syntax)
+================================================================================
+
+class Wide(
+  val a: Int,
+  val b: Int
+)
+end Wide
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier))
+      (class_parameter
+        (identifier)
+        (type_identifier)))
+    (end_marker)))
