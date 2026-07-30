@@ -39,7 +39,8 @@ enum TokenType {
   ERROR_SENTINEL,
   COLON_EOL,
   OPERATOR_EOL,
-  FLOATING_POINT_WITH_SEPARATORS
+  FLOATING_POINT_WITH_SEPARATORS,
+  END_KEYWORD
 };
 
 const char* token_name[] = {
@@ -68,7 +69,8 @@ const char* token_name[] = {
   "ERROR_SENTINEL",
   "COLON_EOL",
   "OPERATOR_EOL",
-  "FLOATING_POINT_WITH_SEPARATORS"
+  "FLOATING_POINT_WITH_SEPARATORS",
+  "END_KEYWORD"
 };
 
 typedef struct {
@@ -581,11 +583,12 @@ static bool is_leading_infix_continuation(TSLexer *lexer) {
 typedef struct {
   bool ends_conditional;
   bool has_case_arrow;
+  bool closes_bracket;
 } LineScan;
 
 static LineScan scan_rest_of_line(TSLexer *lexer) {
   int depth = 0;
-  LineScan r = {false, false};
+  LineScan r = {false, false, false};
   while (!lexer->eof(lexer) && lexer->lookahead != '\n' &&
          lexer->lookahead != '\r') {
     int32_t c = lexer->lookahead;
@@ -597,6 +600,9 @@ static LineScan scan_rest_of_line(TSLexer *lexer) {
       advance(lexer);
     } else if (c == ')' || c == ']' || c == '}') {
       depth--;
+      if (depth < 0) {
+        r.closes_bracket = true;
+      }
       r.ends_conditional = false;
       advance(lexer);
     } else if (c == '"' || c == '`') {
@@ -1056,6 +1062,35 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   }
   scanner->last_newline_count = 0;
 
+  // END_KEYWORD is only valid right after the semicolon the grammar puts
+  // in front of a marker. Emit it when the tag word confirms the marker
+  // shape.
+  if (valid_symbols[END_KEYWORD] && !valid_symbols[ERROR_SENTINEL] &&
+      lexer->lookahead == 'e') {
+    if (scan_word(lexer, "end")) {
+      for (;;) {
+        advance_past_blanks(lexer);
+        if (lexer->lookahead != '/') {
+          break;
+        }
+        advance(lexer);
+        if (lexer->lookahead != '*') {
+          break;
+        }
+        advance(lexer);
+        consume_block_comment_body(lexer);
+      }
+      if (iswalpha(lexer->lookahead) || lexer->lookahead == '_' ||
+          lexer->lookahead == '$' || lexer->lookahead == '`' ||
+          lexer->lookahead > 127) {
+        lexer->mark_end(lexer);
+        lexer->result_symbol = END_KEYWORD;
+        return true;
+      }
+    }
+    return false;
+  }
+
   if (valid_symbols[AUTOMATIC_SEMICOLON] && newline_count > 0) {
     // AUTOMATIC_SEMICOLON should not be issued in the middle of expressions
     // Thus, we exit this branch when encountering comments, else/catch clauses, etc.
@@ -1069,6 +1104,46 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     //  .c
     if (lexer->lookahead == '.') {
       return false;
+    }
+
+    // A statement never ends right before a closing bracket, and marker
+    // slots would otherwise ask for a semicolon here.
+    if (lexer->lookahead == ')' || lexer->lookahead == ']' ||
+        lexer->lookahead == ',') {
+      return false;
+    }
+
+    // Same, and it keeps a braced else-if chain from forking one marker
+    // head per nested if. A `}` line that continues with more code
+    // (`} | Mate`) keeps the semicolon and the old reading of its tail. A
+    // trailing comment counts as the line end.
+    if (lexer->lookahead == '}') {
+      advance(lexer);
+      for (;;) {
+        advance_past_blanks(lexer);
+        if (lexer->lookahead == '}' || lexer->lookahead == ')' ||
+            lexer->lookahead == ']') {
+          advance(lexer);
+          continue;
+        }
+        if (lexer->lookahead == '/') {
+          advance(lexer);
+          if (lexer->lookahead == '/') {
+            return false;
+          }
+          if (lexer->lookahead == '*') {
+            advance(lexer);
+            consume_block_comment_body(lexer);
+            continue;
+          }
+        }
+        break;
+      }
+      if (lexer->lookahead == '\n' || lexer->lookahead == '\r' ||
+          lexer->eof(lexer)) {
+        return false;
+      }
+      return true;
     }
 
     // Single-line and multi-line comments
@@ -1121,11 +1196,30 @@ static bool scan_impl(void *payload, TSLexer *lexer,
           return false;
         }
         break;
-      case 'c':
-        if (valid_symbols[CATCH] && scan_word(lexer, "catch")) {
+      case 'c': {
+        // Read the word whole: `catch` and `case` share a prefix that
+        // chained scan_word calls cannot rewind.
+        char word[sizeof "catch"];
+        int len = read_word(lexer, word, (int)sizeof word);
+        if (len <= 0) {
+          break;
+        }
+        if (valid_symbols[CATCH] && strcmp(word, "catch") == 0) {
           return false;
         }
+        // A case clause line needs no separator, and suppressing it keeps
+        // a long else-if chain from forking one marker head per nested if
+        // right before it. A case definition keeps its separator, and so
+        // does a clause line that closes an enclosing bracket, whose
+        // separator belongs to the surrounding expression.
+        if (strcmp(word, "case") == 0 && !is_case_definition_word(lexer)) {
+          LineScan line = scan_rest_of_line(lexer);
+          if (line.has_case_arrow && !line.closes_bracket) {
+            return false;
+          }
+        }
         break;
+      }
       case 'f':
         if (valid_symbols[FINALLY] && scan_word(lexer, "finally")) {
           return false;
