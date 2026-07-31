@@ -1396,8 +1396,14 @@ module.exports = grammar({
         -1,
         prec.left(
           choice(
-            seq(field("type_parameters", $.type_parameters), $._arrow_then_type),
-            seq(field("parameter_types", $.parameter_types), $._arrow_then_type),
+            seq(
+              field("type_parameters", $.type_parameters),
+              $._arrow_then_type,
+            ),
+            seq(
+              field("parameter_types", $.parameter_types),
+              $._arrow_then_type,
+            ),
           ),
         ),
       ),
@@ -1935,7 +1941,9 @@ module.exports = grammar({
         3,
         seq(
           "(",
-          trailingCommaSep(choice($.binding, alias($.name_and_type, $.binding))),
+          trailingCommaSep(
+            choice($.binding, alias($.name_and_type, $.binding)),
+          ),
           ")",
         ),
       ),

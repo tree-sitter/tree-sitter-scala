@@ -1426,60 +1426,12 @@
             "named": true
           },
           {
-            "type": "_end_ident",
-            "named": false
-          },
-          {
             "type": "do_while_expression",
             "named": true
           },
           {
-            "type": "end",
-            "named": false
-          },
-          {
             "type": "expression",
             "named": true
-          },
-          {
-            "type": "extension",
-            "named": false
-          },
-          {
-            "type": "for",
-            "named": false
-          },
-          {
-            "type": "given",
-            "named": false
-          },
-          {
-            "type": "if",
-            "named": false
-          },
-          {
-            "type": "match",
-            "named": false
-          },
-          {
-            "type": "new",
-            "named": false
-          },
-          {
-            "type": "this",
-            "named": false
-          },
-          {
-            "type": "try",
-            "named": false
-          },
-          {
-            "type": "val",
-            "named": false
-          },
-          {
-            "type": "while",
-            "named": false
           }
         ]
       },
@@ -1640,6 +1592,10 @@
         },
         {
           "type": "annotation",
+          "named": true
+        },
+        {
+          "type": "end_marker",
           "named": true
         },
         {
@@ -2399,6 +2355,11 @@
     }
   },
   {
+    "type": "end_marker",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "enum_body",
     "named": true,
     "fields": {},
@@ -2531,6 +2492,10 @@
         },
         {
           "type": "annotation",
+          "named": true
+        },
+        {
+          "type": "end_marker",
           "named": true
         },
         {
@@ -2797,60 +2762,12 @@
             "named": true
           },
           {
-            "type": "_end_ident",
-            "named": false
-          },
-          {
             "type": "do_while_expression",
             "named": true
           },
           {
-            "type": "end",
-            "named": false
-          },
-          {
             "type": "expression",
             "named": true
-          },
-          {
-            "type": "extension",
-            "named": false
-          },
-          {
-            "type": "for",
-            "named": false
-          },
-          {
-            "type": "given",
-            "named": false
-          },
-          {
-            "type": "if",
-            "named": false
-          },
-          {
-            "type": "match",
-            "named": false
-          },
-          {
-            "type": "new",
-            "named": false
-          },
-          {
-            "type": "this",
-            "named": false
-          },
-          {
-            "type": "try",
-            "named": false
-          },
-          {
-            "type": "val",
-            "named": false
-          },
-          {
-            "type": "while",
-            "named": false
           },
           {
             "type": "{",
@@ -2882,6 +2799,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "end_marker",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -3081,6 +3008,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "end_marker",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -3398,6 +3335,10 @@
       "types": [
         {
           "type": "annotation",
+          "named": true
+        },
+        {
+          "type": "end_marker",
           "named": true
         },
         {
@@ -3851,6 +3792,10 @@
           "named": true
         },
         {
+          "type": "end_marker",
+          "named": true
+        },
+        {
           "type": "given_conditional",
           "named": true
         },
@@ -4161,9 +4106,13 @@
       }
     },
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "end_marker",
+          "named": true
+        },
         {
           "type": "inline_modifier",
           "named": true
@@ -4843,6 +4792,10 @@
           "named": true
         },
         {
+          "type": "end_marker",
+          "named": true
+        },
+        {
           "type": "generic_type",
           "named": true
         },
@@ -5442,9 +5395,13 @@
       }
     },
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "end_marker",
+          "named": true
+        },
         {
           "type": "inline_modifier",
           "named": true
@@ -5978,6 +5935,10 @@
           "named": true
         },
         {
+          "type": "end_marker",
+          "named": true
+        },
+        {
           "type": "modifiers",
           "named": true
         }
@@ -6023,6 +5984,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "end_marker",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -6092,6 +6063,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "end_marker",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -7452,6 +7433,10 @@
           "named": true
         },
         {
+          "type": "end_marker",
+          "named": true
+        },
+        {
           "type": "modifiers",
           "named": true
         }
@@ -7496,6 +7481,10 @@
       "types": [
         {
           "type": "catch_clause",
+          "named": true
+        },
+        {
+          "type": "end_marker",
           "named": true
         },
         {
@@ -8839,6 +8828,10 @@
           "named": true
         },
         {
+          "type": "end_marker",
+          "named": true
+        },
+        {
           "type": "modifiers",
           "named": true
         }
@@ -9153,6 +9146,10 @@
           "named": true
         },
         {
+          "type": "end_marker",
+          "named": true
+        },
+        {
           "type": "modifiers",
           "named": true
         }
@@ -9398,6 +9395,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "end_marker",
+          "named": true
+        }
+      ]
     }
   },
   {
