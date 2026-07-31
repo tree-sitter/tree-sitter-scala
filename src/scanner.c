@@ -40,7 +40,11 @@ enum TokenType {
   COLON_EOL,
   OPERATOR_EOL,
   FLOATING_POINT_WITH_SEPARATORS,
-  END_KEYWORD
+  END_KEYWORD,
+  // Zero-width, emitted right before a control-tail keyword (catch, finally,
+  // else, then, or yield) where the grammar allows one, so construct bodies
+  // share one follow column instead of per-keyword ones.
+  CONTROL_TAIL_GATE
 };
 
 const char* token_name[] = {
@@ -70,7 +74,8 @@ const char* token_name[] = {
   "COLON_EOL",
   "OPERATOR_EOL",
   "FLOATING_POINT_WITH_SEPARATORS",
-  "END_KEYWORD"
+  "END_KEYWORD",
+  "CONTROL_TAIL_GATE"
 };
 
 typedef struct {
@@ -950,6 +955,19 @@ static bool scan_impl(void *payload, TSLexer *lexer,
             word_in(word, block_opening_stoppers,
                     sizeof(block_opening_stoppers) /
                         sizeof(block_opening_stoppers[0]))) {
+          // The keyword belongs to an enclosing construct. Where its gate is
+          // valid and the word is a gated one, emit it (zero width: mark_end
+          // ran above) so the keyword can shift; otherwise no block opens
+          // here. `do` stays ungated: it can start a statement, and gate
+          // validity blends in from unrelated GLR forks.
+          static const char *const gated_stoppers[] = {"else", "catch",
+                                                       "finally", "yield"};
+          if (valid_symbols[CONTROL_TAIL_GATE] &&
+              word_in(word, gated_stoppers,
+                      sizeof(gated_stoppers) / sizeof(gated_stoppers[0]))) {
+            lexer->result_symbol = CONTROL_TAIL_GATE;
+            return true;
+          }
           return false;
         }
         // At top level the stack is empty, so the same-width `case` close at
@@ -1185,11 +1203,18 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // dispatch keeps scan_word from consuming a shared prefix.
     switch (lexer->lookahead) {
       case 'e':
-        if (!valid_symbols[ELSE] && !valid_symbols[EXTENDS]) {
+        if (!valid_symbols[ELSE] && !valid_symbols[EXTENDS] &&
+            !valid_symbols[CONTROL_TAIL_GATE]) {
           break;
         }
         advance(lexer);
-        if (valid_symbols[ELSE] && scan_word(lexer, "lse")) {
+        if ((valid_symbols[ELSE] || valid_symbols[CONTROL_TAIL_GATE]) &&
+            scan_word(lexer, "lse")) {
+          // The gate is zero width: mark_end ran before the word.
+          if (valid_symbols[CONTROL_TAIL_GATE]) {
+            lexer->result_symbol = CONTROL_TAIL_GATE;
+            return true;
+          }
           return false;
         }
         if (valid_symbols[EXTENDS] && scan_word(lexer, "xtends")) {
@@ -1204,7 +1229,12 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         if (len <= 0) {
           break;
         }
-        if (valid_symbols[CATCH] && strcmp(word, "catch") == 0) {
+        if ((valid_symbols[CATCH] || valid_symbols[CONTROL_TAIL_GATE]) &&
+            strcmp(word, "catch") == 0) {
+          if (valid_symbols[CONTROL_TAIL_GATE]) {
+            lexer->result_symbol = CONTROL_TAIL_GATE;
+            return true;
+          }
           return false;
         }
         // A case clause line needs no separator, and suppressing it keeps
@@ -1221,7 +1251,12 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         break;
       }
       case 'f':
-        if (valid_symbols[FINALLY] && scan_word(lexer, "finally")) {
+        if ((valid_symbols[FINALLY] || valid_symbols[CONTROL_TAIL_GATE]) &&
+            scan_word(lexer, "finally")) {
+          if (valid_symbols[CONTROL_TAIL_GATE]) {
+            lexer->result_symbol = CONTROL_TAIL_GATE;
+            return true;
+          }
           return false;
         }
         break;
@@ -1255,6 +1290,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   if (
       valid_symbols[OUTDENT] &&
       !valid_symbols[ERROR_SENTINEL] &&
+      !valid_symbols[CONTROL_TAIL_GATE] &&
       newline_count == 0 &&
       prev != -1 &&
       (
@@ -1490,7 +1526,41 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       LOG("    INDENT (same-width case region)\n");
       return true;
     }
+    // The word was not `case`. A `catch` at this width belongs to an
+    // enclosing try. The `case` probe above stopped at its `t`, so the
+    // remainder is `tch` (zero width: mark_end ran above).
+    if (valid_symbols[CONTROL_TAIL_GATE] && scan_word(lexer, "tch")) {
+      lexer->result_symbol = CONTROL_TAIL_GATE;
+      return true;
+    }
     return false;
+  }
+
+  // Zero-width gate before a control-tail keyword (see _control_tail_gate in
+  // the grammar). Tails on the same line, and tails the semicolon machinery
+  // never sees (inside parentheses, or after an emitted semicolon slot),
+  // arrive here.
+  if (valid_symbols[CONTROL_TAIL_GATE] && !valid_symbols[ERROR_SENTINEL]) {
+    switch (lexer->lookahead) {
+      case 'c': case 'e': case 'f': case 't': case 'y': {
+        lexer->mark_end(lexer);
+        // `do` and `while` stay ungated: they can start a statement, and
+        // gate validity blends in from unrelated GLR forks.
+        static const char *const tail_words[] = {
+            "catch", "else", "finally", "then", "yield"};
+        char word[sizeof "finally"];
+        int len = read_word(lexer, word, (int)sizeof word);
+        if (len > 0 &&
+            word_in(word, tail_words,
+                    sizeof(tail_words) / sizeof(tail_words[0]))) {
+          lexer->result_symbol = CONTROL_TAIL_GATE;
+          return true;
+        }
+        return false;
+      }
+      default:
+        break;
+    }
   }
 
   return false;
