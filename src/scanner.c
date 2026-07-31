@@ -13,6 +13,8 @@
 #define LOG(...)
 #endif
 
+// Order must mirror the externals array in grammar.js exactly: tree-sitter
+// couples the two by index.
 enum TokenType {
   AUTOMATIC_SEMICOLON,
   INDENT,
@@ -38,7 +40,8 @@ enum TokenType {
   SUPPRESS_BLOCK_COMMENT,
   ERROR_SENTINEL,
   COLON_EOL,
-  OPERATOR_EOL,
+  POSTFIX_OP,
+  POSTFIX_STAR,
   FLOATING_POINT_WITH_SEPARATORS,
   END_KEYWORD,
   // Zero-width, emitted right before a control-tail keyword (catch, finally,
@@ -47,6 +50,7 @@ enum TokenType {
   CONTROL_TAIL_GATE
 };
 
+// Mirrors enum TokenType above.
 const char* token_name[] = {
   "AUTOMATIC_SEMICOLON",
   "INDENT",
@@ -72,7 +76,8 @@ const char* token_name[] = {
   "SUPPRESS_BLOCK_COMMENT",
   "ERROR_SENTINEL",
   "COLON_EOL",
-  "OPERATOR_EOL",
+  "POSTFIX_OP",
+  "POSTFIX_STAR",
   "FLOATING_POINT_WITH_SEPARATORS",
   "END_KEYWORD",
   "CONTROL_TAIL_GATE"
@@ -185,19 +190,27 @@ static inline bool at_case_region_width(int16_t prev, int16_t width) {
   return prev != -1 && (prev & CASE_INDENT_FLAG) && width == indent_width(prev);
 }
 
-// Used to detect leading infix operators on continuation lines.
+// ASCII opchars, deliberately without `/`, which could open a comment. An
+// operator starting with `/` or a Unicode opchar never takes the external
+// layout paths gated on this; the internal operator tokens handle it.
 // See: https://www.scala-lang.org/api/3.x/docs/changed-features/operators.html
 static bool is_op_char(int32_t c) {
   switch (c) {
     case '!': case '#': case '%': case '&':
-    case '*': case '+': case '-': case '<': 
+    case '*': case '+': case '-': case '<':
     case '=': case '>': case '?': case '@':
-    case '\\': case '^': case '|': case '~': 
+    case '\\': case '^': case '|': case '~':
     case ':':
       return true;
     default:
       return false;
   }
+}
+
+// An operator directly before one of these ends its expression, so no right
+// operand can follow and the operator is postfix.
+static bool is_close_or_separator(int32_t c) {
+  return c == ')' || c == ']' || c == '}' || c == ',' || c == ';';
 }
 
 // We enumerate 3 types of strings that we need to handle differently:
@@ -1328,22 +1341,27 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     return scan_float_with_separator(lexer);
   }
 
-  // A symbolic infix operator that ends its line continues the expression on
-  // the next line (SLS 1.2). Lexed here because the internal operator token
-  // would let the newline split the statement, misreading it as postfix.
-  if ((valid_symbols[OPERATOR_EOL] || valid_symbols[COLON_EOL]) &&
+  // A symbolic operator in postfix position is lexed here, as is the
+  // fewer-braces colon. An operator that continues its expression, on the
+  // same line or over a line break, stays with the internal per-class
+  // tokens: since the postfix reading only exists through this branch, the
+  // internal tokens admit no statement split after `left op`.
+  // COLON_EOL only ever lexes a lone `:`, so that leg needs a colon first.
+  if (((valid_symbols[COLON_EOL] && lexer->lookahead == ':') ||
+       valid_symbols[POSTFIX_OP] || valid_symbols[POSTFIX_STAR]) &&
       !valid_symbols[ERROR_SENTINEL] && is_op_char(lexer->lookahead)) {
     // Collect the operator. Only the first 3 chars are kept, since anything
-    // longer cannot be one of the reserved sequences checked below.
+    // longer cannot be one of the reserved sequences checked below. The
+    // entry condition already checked the first character.
     char op[4] = {0};
     int op_len = 0;
-    while (is_op_char(lexer->lookahead)) {
+    do {
       if (op_len < 3) {
         op[op_len] = (char)lexer->lookahead;
       }
       op_len++;
       advance(lexer);
-    }
+    } while (is_op_char(lexer->lookahead));
     lexer->mark_end(lexer);
     if (op_len == 1 && op[0] == ':') {
       // A lone `:` ending its line is the fewer-braces colon (scalac's
@@ -1356,50 +1374,74 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       }
       return false;
     }
-    // These sequences are not infix operators, so the line does not continue.
-    static const char *const reserved[] = {
-        "=", "#", "@", "=>", "<-", "<:", ">:", "<%", "?=>", "=>>"};
-    if (op_len <= 3 &&
-        word_in(op, reserved, sizeof(reserved) / sizeof(reserved[0]))) {
-      return false;
-    }
     // The branch is also entered for COLON_EOL-only states. Everything from
-    // here on lexes OPERATOR_EOL, which must be valid.
-    if (!valid_symbols[OPERATOR_EOL]) {
+    // here on emits a postfix token, so bail out early where none is valid.
+    enum TokenType postfix_sym =
+        (op_len == 1 && op[0] == '*') ? POSTFIX_STAR : POSTFIX_OP;
+    if (!valid_symbols[postfix_sym]) {
       return false;
     }
-    // The operator must end its line. A trailing comment counts as the line
-    // end because scalac treats it as transparent, so `p || // c` still
-    // continues on the next line.
+    // These sequences are not infix operators, so the line does not
+    // continue. They mirror the grammar's reserved string tokens. Entries
+    // must stay at most 3 characters, or op[] above must grow. The
+    // first-character gate skips the scan for the common operators.
+    if (op[0] == '=' || op[0] == '<' || op[0] == '>' || op[0] == '#' ||
+        op[0] == '@' || op[0] == '?') {
+      static const char *const reserved[] = {
+          "=", "#", "@", "=>", "<-", "<:", ">:", "<%", "?=>", "=>>"};
+      if (op_len <= 3 &&
+          word_in(op, reserved, sizeof(reserved) / sizeof(reserved[0]))) {
+        return false;
+      }
+    }
+    // A trailing comment counts as the line end because scalac treats it as
+    // transparent, so `p || // c` still continues on the next line.
     if (!rest_of_line_is_blank_or_comments(lexer)) {
+      // Mid-line, the call left the lookahead at the next real character (or
+      // just past a lone `/`). An operator directly before a closing
+      // delimiter or a list separator is postfix: the vararg splice `f(xs*)`
+      // or `(p | q.r +) ^^ t`. The external token makes the whole
+      // lower-precedence chain reduce first, which the per-class infix
+      // tokens would not allow.
+      if (is_close_or_separator(lexer->lookahead)) {
+        lexer->result_symbol = postfix_sym;
+        return true;
+      }
       return false;
     }
     // The right operand must be able to start an expression. Comments and line
     // breaks before it are transparent. A comment-only tail to EOF is postfix.
     if (!has_operand(lexer)) {
+      lexer->result_symbol = postfix_sym;
+      return true;
+    }
+    // A next real token that closes a delimiter or list also means the
+    // operator was postfix.
+    if (is_close_or_separator(lexer->lookahead)) {
+      lexer->result_symbol = postfix_sym;
+      return true;
+    }
+    // A lone `/`, a `.`, or a `=` next also ends the infix reading, but those
+    // lines read best with the internal tokens, as before.
+    if (lexer->lookahead == '.' || lexer->lookahead == '=' ||
+        lexer->lookahead == '/') {
       return false;
     }
-    // A next real token that closes a delimiter or list (a vararg splice `xs*`
-    // before a `)`), or a lone `/`, also means the operator was postfix.
-    if (lexer->lookahead == ')' || lexer->lookahead == ']' ||
-        lexer->lookahead == '}' || lexer->lookahead == ',' ||
-        lexer->lookahead == ';' || lexer->lookahead == '.' ||
-        lexer->lookahead == '=' || lexer->lookahead == '/' ||
-        // No expression starts with `@` either. The next line is an
-        // annotated definition (`x --?` + `@deprecated val y = 1`).
-        lexer->lookahead == '@') {
-      return false;
+    // No expression starts with `@` either. The next line is an annotated
+    // definition, so the operator was postfix (`x --?` + `@deprecated val
+    // y = 1`).
+    if (lexer->lookahead == '@') {
+      lexer->result_symbol = postfix_sym;
+      return true;
     }
-    // Nor can the operand be a keyword that only continues or starts a
-    // statement. This matters for symbolic identifiers used as expressions.
-    // In `if (c) ???` + `else d` the `???` must stay a plain expression.
+    // A next line starting with a definition or modifier keyword begins a new
+    // statement, so the operator was postfix (`x --?` + `val y = ...`, Scala 2
+    // postfixOps).
     if (lexer->lookahead >= 'a' && lexer->lookahead <= 'z') {
-      static const char *const non_operand_words[] = {
-          "case", "catch",  "do",   "else",  "finally", "for",   "if",
-          "match", "return", "then", "throw", "try",     "while", "yield",
-          // Definition or modifier keywords. A line starting with one of these
-          // begins a new statement, so the operator was postfix (`x --?` +
-          // `val y = ...`, Scala 2 postfixOps).
+      // Hard keywords that can only begin a definition. Soft modifiers
+      // (`inline`, `open`, `opaque`, `transparent`, `infix`) stay out: they
+      // are ordinary identifiers, so such a line can be the right operand.
+      static const char *const definition_words[] = {
           "abstract", "class", "def",    "enum",      "export", "final",
           "given",    "import", "implicit", "lazy",   "object", "override",
           "package",  "private", "protected", "sealed", "trait", "type",
@@ -1410,17 +1452,15 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       char word[sizeof "protected"];
       int len = read_word(lexer, word, (int)sizeof word);
       if (len > 0 &&
-          word_in(word, non_operand_words,
-                  sizeof(non_operand_words) / sizeof(non_operand_words[0]))) {
-        return false;
+          word_in(word, definition_words,
+                  sizeof(definition_words) / sizeof(definition_words[0]))) {
+        lexer->result_symbol = postfix_sym;
+        return true;
       }
-    } else if (is_leading_infix_continuation(lexer)) {
-      // A leading infix operator on the next line continues the postfix
-      // reading of the previous line instead: `a ???` + `|| b`.
-      return false;
     }
-    lexer->result_symbol = OPERATOR_EOL;
-    return true;
+    // Any other operand continues the expression, on this line or over the
+    // break; the internal per-class token carries the operator's precedence.
+    return false;
   }
 
   // Mid-line block comments with no layout decision pending. `/*` is plain

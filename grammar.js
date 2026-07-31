@@ -11,14 +11,146 @@ const PREC = {
   unit: 4,
   postfix: 5,
   colon_call: 5,
-  infix: 6,
-  prefix: 7,
-  compound: 7,
-  call: 8,
-  field: 8,
-  macro: 10,
-  binding: 10,
+  // Infix operator precedence (SLS 6.12.3), decided by the operator's first
+  // character. Operators ending in `=` (except <=, >=, !=, or starting with
+  // `=`) drop to assignment precedence below every other operator.
+  iassign: 6,
+  iname: 7, // alphanumeric operators
+  ior: 8, // |
+  ixor: 9, // ^
+  iand: 10, // &
+  ieq: 11, // = !
+  irel: 12, // < >
+  icolon: 13, // :
+  iadd: 14, // + -
+  imul: 15, // * / %
+  iother: 16, // remaining symbolic characters
+  infix: 12, // flat level for patterns and types, independent of the ladder
+  prefix: 17,
+  compound: 17,
+  call: 18,
+  field: 18,
+  macro: 20,
+  binding: 20,
 };
+
+// \p{Sm} minus its six ASCII members (+ < = > | ~). The per-class operator
+// tokens below partition the old operator_identifier token by first character,
+// so their first-character sets must be disjoint and a regex class cannot
+// subtract from \p{Sm}. Astral code points appear as literal characters.
+// Verified byte-equal against Node v26's \p{Sm} minus ASCII.
+const SM_NONASCII =
+  "\\u00ac\\u00b1\\u00d7\\u00f7\\u03f6\\u0606-\\u0608\\u2044\\u2052\\u207a-\\u207c\\u208a-\\u208c\\u2118\\u2140-\\u2144\\u214b\\u2190-\\u2194\\u219a-\\u219b\\u21a0\\u21a3\\u21a6\\u21ae\\u21ce-\\u21cf\\u21d2\\u21d4\\u21f4-\\u22ff\\u2320-\\u2321\\u237c\\u239b-\\u23b3\\u23dc-\\u23e1\\u25b7\\u25c1\\u25f8-\\u25ff\\u266f\\u27c0-\\u27c4\\u27c7-\\u27e5\\u27f0-\\u27ff\\u2900-\\u2982\\u2999-\\u29d7\\u29dc-\\u29fb\\u29fe-\\u2aff\\u2b30-\\u2b44\\u2b47-\\u2b4c\\ufb29\\ufe62\\ufe64-\\ufe66\\uff0b\\uff1c-\\uff1e\\uff5c\\uff5e\\uffe2\\uffe9-\\uffec" +
+  "\u{10d8e}-\u{10d8f}\u{1cef0}\u{1d6c1}\u{1d6db}\u{1d6fb}\u{1d715}\u{1d735}\u{1d74f}\u{1d76f}\u{1d789}\u{1d7a9}\u{1d7c3}\u{1eef0}-\u{1eef1}\u{1f8d0}-\u{1f8d8}";
+
+// Regex class bodies over SLS 1.1 opchar. OP is the full set. OP_NSS drops
+// `/` and `*`, the characters that cannot follow a leading `/` (comment
+// starts). OP_END_LEFT drops `:` and `=`, the endings that change an
+// operator's precedence class. OP_NO_COLON only drops `:`, for operators
+// starting with `=` whose `=` ending does not demote them to assignment.
+const OP = "\\-!#%&*+/\\\\:<=>?@\\u005e\\u007c~\\p{Sm}\\p{So}";
+const OP_NSS = "\\-!#%&+\\\\:<=>?@\\u005e\\u007c~\\p{Sm}\\p{So}";
+const OP_END_LEFT =
+  "\\-!#%&*+/\\\\<>?@\\u005e\\u007c~" + SM_NONASCII + "\\p{So}";
+const OP_NO_COLON = "\\-!#%&*+/\\\\<=>?@\\u005e\\u007c~\\p{Sm}\\p{So}";
+// The NSS and END_LEFT restrictions at once, for the second character of a
+// two-character operator starting with `/`.
+const OP_NSS_END_LEFT =
+  "\\-!#%&+\\\\<>?@\\u005e\\u007c~" + SM_NONASCII + "\\p{So}";
+// The restricted single-character set of the old token: technically any \p{Sm}
+// should be allowed, but that includes `=`, and `⇒` must stay lexable as the
+// Scala 2 `=>` (see fatArrow below).
+const OP_SINGLE_UNICODE = "\\u00ac\\u00b1\\u00d7\\u00f7\\u2190-\\u2194\\u2200-\\u22ff\\p{So}";
+// Multi-character first set of the iother class: opchars not claimed by a
+// dedicated precedence level.
+const OP_OTHER_FIRST = "#?@\\\\~" + SM_NONASCII + "\\p{So}";
+
+const opRegex = body => new RegExp(body, "u");
+
+// One token per SLS 6.12.3 precedence class, split by the final character:
+// `:` makes an operator right-associative, `=` demotes it to assignment
+// precedence unless it is `<=`, `>=`, `!=` or starts with `=`. The
+// alternatives reproduce the old operator_identifier token exactly, so
+// every operator string lexes as precisely one of these tokens.
+const OP_TOKEN = {
+  assign: token(
+    choice(
+      opRegex(`[&:+\\-*%\\u005e\\u007c${OP_OTHER_FIRST}][${OP}]*=`),
+      opRegex(`[<>!][${OP}]+=`),
+      opRegex(`/=`),
+      opRegex(`/[${OP_NSS}][${OP}]*=`),
+    ),
+  ),
+  orLeft: token(
+    choice(opRegex("\\u007c"), opRegex(`\\u007c[${OP}]*[${OP_END_LEFT}]`)),
+  ),
+  orRight: token(opRegex(`\\u007c[${OP}]*:`)),
+  xorLeft: token(
+    choice(opRegex("\\u005e"), opRegex(`\\u005e[${OP}]*[${OP_END_LEFT}]`)),
+  ),
+  xorRight: token(opRegex(`\\u005e[${OP}]*:`)),
+  andLeft: token(choice(opRegex("&"), opRegex(`&[${OP}]*[${OP_END_LEFT}]`))),
+  andRight: token(opRegex(`&[${OP}]*:`)),
+  eqLeft: token(
+    choice(
+      opRegex("!"),
+      // The SLS 6.12.4 assignment exceptions (!=, <=, >=) are spelled as
+      // literals for visibility; inside token() they lex like the regexes.
+      "!=",
+      opRegex(`![${OP}]*[${OP_END_LEFT}]`),
+      opRegex(`=[${OP}]*[${OP_NO_COLON}]`),
+    ),
+  ),
+  eqRight: token(opRegex(`[=!][${OP}]*:`)),
+  relLeft: token(
+    choice(
+      opRegex("[<>]"),
+      "<=",
+      ">=",
+      opRegex(`[<>][${OP}]*[${OP_END_LEFT}]`),
+    ),
+  ),
+  relRight: token(opRegex(`[<>][${OP}]*:`)),
+  colonLeft: token(opRegex(`:[${OP}]*[${OP_END_LEFT}]`)),
+  colonRight: token(opRegex(`:[${OP}]*:`)),
+  addLeft: token(
+    choice(opRegex("[+\\-]"), opRegex(`[+\\-][${OP}]*[${OP_END_LEFT}]`)),
+  ),
+  addRight: token(opRegex(`[+\\-][${OP}]*:`)),
+  mulLeft: token(
+    choice(
+      opRegex("[/%]"),
+      opRegex(`[*%][${OP}]*[${OP_END_LEFT}]`),
+      opRegex(`/[${OP_NSS_END_LEFT}]`),
+      opRegex(`/[${OP_NSS}][${OP}]*[${OP_END_LEFT}]`),
+    ),
+  ),
+  mulRight: token(
+    choice(opRegex(`[*%][${OP}]*:`), opRegex("/:"), opRegex(`/[${OP_NSS}][${OP}]*:`)),
+  ),
+  otherLeft: token(
+    choice(
+      opRegex(`[#?\\\\~${OP_SINGLE_UNICODE}]`),
+      opRegex(`[${OP_OTHER_FIRST}][${OP}]*[${OP_END_LEFT}]`),
+    ),
+  ),
+  otherRight: token(opRegex(`[${OP_OTHER_FIRST}][${OP}]*:`)),
+};
+
+// The pre-split operator identifier as one token, for pure name contexts
+// (definitions, imports, types, patterns). A state that also allows an infix
+// continuation needs the per-class tokens instead, because one lexer state
+// cannot hold both flavors of the same string (see _identifier).
+const OP_NO_SLASH = OP.replace("/", "");
+const OP_ID_UNION = token(
+  choice(
+    opRegex(`[${OP_SINGLE_UNICODE}\\-!#%&*+/\\\\<>?\\u005e\\u007c~]`),
+    // 2+ characters: no `//` or `/*` comment start, so either the first
+    // character is not `/`, or the second is neither `/` nor `*`.
+    opRegex(`[${OP_NO_SLASH}][${OP}]+`),
+    opRegex(`[${OP}][${OP_NSS}][${OP}]*`),
+  ),
+);
 
 // `⇒` (U+21D2) is the alternate Scala 2 spelling of `=>` (SLS 1.1, dropped in
 // Scala 3). It is not lexable as an operator_identifier (the single-opchar
@@ -47,6 +179,25 @@ const ascriptionArrowTail = $ =>
 // because inside $.expression it would break the supertype single-child rule.
 const statementExpression = $ => choice($.expression, $.do_while_expression);
 
+// An alphanumeric name as the bare word tokens instead of the identifier
+// rule. In positions that never need the soft-keyword, `this`, or `super`
+// tokens for another reading, this drops those columns from every state;
+// keyword extraction still lexes such words here as names.
+const wordName = $ =>
+  alias(choice($._alpha_identifier, $._backquoted_id), $.identifier);
+
+// The union operator token as a name (see OP_ID_UNION).
+const opName = $ => alias(OP_ID_UNION, $.operator_identifier);
+
+// A name or symbolic name with the same narrow-token property.
+const wordOrOpName = $ => choice(wordName($), opName($));
+
+// A name in a position whose lexer states also serve expression operands
+// (lambda parameters, bindings, self types). These must share the identifier
+// rule's per-class tokens: one lexer state cannot hold both flavors of the
+// same string, so swapping a site to $._identifier changes lexing there.
+const operandName = $ => choice($.identifier, $.operator_identifier);
+
 // A Scala 3 end marker as the last child of the construct it closes. The
 // leading semicolon keeps `end` out of every expression follow set, and
 // the weight beats the statement reading of the marker line. The tails are
@@ -64,6 +215,8 @@ module.exports = grammar({
 
   supertypes: $ => [$.expression, $._definition, $._pattern],
 
+  // Order must mirror enum TokenType in src/scanner.c exactly: the scanner
+  // addresses these tokens by index.
   externals: $ => [
     $._automatic_semicolon,
     $._indent,
@@ -94,7 +247,14 @@ module.exports = grammar({
     $._suppress_block_comment,
     $.error_sentinel,
     $._colon_eol,
-    $._operator_eol,
+    // A symbolic operator in postfix position. Lexed externally so the infix
+    // productions never see it and the whole lower-precedence chain reduces
+    // first (SLS: PostfixExpr ::= InfixExpr id). The emission conditions
+    // live in the operator branch of scan_impl in src/scanner.c, which only
+    // offers these for ASCII, non-slash-initial operators. A lone `*` gets
+    // its own token so vararg can claim it.
+    $._postfix_op,
+    $._postfix_star,
     $._floating_point_with_separators,
     // Emitted only where a marker can attach and the line is `end` plus a
     // tag word, so `end` stays an ordinary identifier elsewhere.
@@ -142,6 +302,9 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
+    // _simple_expression  '('  _simple_expression  •  ':'  — reduce toward an
+    // ascribed argument or shift the colon of a Scala 2 vararg `x: _*`.
+    [$._infix_operand, $.vararg],
     [$.tuple_type, $.parameter_types],
     [$.inline_modifier, $._soft_identifier],
     // 'extension' • '{' is either an extension definition with a braced body
@@ -227,10 +390,6 @@ module.exports = grammar({
     [$.match_expression, $._simple_expression],
     // _  :  Type  •  '=>'  …
     [$.self_type, $._simple_expression],
-    // 'for'  null_literal  _asterisk  •  '*'  …
-    [$.repeat_pattern, $.operator_identifier],
-    // _simple_expression  '('  _simple_expression  _asterisk  •  ')'  …
-    [$.vararg, $.operator_identifier],
     // _simple_expression  '('  expression  •  ','  …
     [$._exprs_in_parens],
     // _simple_expression  ':'  '('  name_and_type  ')'  •  '=>'
@@ -747,7 +906,7 @@ module.exports = grammar({
         prec(
           "self_type",
           seq(
-            choice($._identifier, $.wildcard),
+            choice($.identifier, $.operator_identifier, $.wildcard),
             optional($._self_type_ascription),
             fatArrow(),
           ),
@@ -1326,7 +1485,7 @@ module.exports = grammar({
       prec.left(
         seq(
           field("left", $._infix_type_choice),
-          field("operator", $._identifier),
+          field("operator", wordOrOpName($)),
           field("right", $._infix_type_choice),
         ),
       ),
@@ -1489,7 +1648,7 @@ module.exports = grammar({
         PREC.infix,
         seq(
           field("left", $._definition_pattern),
-          field("operator", $._identifier),
+          field("operator", wordOrOpName($)),
           field("right", $._definition_pattern),
         ),
       ),
@@ -1536,15 +1695,21 @@ module.exports = grammar({
         $.lambda_expression,
         $.postfix_expression,
         $.ascription_expression,
-        $.infix_expression,
-        $.prefix_expression,
+        $._infix_operand,
         $.return_expression,
         $.throw_expression,
         $.while_expression,
         $.for_expression,
         $.macro_body,
-        $._simple_expression,
       ),
+
+    // The operand chain of infix and postfix operators (SLS 6.12 InfixExpr).
+    // The single nonterminal keeps the 21 per-class infix productions from
+    // multiplying out their operand alternatives in the parse table, so every
+    // rule admitting these three forms must go through it (a direct sibling
+    // reference would reintroduce a competing unit reduction).
+    _infix_operand: $ =>
+      choice($.infix_expression, $.prefix_expression, $._simple_expression),
 
     /**
      *  SimpleExpr        ::=  SimpleRef
@@ -1594,7 +1759,7 @@ module.exports = grammar({
       prec.left(PREC.call, seq($._simple_expression, $.wildcard)),
 
     _single_lambda_param: $ =>
-      prec.right(seq(optional("implicit"), $._identifier)),
+      prec.right(seq(optional("implicit"), operandName($))),
 
     // Keeps a braced `{ x: T => ... }` a lambda instead of a fewer-braces colon
     // argument on `x`.
@@ -1678,7 +1843,7 @@ module.exports = grammar({
             field(
               "parameters",
               prec.right(
-                seq(optional("implicit"), $._identifier, ":", $._type),
+                seq(optional("implicit"), operandName($), ":", $._type),
               ),
             ),
             anyArrow(),
@@ -1836,7 +2001,7 @@ module.exports = grammar({
      */
     binding: $ =>
       seq(
-        choice(field("name", $._identifier), $.wildcard),
+        choice(field("name", operandName($)), $.wildcard),
         // colonEol here mirrors name_and_type, the shared-token twin of this rule.
         optional(seq(colonEol($), field("type", $._param_type))),
       ),
@@ -2034,64 +2199,95 @@ module.exports = grammar({
         ),
       ),
 
-    infix_expression: $ =>
-      prec.left(
-        PREC.infix,
-        seq(
-          field(
-            "left",
-            choice(
-              $.infix_expression,
-              $.prefix_expression,
-              $._simple_expression,
-            ),
+    // One production per SLS 6.12.3 precedence class. The operator tokens are
+    // partitioned by first character (see OP_TOKEN), so each class carries its
+    // own precedence and associativity: alphanumeric operators bind loosest,
+    // `=`-ending assignment operators sit below them, and an operator ending
+    // in `:` is right-associative. An operator that ends its line continues
+    // the expression on the next line (SLS 1.2) with the same tokens: the
+    // postfix reading is the external _postfix_op, so after `left op` only the
+    // right operand can follow and the newline cannot split the statement.
+    // No colon-argument choice belongs here. postfix_expression already
+    // covers `a op:` bodies and it shadowed postfix ascriptions.
+    infix_expression: $ => {
+      const production = (level, assoc, operator) =>
+        (assoc === "right" ? prec.right : prec.left)(
+          level,
+          seq(
+            field("left", $._infix_operand),
+            field("operator", operator),
+            field("right", $._infix_operand),
           ),
-          // A symbolic operator that ends its line continues the expression on
-          // the next line (SLS 1.2), so the external _operator_eol joins the
-          // choice. No colon-argument choice belongs here. postfix_expression
-          // already covers `a op:` bodies and it shadowed postfix ascriptions.
-          field(
-            "operator",
-            choice(
-              $._identifier,
-              alias($._operator_eol, $.operator_identifier),
-            ),
+        );
+      const op = tok => alias(tok, $.operator_identifier);
+      // The alphanumeric operator takes the bare word tokens, not the
+      // identifier rule: `this`, `super`, and the soft-keyword tokens never
+      // continue an infix chain, so their columns drop out of every
+      // post-expression state. A soft keyword used as an infix method
+      // (`x open y`) still lexes here through keyword extraction, because
+      // no soft-keyword token is valid before the statement boundary.
+      return choice(
+        production(PREC.iname, "left", wordName($)),
+        production(PREC.iassign, "left", op(OP_TOKEN.assign)),
+        production(PREC.ior, "left", op(OP_TOKEN.orLeft)),
+        production(PREC.ior, "right", op(OP_TOKEN.orRight)),
+        production(PREC.ixor, "left", op(OP_TOKEN.xorLeft)),
+        production(PREC.ixor, "right", op(OP_TOKEN.xorRight)),
+        production(PREC.iand, "left", op(OP_TOKEN.andLeft)),
+        production(PREC.iand, "right", op(OP_TOKEN.andRight)),
+        production(PREC.ieq, "left", op(OP_TOKEN.eqLeft)),
+        production(PREC.ieq, "right", op(OP_TOKEN.eqRight)),
+        production(PREC.irel, "left", op(OP_TOKEN.relLeft)),
+        production(PREC.irel, "right", op(OP_TOKEN.relRight)),
+        production(PREC.icolon, "left", op(OP_TOKEN.colonLeft)),
+        production(PREC.icolon, "right", op(OP_TOKEN.colonRight)),
+        production(PREC.iadd, "left", op(OP_TOKEN.addLeft)),
+        production(PREC.iadd, "right", op(OP_TOKEN.addRight)),
+        production(
+          PREC.imul,
+          "left",
+          // A lone `*` lexes as the shared _asterisk token, so mulLeft's
+          // single-character alternative omits it (see _asterisk).
+          choice(
+            alias($._asterisk, $.operator_identifier),
+            op(OP_TOKEN.mulLeft),
           ),
-          field("right", choice($.prefix_expression, $._simple_expression)),
         ),
-      ),
+        production(PREC.imul, "right", op(OP_TOKEN.mulRight)),
+        production(PREC.iother, "left", op(OP_TOKEN.otherLeft)),
+        production(PREC.iother, "right", op(OP_TOKEN.otherRight)),
+      );
+    },
 
     /**
      * PostfixExpr       ::=  InfixExpr [id]
+     * A symbolic postfix operator arrives as the external _postfix_op or
+     * _postfix_star token, which no infix production accepts, so the whole
+     * lower-precedence chain reduces first and the operator attaches to the
+     * full InfixExpr. An alphanumeric operator shares the iname level with
+     * its infix production; prec.right makes the tie shift, so it reduces as
+     * postfix only where the infix reading cannot continue.
      */
     postfix_expression: $ =>
-      prec.left(
-        PREC.postfix,
-        seq(
-          choice($.infix_expression, $.prefix_expression, $._simple_expression),
-          $._identifier,
+      choice(
+        // Bare word tokens for the same reason as the iname production.
+        prec.right(PREC.iname, seq($._infix_operand, wordName($))),
+        prec.left(
+          PREC.postfix,
+          seq(
+            $._infix_operand,
+            alias(
+              choice($._postfix_op, $._postfix_star),
+              $.operator_identifier,
+            ),
+          ),
         ),
       ),
 
     _postfix_expression_choice: $ =>
-      prec.left(
-        PREC.postfix,
-        choice(
-          $.postfix_expression,
-          $.infix_expression,
-          $.prefix_expression,
-          $._simple_expression,
-        ),
-      ),
+      prec.left(PREC.postfix, choice($.postfix_expression, $._infix_operand)),
 
-    macro_body: $ =>
-      prec.left(
-        PREC.macro,
-        seq(
-          "macro",
-          choice($.infix_expression, $.prefix_expression, $._simple_expression),
-        ),
-      ),
+    macro_body: $ => prec.left(PREC.macro, seq("macro", $._infix_operand)),
 
     /**
      * PrefixExpr        ::=  [PrefixOperator] SimpleExpr
@@ -2128,8 +2324,10 @@ module.exports = grammar({
 
     vararg: $ =>
       choice(
-        // Scala 3: `args*`
-        seq($._simple_expression, $._asterisk),
+        // Scala 3: `args*`. The star in front of a closing delimiter arrives
+        // as the external _postfix_star, which the postfix reading also
+        // accepts, so the higher level settles the tie in vararg's favor.
+        prec(PREC.imul, seq($._simple_expression, $._postfix_star)),
         // Scala 2: `args: _*`
         seq($._simple_expression, ":", token(seq("_", token.immediate("*")))),
       ),
@@ -2227,49 +2425,29 @@ module.exports = grammar({
 
     _backquoted_id: $ => /`[^\n`]+`/,
 
-    _identifier: $ => choice($.identifier, $.operator_identifier),
+    // Name contexts take the union token; sites whose states also allow an
+    // infix continuation use operandName instead (see its comment).
+    _identifier: $ => choice($.identifier, opName($)),
 
     identifiers: $ => seq($.identifier, ",", commaSep1($.identifier)),
 
     wildcard: $ => "_",
 
-    // We have an asterisk as a separte rule to avoid premature choice of
-    // $.vararg branch over $.operator_identifier.
-    // Otherwise $.operator_identifier that is being declared as regexp
-    // looses by a lexical precedence to an explicitly defined literal "*".
+    // A single shared `*` token. As a string literal it beats the operator
+    // regexes on lexical precedence, so every rule admitting a lone `*` in
+    // states where this string token is valid must use this rule (name-only
+    // states lex a lone `*` through OP_ID_UNION instead). Before a closing
+    // delimiter it arrives as the external _postfix_star (see vararg).
     _asterisk: $ => "*",
 
     /**
-     * Regex patterns created to avoid matching // comments and /* comment starts.
-     * This could technically match illegal tokens such as val ?// = 1
+     * The union of the per-precedence operator tokens (see OP_TOKEN at the
+     * top), so every use site outside infix_expression accepts any class and
+     * the partition never changes which strings lex as an operator. The
+     * classes avoid matching // and /* comment starts, but can still
+     * technically match illegal tokens such as val ?// = 1
      */
-    operator_identifier: $ =>
-      choice(
-        $._asterisk,
-        token(
-          choice(
-            // opchar minus colon, equal, at
-            // Technically speaking, Sm (Math symbols https://www.compart.com/en/unicode/category/Sm)
-            // should be allowed as a single-character opchar, however, it includes `=`,
-            // so we should to avoid that to prevent bad parsing of `=` as infix term or type.
-            /[\-!#%&*+\/\\<>?\u005e\u007c~\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\u2200-\u22ff\p{So}]/,
-            seq(
-              // opchar minus slash
-              /[\-!#%&*+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
-              // opchar*
-              repeat1(/[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/),
-            ),
-            seq(
-              // opchar
-              /[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
-              // opchar minus slash and asterisk
-              /[\-!#%&+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/,
-              // opchar*
-              repeat(/[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]/),
-            ),
-          ),
-        ),
-      ),
+    operator_identifier: $ => choice($._asterisk, ...Object.values(OP_TOKEN)),
 
     _non_null_literal: $ =>
       choice(
