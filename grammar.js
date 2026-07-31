@@ -1191,7 +1191,16 @@ module.exports = grammar({
     indented_block: $ =>
       prec.left(
         PREC.control,
-        seq($._indent, $._block, choice($._outdent, $._comma_outdent)),
+        seq(
+          $._indent,
+          choice(
+            $._block,
+            // A lambda statement takes the rest of the enclosing block as
+            // its body (SLS ResultExpr), exactly as in braces.
+            alias($._indented_block_lambda, $.lambda_expression),
+          ),
+          choice($._outdent, $._comma_outdent),
+        ),
       ),
 
     indented_cases: $ =>
@@ -1617,6 +1626,22 @@ module.exports = grammar({
             ),
           ),
           $._braced_typed_lambda,
+        ),
+      ),
+
+    // The indented twin of _block_lambda_expression, without the typed
+    // branches. A typed head there (`x: T =>`) must stay a fewer-braces
+    // colon argument on `x`.
+    _indented_block_lambda: $ =>
+      prec.right(
+        "lambda",
+        seq(
+          field(
+            "parameters",
+            choice($.bindings, $.wildcard, $._single_lambda_param),
+          ),
+          anyArrow(),
+          optional($._block),
         ),
       ),
 

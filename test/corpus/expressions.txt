@@ -4360,3 +4360,40 @@ val h = { x: Int => y: Int => x + y }
             (type_identifier)
             (operator_identifier)
             (type_identifier)))))))
+
+================================================================================
+Lambda takes the rest of an indented block (Scala 3 syntax)
+================================================================================
+
+object T:
+  def f =
+    run(x):
+      implicit b =>
+      import G.*
+      compute(b)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    name: (identifier)
+    body: (template_body
+      (function_definition
+        name: (identifier)
+        body: (indented_block
+          (call_expression
+            function: (call_expression
+              function: (identifier)
+              arguments: (arguments
+                (identifier)))
+            arguments: (colon_argument
+              (indented_block
+                (lambda_expression
+                  parameters: (identifier)
+                  (import_declaration
+                    path: (identifier)
+                    (namespace_wildcard))
+                  (call_expression
+                    function: (identifier)
+                    arguments: (arguments
+                      (identifier))))))))))))
