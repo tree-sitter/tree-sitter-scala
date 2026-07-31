@@ -2594,3 +2594,133 @@ end Wide
         (identifier)
         (type_identifier)))
     (end_marker)))
+
+================================================================================
+A dedented comma closes an indented template argument (Scala 3 syntax)
+================================================================================
+
+object T:
+  def a = Paginator(
+    adapter = new:
+      def slice(offset: Int): Int =
+        coll
+          .aggregateList(offset): framework =>
+            compute(framework)
+    ,
+    currentPage = 2
+  )
+
+  object inactive:
+    def apply(page: Int): Int =
+      Paginator(
+        adapter = new:
+          def slice(offset: Int): Int =
+            if offset == 0 then cache.get({})
+            else inactive.slice(offset)
+        ,
+        currentPage = page
+      )
+
+  def search(query: String): Int =
+
+    val day = 1
+    day
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    name: (identifier)
+    body: (template_body
+      (function_definition
+        name: (identifier)
+        body: (call_expression
+          function: (identifier)
+          arguments: (arguments
+            (assignment_expression
+              left: (identifier)
+              right: (instance_expression
+                (template_body
+                  (function_definition
+                    name: (identifier)
+                    parameters: (parameters
+                      (parameter
+                        name: (identifier)
+                        type: (type_identifier)))
+                    return_type: (type_identifier)
+                    body: (indented_block
+                      (call_expression
+                        function: (call_expression
+                          function: (field_expression
+                            value: (identifier)
+                            field: (identifier))
+                          arguments: (arguments
+                            (identifier)))
+                        arguments: (colon_argument
+                          lambda_start: (identifier)
+                          (indented_block
+                            (call_expression
+                              function: (identifier)
+                              arguments: (arguments
+                                (identifier)))))))))))
+            (assignment_expression
+              left: (identifier)
+              right: (integer_literal)))))
+      (object_definition
+        name: (identifier)
+        body: (template_body
+          (function_definition
+            name: (identifier)
+            parameters: (parameters
+              (parameter
+                name: (identifier)
+                type: (type_identifier)))
+            return_type: (type_identifier)
+            body: (indented_block
+              (call_expression
+                function: (identifier)
+                arguments: (arguments
+                  (assignment_expression
+                    left: (identifier)
+                    right: (instance_expression
+                      (template_body
+                        (function_definition
+                          name: (identifier)
+                          parameters: (parameters
+                            (parameter
+                              name: (identifier)
+                              type: (type_identifier)))
+                          return_type: (type_identifier)
+                          body: (indented_block
+                            (if_expression
+                              condition: (infix_expression
+                                left: (identifier)
+                                operator: (operator_identifier)
+                                right: (integer_literal))
+                              consequence: (call_expression
+                                function: (field_expression
+                                  value: (identifier)
+                                  field: (identifier))
+                                arguments: (arguments
+                                  (block)))
+                              alternative: (call_expression
+                                function: (field_expression
+                                  value: (identifier)
+                                  field: (identifier))
+                                arguments: (arguments
+                                  (identifier)))))))))
+                  (assignment_expression
+                    left: (identifier)
+                    right: (identifier))))))))
+      (function_definition
+        name: (identifier)
+        parameters: (parameters
+          (parameter
+            name: (identifier)
+            type: (type_identifier)))
+        return_type: (type_identifier)
+        body: (indented_block
+          (val_definition
+            pattern: (identifier)
+            value: (integer_literal))
+          (identifier))))))

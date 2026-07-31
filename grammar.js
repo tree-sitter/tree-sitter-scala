@@ -642,7 +642,10 @@ module.exports = grammar({
             // variant in _braced_template_body1.
             $.self_type,
           ),
-          $._outdent,
+          // The comma close lets a dedented `,` end a `new:` template used
+          // as an argument (`f(adapter = new: ...` + `    ,`) instead of
+          // leaving that reading to a losing GLR fork.
+          choice($._outdent, $._comma_outdent),
         ),
       ),
 
