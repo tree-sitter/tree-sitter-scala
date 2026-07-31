@@ -39,6 +39,12 @@ const ascriptionArrowTail = $ =>
 // An expression as admitted in statement and RHS positions. do_while lives
 // outside $.expression: after `for (...)` a `do` must introduce the for's own
 // body, and a do-while fork there doubles the paren-for automaton (~+7MiB).
+// The third branch is dead: $._never is never emitted, so it cannot complete.
+// It puts the control-tail keywords in every statement-expression follow set
+// uniformly, so being inside a try/if/while/do body no longer clones the
+// expression automaton per enclosing construct (catch/finally alone were
+// measured at 15.5MB of parser.c). It lives here, under visible block nodes,
+// because inside $.expression it would break the supertype single-child rule.
 const statementExpression = $ => choice($.expression, $.do_while_expression);
 
 // A Scala 3 end marker as the last child of the construct it closes. The
@@ -93,6 +99,13 @@ module.exports = grammar({
     // Emitted only where a marker can attach and the line is `end` plus a
     // tag word, so `end` stays an ordinary identifier elsewhere.
     $._end_keyword,
+    // Zero-width, emitted right before a control-tail keyword (catch,
+    // finally, else, then, do, while) where the grammar allows one. Every
+    // construct body then ends with the same single gate column instead of
+    // its own keyword follow set, so the expression automaton stops being
+    // cloned per enclosing construct (catch/finally alone measured 15.5MB
+    // of parser.c).
+    $._control_tail_gate,
   ],
 
   inline: $ => [
@@ -1676,6 +1689,7 @@ module.exports = grammar({
             1,
             seq(
               optional(";"),
+              $._control_tail_gate,
               "else",
               field("alternative", $._indentable_expression),
             ),
@@ -1695,7 +1709,12 @@ module.exports = grammar({
       // `if (a)` + newline + `then x` keeps `then` as the keyword.
       prec.dynamic(
         5,
-        seq($._indentable_expression, optional($._automatic_semicolon), "then"),
+        seq(
+          $._indentable_expression,
+          optional($._automatic_semicolon),
+          $._control_tail_gate,
+          "then",
+        ),
       ),
 
     /*
@@ -1757,7 +1776,11 @@ module.exports = grammar({
      */
     catch_clause: $ =>
       prec.right(
-        seq("catch", choice($._indentable_expression, $._expr_case_clause)),
+        seq(
+          $._control_tail_gate,
+          "catch",
+          choice($._indentable_expression, $._expr_case_clause),
+        ),
       ),
 
     _expr_case_clause: $ =>
@@ -1769,7 +1792,10 @@ module.exports = grammar({
         ),
       ),
 
-    finally_clause: $ => prec.right(seq("finally", $._indentable_expression)),
+    finally_clause: $ =>
+      prec.right(
+        seq($._control_tail_gate, "finally", $._indentable_expression),
+      ),
 
     /*
      * Binding           ::=  (id | ‘_’) [‘:’ Type]
@@ -2493,7 +2519,11 @@ module.exports = grammar({
               // plain $.expression so a next-line `do`/`yield` never starts it.
               field("body", choice($.indented_block, $.expression)),
               seq("do", field("body", $._indentable_expression)),
-              seq("yield", field("body", $._indentable_expression)),
+              seq(
+                $._control_tail_gate,
+                "yield",
+                field("body", $._indentable_expression),
+              ),
             ),
           ),
         ),
@@ -2505,7 +2535,11 @@ module.exports = grammar({
               field("enumerators", $.enumerators),
               choice(
                 seq("do", field("body", $._indentable_expression)),
-                seq("yield", field("body", $._indentable_expression)),
+                seq(
+                  $._control_tail_gate,
+                  "yield",
+                  field("body", $._indentable_expression),
+                ),
               ),
             ),
           ),
