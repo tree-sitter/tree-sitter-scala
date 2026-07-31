@@ -655,7 +655,10 @@ module.exports = grammar({
             // variant in _braced_template_body1.
             $.self_type,
           ),
-          $._outdent,
+          // The comma close lets a dedented `,` end a `new:` template used
+          // as an argument (`f(adapter = new: ...` + `    ,`) instead of
+          // leaving that reading to a losing GLR fork.
+          choice($._outdent, $._comma_outdent),
         ),
       ),
 
@@ -1204,7 +1207,16 @@ module.exports = grammar({
     indented_block: $ =>
       prec.left(
         PREC.control,
-        seq($._indent, $._block, choice($._outdent, $._comma_outdent)),
+        seq(
+          $._indent,
+          choice(
+            $._block,
+            // A lambda statement takes the rest of the enclosing block as
+            // its body (SLS ResultExpr), exactly as in braces.
+            alias($._indented_block_lambda, $.lambda_expression),
+          ),
+          choice($._outdent, $._comma_outdent),
+        ),
       ),
 
     indented_cases: $ =>
@@ -1630,6 +1642,22 @@ module.exports = grammar({
             ),
           ),
           $._braced_typed_lambda,
+        ),
+      ),
+
+    // The indented twin of _block_lambda_expression, without the typed
+    // branches. A typed head there (`x: T =>`) must stay a fewer-braces
+    // colon argument on `x`.
+    _indented_block_lambda: $ =>
+      prec.right(
+        "lambda",
+        seq(
+          field(
+            "parameters",
+            choice($.bindings, $.wildcard, $._single_lambda_param),
+          ),
+          anyArrow(),
+          optional($._block),
         ),
       ),
 
