@@ -60,7 +60,8 @@ const OP_NSS_END_LEFT =
 // The restricted single-character set of the old token: technically any \p{Sm}
 // should be allowed, but that includes `=`, and `⇒` must stay lexable as the
 // Scala 2 `=>` (see fatArrow below).
-const OP_SINGLE_UNICODE = "\\u00ac\\u00b1\\u00d7\\u00f7\\u2190-\\u2194\\u2200-\\u22ff\\p{So}";
+const OP_SINGLE_UNICODE =
+  "\\u00ac\\u00b1\\u00d7\\u00f7\\u2190-\\u2194\\u2200-\\u22ff\\p{So}";
 // Multi-character first set of the iother class: opchars not claimed by a
 // dedicated precedence level.
 const OP_OTHER_FIRST = "#?@\\\\~" + SM_NONASCII + "\\p{So}";
@@ -126,7 +127,11 @@ const OP_TOKEN = {
     ),
   ),
   mulRight: token(
-    choice(opRegex(`[*%][${OP}]*:`), opRegex("/:"), opRegex(`/[${OP_NSS}][${OP}]*:`)),
+    choice(
+      opRegex(`[*%][${OP}]*:`),
+      opRegex("/:"),
+      opRegex(`/[${OP_NSS}][${OP}]*:`),
+    ),
   ),
   otherLeft: token(
     choice(
