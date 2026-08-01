@@ -3,7 +3,6 @@
 #include "tree_sitter/parser.h"
 
 #include <string.h>
-#include <wctype.h>
 
 // #define DEBUG
 
@@ -90,6 +89,10 @@ typedef struct {
   int16_t last_indentation_size;
   int16_t last_newline_count;
   int16_t last_column;
+  // The lookahead at the position last_column names. Two lines can share a
+  // column, so the character keeps the saved newline from being recovered at
+  // an unrelated position further down.
+  int16_t last_char;
   int16_t after_colon_eol;
 } Scanner;
 
@@ -110,7 +113,7 @@ void tree_sitter_scala_external_scanner_destroy(void *payload) {
 unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *scanner = (Scanner*)payload;
 
-  if ((scanner->indents.size + 4) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+  if ((scanner->indents.size + 5) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
 
@@ -120,6 +123,8 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
   memcpy(buffer + size, &scanner->last_newline_count, sizeof(int16_t));
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->last_column, sizeof(int16_t));
+  size += sizeof(int16_t);
+  memcpy(buffer + size, &scanner->last_char, sizeof(int16_t));
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->after_colon_eol, sizeof(int16_t));
   size += sizeof(int16_t);
@@ -138,6 +143,7 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   array_clear(&scanner->indents);
   scanner->last_indentation_size = -1;
   scanner->last_column = -1;
+  scanner->last_char = 0;
   scanner->last_newline_count = 0;
   scanner->after_colon_eol = 0;
 
@@ -153,15 +159,31 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   size += sizeof(int16_t);
   scanner->last_column = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
+  scanner->last_char = *(int16_t *)&buffer[size];
+  size += sizeof(int16_t);
   scanner->after_colon_eol = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
 
-  while (size < length) {
-    array_push(&scanner->indents, *(int16_t *)&buffer[size]);
-    size += sizeof(int16_t);
+  unsigned count = (length - (unsigned)size) / sizeof(int16_t);
+  if (count > 0) {
+    array_reserve(&scanner->indents, count);
+    memcpy(scanner->indents.contents, &buffer[size], count * sizeof(int16_t));
+    scanner->indents.size = count;
   }
+}
 
-  assert(size == length);
+// The C locale sets of iswspace, iswalpha and iswalnum, spelled out. No locale
+// is ever installed here, and the library calls showed up in the parse profile.
+static inline bool is_space(int32_t c) {
+  return c == ' ' || (c >= '\t' && c <= '\r');
+}
+
+static inline bool is_alpha(int32_t c) {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+static inline bool is_alnum(int32_t c) {
+  return is_alpha(c) || (c >= '0' && c <= '9');
 }
 
 static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
@@ -210,10 +232,10 @@ static bool is_op_char(int32_t c) {
 }
 
 // Mirrors the start class of XML_NAME in grammar.js. Every non-ASCII
-// character is accepted, since iswalpha is ASCII-only under the C locale and
-// the internal lexer rejects the name if it is not a letter after all.
+// character is accepted, since the letter test is ASCII-only and the internal
+// lexer rejects the name if it is not a letter after all.
 static bool is_xml_name_start(int32_t c) {
-  return iswalpha(c) || c == '_' || c > 127;
+  return is_alpha(c) || c == '_' || c > 127;
 }
 
 // An operator directly before one of these ends its expression, so no right
@@ -356,7 +378,7 @@ static bool scan_word(TSLexer *lexer, const char* const word) {
     advance(lexer);
   }
   // `match_` must not match the keyword `match`.
-  return !(iswalnum(lexer->lookahead) || lexer->lookahead == '_' ||
+  return !(is_alnum(lexer->lookahead) || lexer->lookahead == '_' ||
            lexer->lookahead == '$');
 }
 
@@ -366,7 +388,7 @@ static bool scan_word(TSLexer *lexer, const char* const word) {
 static int read_word(TSLexer *lexer, char *buf, int cap) {
   int len = 0;
   bool not_keyword = false;
-  while (iswalnum(lexer->lookahead) || lexer->lookahead == '_' ||
+  while (is_alnum(lexer->lookahead) || lexer->lookahead == '_' ||
          lexer->lookahead == '$') {
     if (lexer->lookahead > 127 || len >= cap - 1) {
       not_keyword = true;
@@ -555,7 +577,7 @@ static bool has_operand(TSLexer *lexer) {
     if (lexer->eof(lexer)) {
       return false;
     }
-    if (iswspace(lexer->lookahead)) {
+    if (is_space(lexer->lookahead)) {
       advance(lexer);
       continue;
     }
@@ -679,7 +701,7 @@ static LineScan scan_rest_of_line(TSLexer *lexer) {
         r.has_case_arrow = true;
       }
       r.ends_conditional = false;
-    } else if (iswalpha(c) || c == '_' || c == '$') {
+    } else if (is_alpha(c) || c == '_' || c == '$') {
       char word[sizeof "then"];
       int len = read_word(lexer, word, (int)sizeof word);
       r.ends_conditional = depth == 0 && len > 0 &&
@@ -814,7 +836,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   int16_t newline_count = 0;
   int16_t indentation_size = 0;
 
-  while (iswspace(lexer->lookahead)) {
+  while (is_space(lexer->lookahead)) {
     if (lexer->lookahead == '\n') {
       newline_count++;
       indentation_size = 0;
@@ -1055,6 +1077,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         // decide, carrying the newline through the recovery below.
         scanner->last_newline_count = newline_count;
         scanner->last_column = effective;
+        scanner->last_char = (int16_t)(lexer->lookahead & 0x7FFF);
         return finish_block_comment(lexer);
       }
       case COMMENT_NONE: break;
@@ -1063,8 +1086,10 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     scanner->last_newline_count = newline_count;
     if (lexer->eof(lexer)) {
       scanner->last_column = -1;
+      scanner->last_char = 0;
     } else {
       scanner->last_column = (int16_t)lexer->get_column(lexer);
+      scanner->last_char = (int16_t)(lexer->lookahead & 0x7FFF);
     }
     // Keep the indented block open when the next line starts with a leading
     // infix operator, which continues the previous expression. But a line
@@ -1089,16 +1114,18 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   // Recover newline_count from the outdent reset. Skipped when this scan
   // crossed a newline itself, because the saved count belongs to an
   // earlier line at the same column.
-  bool is_eof = lexer->eof(lexer);
-  if (
-      (
-        scanner->last_newline_count > 0 &&
-        (is_eof && scanner->last_column == -1)
-      ) ||
-      (!is_eof && newline_count == 0 &&
-       lexer->get_column(lexer) == (uint32_t)scanner->last_column)
-  ) {
-    newline_count += scanner->last_newline_count;
+  // Nothing to recover when the count is zero, and get_column costs a rescan
+  // of the line, so gate the whole test on it.
+  if (scanner->last_newline_count > 0) {
+    bool is_eof = lexer->eof(lexer);
+    if (
+        (is_eof && scanner->last_column == -1) ||
+        (!is_eof && newline_count == 0 &&
+         (int16_t)(lexer->lookahead & 0x7FFF) == scanner->last_char &&
+         lexer->get_column(lexer) == (uint32_t)scanner->last_column)
+    ) {
+      newline_count += scanner->last_newline_count;
+    }
   }
   scanner->last_newline_count = 0;
 
@@ -1120,7 +1147,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         advance(lexer);
         consume_block_comment_body(lexer);
       }
-      if (iswalpha(lexer->lookahead) || lexer->lookahead == '_' ||
+      if (is_alpha(lexer->lookahead) || lexer->lookahead == '_' ||
           lexer->lookahead == '$' || lexer->lookahead == '`' ||
           lexer->lookahead > 127) {
         lexer->mark_end(lexer);
@@ -1203,6 +1230,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
               lexer->eof(lexer))) {
           scanner->last_newline_count = newline_count;
           scanner->last_column = (int16_t)lexer->get_column(lexer);
+          scanner->last_char = (int16_t)(lexer->lookahead & 0x7FFF);
         }
         return finish_block_comment(lexer);
       }
@@ -1336,7 +1364,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     return false;
   }
 
-  while (iswspace(lexer->lookahead)) {
+  while (is_space(lexer->lookahead)) {
     if (lexer->lookahead == '\n') {
       newline_count++;
     }
