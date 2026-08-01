@@ -1271,12 +1271,12 @@ def foo =
     (indented_block
       (infix_expression
         (infix_expression
+          (identifier)
+          (operator_identifier)
           (infix_expression
             (identifier)
             (operator_identifier)
-            (identifier))
-          (operator_identifier)
-          (identifier))
+            (identifier)))
         (identifier)
         (identifier)))))
 
@@ -3207,21 +3207,21 @@ def allowed =
               (boolean_literal))
             (case_clause
               (identifier)
-              (postfix_expression
-                (field_expression
-                  (identifier)
-                  (identifier))
-                (comment)
-                (operator_identifier))
-              (comment)
               (infix_expression
                 (infix_expression
-                  (call_expression
+                  (infix_expression
                     (field_expression
                       (identifier)
                       (identifier))
-                    (arguments
-                      (identifier)))
+                    (comment)
+                    (operator_identifier)
+                    (comment)
+                    (call_expression
+                      (field_expression
+                        (identifier)
+                        (identifier))
+                      (arguments
+                        (identifier))))
                   (operator_identifier)
                   (field_expression
                     (field_expression
@@ -3874,23 +3874,23 @@ def f: Boolean =
                 (indented_block
                   (call_expression
                     (infix_expression
+                      (call_expression
+                        (field_expression
+                          (identifier)
+                          (identifier))
+                        (arguments
+                          (identifier)))
+                      (operator_identifier)
                       (infix_expression
-                        (call_expression
-                          (field_expression
-                            (identifier)
-                            (identifier))
-                          (arguments
-                            (identifier)))
-                        (operator_identifier)
                         (prefix_expression
                           (field_expression
                             (identifier)
-                            (identifier))))
-                      (operator_identifier)
-                      (call_expression
-                        (identifier)
-                        (arguments
-                          (identifier))))
+                            (identifier)))
+                        (operator_identifier)
+                        (call_expression
+                          (identifier)
+                          (arguments
+                            (identifier)))))
                     (colon_argument
                       (indented_block
                         (val_definition
@@ -4397,3 +4397,60 @@ object T:
                     function: (identifier)
                     arguments: (arguments
                       (identifier))))))))))))
+
+================================================================================
+Infix operator precedence (issue #218)
+================================================================================
+
+object X {
+  a < b && c > d
+  x :: y :: z
+  n + m * k
+  acc += n * 2
+  p max q && r
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (infix_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))
+        (operator_identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier)))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier)))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier)))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (integer_literal)))
+      (infix_expression
+        (identifier)
+        (identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))))))
