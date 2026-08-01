@@ -2362,10 +2362,7 @@ module.exports = grammar({
     arguments: $ =>
       seq(
         "(",
-        choice(
-          optional($._argument_list),
-          seq("using", $._exprs_in_parens),
-        ),
+        choice(optional($._argument_list), seq("using", $._exprs_in_parens)),
         ")",
       ),
 
@@ -2411,7 +2408,12 @@ module.exports = grammar({
             seq("{", optional($._block), "}"),
             // TypeBlock ::= {TypeBlockStat semi} Type. The bindings let a
             // quote name the type variables it matches on.
-            seq("[", repeat(seq($.type_definition, $._semicolon)), $._type, "]"),
+            seq(
+              "[",
+              repeat(seq($.type_definition, $._semicolon)),
+              $._type,
+              "]",
+            ),
             $.identifier,
             $.null_literal,
             $.boolean_literal,
