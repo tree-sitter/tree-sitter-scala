@@ -292,6 +292,7 @@ module.exports = grammar({
   ],
 
   inline: $ => [
+    $._definition_pattern,
     $._pattern,
     $._semicolon,
     $._definition,
@@ -335,6 +336,15 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
+    [$.repeat_pattern, $._simple_expression],
+    [$.tuple_pattern, $._simple_expression],
+    [$.tuple_pattern, $._simple_expression, $.binding],
+    // 'for'  '('  pattern  '='  _xml_open_tag  '/>'  •  ':'  … — the element
+    // and pattern readings of a literal differ only in their content, and the
+    // enumerator admits both once the definition pattern is inlined.
+    [$.xml_element, $.xml_pattern],
+    [$._simple_expression, $._xml_embedded_pattern],
+    [$._simple_expression, $._xml_repeat_pattern],
     // _simple_expression  '('  _simple_expression  •  ':'  — reduce toward an
     // ascribed argument or shift the colon of a Scala 2 vararg `x: _*`.
     [$._infix_operand, $.vararg],
