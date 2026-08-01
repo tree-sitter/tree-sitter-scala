@@ -158,7 +158,15 @@
         "named": true
       },
       {
+        "type": "unit",
+        "named": true
+      },
+      {
         "type": "wildcard",
+        "named": true
+      },
+      {
+        "type": "xml_pattern",
         "named": true
       }
     ]
@@ -309,6 +317,10 @@
       },
       {
         "type": "wildcard",
+        "named": true
+      },
+      {
+        "type": "xml_expression",
         "named": true
       }
     ]
@@ -895,6 +907,10 @@
         {
           "type": "wildcard",
           "named": true
+        },
+        {
+          "type": "xml_expression",
+          "named": true
         }
       ]
     }
@@ -1001,6 +1017,10 @@
           },
           {
             "type": "wildcard",
+            "named": true
+          },
+          {
+            "type": "xml_expression",
             "named": true
           }
         ]
@@ -1316,6 +1336,10 @@
           },
           {
             "type": "wildcard",
+            "named": true
+          },
+          {
+            "type": "xml_expression",
             "named": true
           }
         ]
@@ -1945,6 +1969,10 @@
           },
           {
             "type": "applied_constructor_type",
+            "named": true
+          },
+          {
+            "type": "compound_type",
             "named": true
           },
           {
@@ -2923,6 +2951,10 @@
           },
           {
             "type": "wildcard",
+            "named": true
+          },
+          {
+            "type": "xml_expression",
             "named": true
           }
         ]
@@ -4005,6 +4037,10 @@
           {
             "type": "wildcard",
             "named": true
+          },
+          {
+            "type": "xml_expression",
+            "named": true
           }
         ]
       }
@@ -4307,6 +4343,10 @@
           {
             "type": "wildcard",
             "named": true
+          },
+          {
+            "type": "xml_expression",
+            "named": true
           }
         ]
       },
@@ -4427,6 +4467,10 @@
           {
             "type": "wildcard",
             "named": true
+          },
+          {
+            "type": "xml_expression",
+            "named": true
           }
         ]
       }
@@ -4514,7 +4558,15 @@
             "named": true
           },
           {
+            "type": "unit",
+            "named": true
+          },
+          {
             "type": "wildcard",
+            "named": true
+          },
+          {
+            "type": "xml_pattern",
             "named": true
           }
         ]
@@ -4606,7 +4658,15 @@
             "named": true
           },
           {
+            "type": "unit",
+            "named": true
+          },
+          {
             "type": "wildcard",
+            "named": true
+          },
+          {
+            "type": "xml_pattern",
             "named": true
           }
         ]
@@ -5365,6 +5425,10 @@
         {
           "type": "wildcard",
           "named": true
+        },
+        {
+          "type": "xml_expression",
+          "named": true
         }
       ]
     }
@@ -5578,6 +5642,10 @@
         },
         {
           "type": "wildcard",
+          "named": true
+        },
+        {
+          "type": "xml_expression",
           "named": true
         }
       ]
@@ -6579,6 +6647,10 @@
         {
           "type": "wildcard",
           "named": true
+        },
+        {
+          "type": "xml_expression",
+          "named": true
         }
       ]
     }
@@ -6681,6 +6753,10 @@
         },
         {
           "type": "wildcard",
+          "named": true
+        },
+        {
+          "type": "xml_expression",
           "named": true
         }
       ]
@@ -8717,7 +8793,15 @@
             "named": true
           },
           {
+            "type": "unit",
+            "named": true
+          },
+          {
             "type": "wildcard",
+            "named": true
+          },
+          {
+            "type": "xml_pattern",
             "named": true
           }
         ]
@@ -9035,7 +9119,15 @@
             "named": true
           },
           {
+            "type": "unit",
+            "named": true
+          },
+          {
             "type": "wildcard",
+            "named": true
+          },
+          {
+            "type": "xml_pattern",
             "named": true
           }
         ]
@@ -9259,6 +9351,10 @@
         {
           "type": "wildcard",
           "named": true
+        },
+        {
+          "type": "xml_expression",
+          "named": true
         }
       ]
     }
@@ -9444,6 +9540,235 @@
     }
   },
   {
+    "type": "xml_attribute",
+    "named": true,
+    "fields": {
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "xml_name",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          },
+          {
+            "type": "xml_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "xml_element",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "xml_name",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "block",
+          "named": true
+        },
+        {
+          "type": "xml_attribute",
+          "named": true
+        },
+        {
+          "type": "xml_cdata",
+          "named": true
+        },
+        {
+          "type": "xml_comment",
+          "named": true
+        },
+        {
+          "type": "xml_element",
+          "named": true
+        },
+        {
+          "type": "xml_name",
+          "named": true
+        },
+        {
+          "type": "xml_processing_instruction",
+          "named": true
+        },
+        {
+          "type": "xml_text",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "xml_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "xml_cdata",
+          "named": true
+        },
+        {
+          "type": "xml_comment",
+          "named": true
+        },
+        {
+          "type": "xml_element",
+          "named": true
+        },
+        {
+          "type": "xml_processing_instruction",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "xml_pattern",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "xml_name",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "boolean_literal",
+          "named": true
+        },
+        {
+          "type": "capture_pattern",
+          "named": true
+        },
+        {
+          "type": "case_class_pattern",
+          "named": true
+        },
+        {
+          "type": "character_literal",
+          "named": true
+        },
+        {
+          "type": "floating_point_literal",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "integer_literal",
+          "named": true
+        },
+        {
+          "type": "interpolated_string_expression",
+          "named": true
+        },
+        {
+          "type": "named_tuple_pattern",
+          "named": true
+        },
+        {
+          "type": "null_literal",
+          "named": true
+        },
+        {
+          "type": "operator_identifier",
+          "named": true
+        },
+        {
+          "type": "quote_expression",
+          "named": true
+        },
+        {
+          "type": "repeat_pattern",
+          "named": true
+        },
+        {
+          "type": "stable_identifier",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        },
+        {
+          "type": "tuple_pattern",
+          "named": true
+        },
+        {
+          "type": "wildcard",
+          "named": true
+        },
+        {
+          "type": "xml_attribute",
+          "named": true
+        },
+        {
+          "type": "xml_cdata",
+          "named": true
+        },
+        {
+          "type": "xml_comment",
+          "named": true
+        },
+        {
+          "type": "xml_name",
+          "named": true
+        },
+        {
+          "type": "xml_pattern",
+          "named": true
+        },
+        {
+          "type": "xml_processing_instruction",
+          "named": true
+        },
+        {
+          "type": "xml_text",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "!",
     "named": false
   },
@@ -9508,6 +9833,10 @@
     "named": false
   },
   {
+    "type": "/>",
+    "named": false
+  },
+  {
     "type": ":",
     "named": false
   },
@@ -9516,11 +9845,19 @@
     "named": false
   },
   {
+    "type": "<",
+    "named": false
+  },
+  {
     "type": "<%",
     "named": false
   },
   {
     "type": "<-",
+    "named": false
+  },
+  {
+    "type": "</",
     "named": false
   },
   {
@@ -9819,6 +10156,30 @@
   {
     "type": "with",
     "named": false
+  },
+  {
+    "type": "xml_cdata",
+    "named": true
+  },
+  {
+    "type": "xml_comment",
+    "named": true
+  },
+  {
+    "type": "xml_name",
+    "named": true
+  },
+  {
+    "type": "xml_processing_instruction",
+    "named": true
+  },
+  {
+    "type": "xml_string",
+    "named": true
+  },
+  {
+    "type": "xml_text",
+    "named": true
   },
   {
     "type": "yield",
