@@ -290,6 +290,11 @@ module.exports = grammar({
     $._param_value_type,
     $._simple_type,
     $.literal,
+    // Every parenthesized argument list reduces through this rule, so it is
+    // one of the most frequent unit reductions in a parse. Inlining it costs
+    // about 600 states and buys 5 to 10 percent of parse time.
+    $._exprs_in_parens,
+    $._argument_list,
     // Small hidden rules that reduce to a token almost immediately. Inlining
     // removes the reduce step and merges states, shrinking parser.c by ~2MB.
     $._asterisk,
@@ -406,8 +411,6 @@ module.exports = grammar({
     [$.match_expression, $._simple_expression],
     // _  :  Type  •  '=>'  …
     [$.self_type, $._simple_expression],
-    // _simple_expression  '('  expression  •  ','  …
-    [$._exprs_in_parens],
     // _simple_expression  ':'  '('  name_and_type  ')'  •  '=>'
     // The parenthesized list is either the lambda parameters of a colon
     // argument or a named tuple type on the ascription reading. What follows
@@ -2330,15 +2333,17 @@ module.exports = grammar({
       seq(
         "(",
         choice(
-          $._vararg_arguments,
-          optional($._exprs_in_parens),
+          optional($._argument_list),
           seq("using", $._exprs_in_parens),
         ),
         ")",
       ),
 
-    _vararg_arguments: $ =>
-      seq(optional(seq($._exprs_in_parens, ",")), $.vararg),
+    // One rule for the plain and vararg-tailed forms. Sharing the repeat means
+    // no conflict is needed between continuing the list and starting a vararg,
+    // which in turn lets the list inline away its unit reduction.
+    _argument_list: $ =>
+      seq(sep1(",", choice($.expression, $.vararg)), optional(",")),
 
     vararg: $ =>
       choice(
@@ -2346,8 +2351,12 @@ module.exports = grammar({
         // as the external _postfix_star, which the postfix reading also
         // accepts, so the higher level settles the tie in vararg's favor.
         prec(PREC.imul, seq($._simple_expression, $._postfix_star)),
-        // Scala 2: `args: _*`
-        seq($._simple_expression, ":", token(seq("_", token.immediate("*")))),
+        // Scala 2: `args: _*`. The weight beats the ascription reading of the
+        // same text, which the parser also completes.
+        prec.dynamic(
+          1,
+          seq($._simple_expression, ":", token(seq("_", token.immediate("*")))),
+        ),
       ),
 
     // ExprsInParens     ::=  ExprInParens {‘,’ ExprInParens}
