@@ -1488,7 +1488,14 @@ module.exports = grammar({
             repeat1(seq("with", field("extra", $._annotated_type))),
           ),
         ),
-        prec.left(seq(field("base", $._annotated_type), $._refinement)),
+        // Dotty's refinedTypeRest recurses on itself, so a type takes any
+        // number of refinements. `C { type U = T } { type T = String }`.
+        prec.left(
+          seq(
+            field("base", choice($._annotated_type, $.compound_type)),
+            $._refinement,
+          ),
+        ),
         prec.left(
           -1,
           seq(
