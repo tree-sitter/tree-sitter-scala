@@ -266,6 +266,9 @@ module.exports = grammar({
     // cloned per enclosing construct (catch/finally alone measured 15.5MB
     // of parser.c).
     $._control_tail_gate,
+    // The `<` that opens an XML literal. Only valid where the grammar admits
+    // a literal, so the operator `<` is untouched everywhere else.
+    $._xml_tag_start,
   ],
 
   inline: $ => [
