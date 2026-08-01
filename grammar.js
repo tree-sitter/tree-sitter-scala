@@ -165,6 +165,9 @@ const fatArrow = () => choice("=>", alias("⇒", "=>"));
 // `=>` or the context-function arrow `?=>`.
 const anyArrow = () => choice(fatArrow(), "?=>");
 
+// XML Name (SLS §10 / XML spec), covering namespaced names like `x:ga`.
+const XML_NAME = /[_\p{L}][-.:_\p{L}\p{Nd}]*/;
+
 // Accepts a `:` in both spellings. The scanner lexes a line-final lone colon
 // as the external COLON_EOL token (scalac's COLONeol), so every consumer of
 // such a colon must handle it.
@@ -295,6 +298,11 @@ module.exports = grammar({
     $._non_null_literal,
     $._braced_template_body,
     $._indented_template_body,
+    // Inlined so the expression and pattern content variants never compete in
+    // a reduce, which they cannot be resolved out of.
+    $._xml_node,
+    $._xml_content,
+    $._xml_pattern_content,
     $._structural_type,
     $._refinement,
   ],
@@ -1636,6 +1644,7 @@ module.exports = grammar({
         $.quote_expression,
         $.literal,
         $.wildcard,
+        $.xml_pattern,
       ),
 
     case_class_pattern: $ =>
@@ -1755,6 +1764,7 @@ module.exports = grammar({
         $.field_expression,
         $.generic_function,
         $.call_expression,
+        $.xml_expression,
         $.method_value,
         alias($._dot_match_expression, $.match_expression),
       ),
@@ -2457,6 +2467,139 @@ module.exports = grammar({
      */
     operator_identifier: $ => choice($._asterisk, ...Object.values(OP_TOKEN)),
 
+    // XML literals (SLS §10). The external token $._xml_tag_start decides
+    // where markup starts. Comment, CDATA and processing instruction
+    // literals need no scanner support, since their tokens are longer than
+    // the operator tokens that could match the same text.
+
+    // XmlExpr ::= XmlContent {Element}
+    xml_expression: $ => repeat1($._xml_node),
+
+    _xml_node: $ =>
+      choice(
+        $.xml_element,
+        $.xml_comment,
+        $.xml_cdata,
+        $.xml_processing_instruction,
+      ),
+
+    xml_element: $ => xmlElementShape($, $._xml_content),
+
+    // Shared between expression elements and pattern elements so that GLR
+    // forks where both are viable shift the same states until the element
+    // body disambiguates them.
+    _xml_open_tag: $ =>
+      seq(
+        alias($._xml_tag_start, "<"),
+        field("name", alias(token.immediate(XML_NAME), $.xml_name)),
+        repeat($.xml_attribute),
+      ),
+
+    // The name is immediate, like scalac's xEndTag, which reads it right
+    // after the `</`. Trailing space before the `>` stays allowed.
+    _xml_end_tag: $ =>
+      seq("</", alias(token.immediate(XML_NAME), $.xml_name), ">"),
+
+    xml_attribute: $ =>
+      seq(
+        field("key", alias(token(XML_NAME), $.xml_name)),
+        "=",
+        field(
+          "value",
+          choice(
+            alias(token(choice(/"[^<"]*"/, /'[^<']*'/)), $.xml_string),
+            $.block,
+          ),
+        ),
+      ),
+
+    _xml_content: $ =>
+      choice(
+        ...xmlTextAlternatives($),
+        $.block,
+        $._xml_node,
+        // Dead alternative: `/*` in XML content is text, not a comment.
+        $._suppress_block_comment,
+      ),
+
+    // Outranks the comment and whitespace extras, which would otherwise win
+    // the same characters and drop markup text from the tree.
+    xml_text: _ => token(prec(PREC.comment + 1, /[^<{}]+/)),
+
+    // The bodies below stop at the first terminator: a run of the closing
+    // character can only be consumed when a character that cannot close the
+    // literal follows it.
+    xml_comment: _ =>
+      token(
+        seq(
+          "<!--",
+          repeat(choice(/[^-]/, seq(repeat1("-"), /[^->]/))),
+          repeat("-"),
+          "-->",
+        ),
+      ),
+
+    xml_cdata: _ =>
+      token(
+        seq(
+          "<![CDATA[",
+          repeat(choice(/[^\]]/, seq(repeat1("]"), /[^\]>]/))),
+          repeat("]"),
+          "]]>",
+        ),
+      ),
+
+    xml_processing_instruction: _ =>
+      token(
+        seq(
+          "<?",
+          repeat(choice(/[^?]/, seq(repeat1("?"), /[^?>]/))),
+          repeat("?"),
+          "?>",
+        ),
+      ),
+
+    // XmlPattern ::= ElemPattern. Embedded `{...}` blocks hold patterns.
+    xml_pattern: $ => xmlElementShape($, $._xml_pattern_content),
+
+    _xml_pattern_content: $ =>
+      choice(
+        ...xmlTextAlternatives($),
+        seq("{", commaSep1($._xml_embedded_pattern), "}"),
+        $.xml_pattern,
+        $.xml_comment,
+        $.xml_cdata,
+        $.xml_processing_instruction,
+        $._suppress_block_comment,
+      ),
+
+    // A restricted top-level pattern for XML embeds. Where an element and an
+    // element pattern both stay viable, $.block shares the state with this
+    // rule. An alternative whose leftmost symbol is the full $._pattern then
+    // drags given_pattern and ascriptions into the closure and the conflicts
+    // cascade past resolution, so only alternatives with a closed left edge
+    // belong here. Nested pattern positions still admit the full $._pattern.
+    _xml_embedded_pattern: $ =>
+      choice(
+        $._identifier,
+        $.stable_identifier,
+        $.interpolated_string_expression,
+        $.capture_pattern,
+        $.tuple_pattern,
+        $.named_tuple_pattern,
+        $.case_class_pattern,
+        $.quote_expression,
+        $.literal,
+        $.wildcard,
+        alias($._xml_repeat_pattern, $.repeat_pattern),
+        $.xml_pattern,
+      ),
+
+    // `_*` / `x*` at the top of an XML embed, without the $._pattern left
+    // recursion of $.repeat_pattern.
+    _xml_repeat_pattern: $ =>
+      seq(field("pattern", choice($.wildcard, $._identifier)), $._asterisk),
+
     _non_null_literal: $ =>
       choice(
         $.integer_literal,
@@ -2859,4 +3002,19 @@ function trailingSep1(delimiter, rule) {
 
 function sep1(delimiter, rule) {
   return seq(rule, repeat(seq(delimiter, rule)));
+}
+
+// Plain text and the `{{` / `}}` escaped literal braces, shared between XML
+// elements and XML patterns.
+function xmlTextAlternatives($) {
+  return [$.xml_text, alias("{{", $.xml_text), alias("}}", $.xml_text)];
+}
+
+// Element skeleton (self-closing, or open tag + content + end tag), shared
+// between xml_element and xml_pattern, which differ only in their content.
+function xmlElementShape($, content) {
+  return seq(
+    $._xml_open_tag,
+    choice("/>", seq(">", repeat(content), $._xml_end_tag)),
+  );
 }

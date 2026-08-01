@@ -265,3 +265,12 @@
 ;; Scala CLI using directives
 (using_directive_key) @parameter
 (using_directive_value) @string
+
+;; XML literals
+(xml_name) @tag
+(xml_attribute key: (xml_name) @tag.attribute)
+(xml_string) @string
+(xml_text) @spell
+(xml_comment) @spell @comment
+(xml_cdata) @string
+(xml_processing_instruction) @keyword.directive
