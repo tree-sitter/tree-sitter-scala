@@ -1066,3 +1066,64 @@ end Merge
             (identifier)))))
     (end_marker)))
 
+================================================================================
+Chained refinements
+================================================================================
+
+type X = C { type U = T; def u: U } { type T = String }
+
+type T1 = C { type T <: A } { type T <: B }
+
+var xx: (Lambda { type Apply = Arg } { type Arg = Int }) # Apply = uninitialized
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (type_definition
+    (type_identifier)
+    (compound_type
+      (compound_type
+        (type_identifier)
+        (refinement
+          (type_definition
+            (type_identifier)
+            (type_identifier))
+          (function_declaration
+            (identifier)
+            (type_identifier))))
+      (refinement
+        (type_definition
+          (type_identifier)
+          (type_identifier)))))
+  (type_definition
+    (type_identifier)
+    (compound_type
+      (compound_type
+        (type_identifier)
+        (refinement
+          (type_definition
+            (type_identifier)
+            (upper_bound
+              (type_identifier)))))
+      (refinement
+        (type_definition
+          (type_identifier)
+          (upper_bound
+            (type_identifier))))))
+  (var_definition
+    (identifier)
+    (projected_type
+      (tuple_type
+        (compound_type
+          (compound_type
+            (type_identifier)
+            (refinement
+              (type_definition
+                (type_identifier)
+                (type_identifier))))
+          (refinement
+            (type_definition
+              (type_identifier)
+              (type_identifier)))))
+      (type_identifier))
+    (identifier)))
