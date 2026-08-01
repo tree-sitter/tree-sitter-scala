@@ -47,7 +47,8 @@ enum TokenType {
   // Zero-width, emitted right before a control-tail keyword (catch, finally,
   // else, then, or yield) where the grammar allows one, so construct bodies
   // share one follow column instead of per-keyword ones.
-  CONTROL_TAIL_GATE
+  CONTROL_TAIL_GATE,
+  XML_TAG_START
 };
 
 // Mirrors enum TokenType above.
@@ -80,7 +81,8 @@ const char* token_name[] = {
   "POSTFIX_STAR",
   "FLOATING_POINT_WITH_SEPARATORS",
   "END_KEYWORD",
-  "CONTROL_TAIL_GATE"
+  "CONTROL_TAIL_GATE",
+  "XML_TAG_START"
 };
 
 typedef struct {
@@ -205,6 +207,13 @@ static bool is_op_char(int32_t c) {
     default:
       return false;
   }
+}
+
+// Mirrors the start class of XML_NAME in grammar.js. Every non-ASCII
+// character is accepted, since iswalpha is ASCII-only under the C locale and
+// the internal lexer rejects the name if it is not a letter after all.
+static bool is_xml_name_start(int32_t c) {
+  return iswalpha(c) || c == '_' || c > 127;
 }
 
 // An operator directly before one of these ends its expression, so no right
@@ -1332,6 +1341,20 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       newline_count++;
     }
     skip(lexer);
+  }
+
+  // XML mode (SLS §10) starts only where the grammar makes XML_TAG_START
+  // valid and the `<` is immediately followed by a name-start character, so
+  // `< b` and `<-`, `<:`, `<=` fall through to the regular operator tokens.
+  if (valid_symbols[XML_TAG_START] && !valid_symbols[ERROR_SENTINEL] &&
+      lexer->lookahead == '<') {
+    advance(lexer);
+    if (is_xml_name_start(lexer->lookahead)) {
+      lexer->mark_end(lexer);
+      lexer->result_symbol = XML_TAG_START;
+      return true;
+    }
+    return false;
   }
 
   // A floating point literal whose integer part uses digit separators.
