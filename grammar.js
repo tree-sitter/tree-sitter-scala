@@ -2409,7 +2409,9 @@ module.exports = grammar({
           choice(
             // `'{}` is a quoted empty block, common in macro code.
             seq("{", optional($._block), "}"),
-            seq("[", $._type, "]"),
+            // TypeBlock ::= {TypeBlockStat semi} Type. The bindings let a
+            // quote name the type variables it matches on.
+            seq("[", repeat(seq($.type_definition, $._semicolon)), $._type, "]"),
             $.identifier,
             $.null_literal,
             $.boolean_literal,
