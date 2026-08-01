@@ -1089,16 +1089,17 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   // Recover newline_count from the outdent reset. Skipped when this scan
   // crossed a newline itself, because the saved count belongs to an
   // earlier line at the same column.
-  bool is_eof = lexer->eof(lexer);
-  if (
-      (
-        scanner->last_newline_count > 0 &&
-        (is_eof && scanner->last_column == -1)
-      ) ||
-      (!is_eof && newline_count == 0 &&
-       lexer->get_column(lexer) == (uint32_t)scanner->last_column)
-  ) {
-    newline_count += scanner->last_newline_count;
+  // Nothing to recover when the count is zero, and get_column costs a rescan
+  // of the line, so gate the whole test on it.
+  if (scanner->last_newline_count > 0) {
+    bool is_eof = lexer->eof(lexer);
+    if (
+        (is_eof && scanner->last_column == -1) ||
+        (!is_eof && newline_count == 0 &&
+         lexer->get_column(lexer) == (uint32_t)scanner->last_column)
+    ) {
+      newline_count += scanner->last_newline_count;
+    }
   }
   scanner->last_newline_count = 0;
 
