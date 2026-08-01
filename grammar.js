@@ -1666,6 +1666,9 @@ module.exports = grammar({
         $.given_pattern,
         $.quote_expression,
         $.literal,
+        // The unit value is a pattern too (`case () =>`). Without it the
+        // parens read as a tuple pattern and recovery invents its element.
+        $.unit,
         $.wildcard,
         $.xml_pattern,
       ),
