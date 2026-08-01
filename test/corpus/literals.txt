@@ -399,10 +399,22 @@ val l3 = 0xF23l
 val l4 = 0XA03L
 val l5 = 150_000_000
 val l6 = 0xFF_FF_FF
+val b1 = 0b1
+val b2 = 0B0000
+val b3 = 0b1000_0000_0000_0000__0000_0000_0000_0000L
 
 --------------------------------------------------------------------------------
 
 (compilation_unit
+  (val_definition
+    (identifier)
+    (integer_literal))
+  (val_definition
+    (identifier)
+    (integer_literal))
+  (val_definition
+    (identifier)
+    (integer_literal))
   (val_definition
     (identifier)
     (integer_literal))
