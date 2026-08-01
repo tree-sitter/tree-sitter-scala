@@ -194,6 +194,18 @@ const statementExpression = $ => choice($.expression, $.do_while_expression);
 const wordName = $ =>
   alias(choice($._alpha_identifier, $._backquoted_id), $.identifier);
 
+// The identifier rule spelled as its alternatives, each aliased back to
+// identifier. A single-token alternative carries its alias on the parent
+// production, so a plain name shifts straight in with no unit reduction.
+const nameChoice = $ =>
+  choice(
+    alias($._alpha_identifier, $.identifier),
+    alias($._backquoted_id, $.identifier),
+    alias($._soft_identifier, $.identifier),
+    alias("this", $.identifier),
+    alias("super", $.identifier),
+  );
+
 // The union operator token as a name (see OP_ID_UNION).
 const opName = $ => alias(OP_ID_UNION, $.operator_identifier);
 
@@ -204,7 +216,7 @@ const wordOrOpName = $ => choice(wordName($), opName($));
 // (lambda parameters, bindings, self types). These must share the identifier
 // rule's per-class tokens: one lexer state cannot hold both flavors of the
 // same string, so swapping a site to $._identifier changes lexing there.
-const operandName = $ => choice($.identifier, $.operator_identifier);
+const operandName = $ => choice(nameChoice($), $.operator_identifier);
 
 // A Scala 3 end marker as the last child of the construct it closes. The
 // leading semicolon keeps `end` out of every expression follow set, and
@@ -925,7 +937,7 @@ module.exports = grammar({
         prec(
           "self_type",
           seq(
-            choice($.identifier, $.operator_identifier, $.wildcard),
+            choice(nameChoice($), $.operator_identifier, $.wildcard),
             optional($._self_type_ascription),
             fatArrow(),
           ),
@@ -1751,7 +1763,7 @@ module.exports = grammar({
      */
     _simple_expression: $ =>
       choice(
-        $.identifier,
+        nameChoice($),
         $.operator_identifier,
         $.literal,
         $.interpolated_string_expression,
@@ -2454,9 +2466,9 @@ module.exports = grammar({
 
     // Name contexts take the union token; sites whose states also allow an
     // infix continuation use operandName instead (see its comment).
-    _identifier: $ => choice($.identifier, opName($)),
+    _identifier: $ => choice(nameChoice($), opName($)),
 
-    identifiers: $ => seq($.identifier, ",", commaSep1($.identifier)),
+    identifiers: $ => seq(nameChoice($), ",", commaSep1(nameChoice($))),
 
     wildcard: $ => "_",
 
@@ -2687,7 +2699,7 @@ module.exports = grammar({
           field("interpolator", alias($._raw_string_start, $.identifier)),
           alias($._raw_string, $.interpolated_string),
         ),
-        seq(field("interpolator", $.identifier), $.interpolated_string),
+        seq(field("interpolator", nameChoice($)), $.interpolated_string),
       ),
 
     _dollar_escape: $ =>
