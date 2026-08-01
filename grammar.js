@@ -2400,7 +2400,8 @@ module.exports = grammar({
         seq(
           "'",
           choice(
-            seq("{", $._block, "}"),
+            // `'{}` is a quoted empty block, common in macro code.
+            seq("{", optional($._block), "}"),
             seq("[", $._type, "]"),
             $.identifier,
             $.null_literal,

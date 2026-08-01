@@ -4454,3 +4454,21 @@ object X {
           (identifier)
           (operator_identifier)
           (identifier))))))
+
+================================================================================
+Empty quoted block
+================================================================================
+
+val a = '{}
+val b = '{ x }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (quote_expression))
+  (val_definition
+    (identifier)
+    (quote_expression
+      (identifier))))
