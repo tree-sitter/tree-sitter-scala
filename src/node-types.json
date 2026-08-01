@@ -4365,6 +4365,10 @@
             "named": true
           },
           {
+            "type": "infix_expression",
+            "named": true
+          },
+          {
             "type": "instance_expression",
             "named": true
           },
