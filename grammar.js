@@ -2651,7 +2651,13 @@ module.exports = grammar({
       token(
         seq(
           optional(/[-]/),
-          choice(/[\d](_?\d)*/, /0[xX][\da-fA-F](_?[\da-fA-F])*/),
+          choice(
+            /[\d](_?\d)*/,
+            /0[xX][\da-fA-F](_?[\da-fA-F])*/,
+            // Dotty's scanner loops over separators, so `0b0001__0000` is legal
+            // and only a trailing `_` is an error.
+            /0[bB][01](_*[01])*/,
+          ),
           optional(/[lL]/),
         ),
       ),
