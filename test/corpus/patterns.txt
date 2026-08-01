@@ -456,3 +456,31 @@ object A {
                 (identifier)
                 (wildcard)))))
         (identifier)))))
+
+================================================================================
+Unit patterns
+================================================================================
+
+val x = y match {
+  case () => a
+  case Literal(Constant(())) => b
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (case_block
+        (case_clause
+          (unit)
+          (identifier))
+        (case_clause
+          (case_class_pattern
+            (type_identifier)
+            (case_class_pattern
+              (type_identifier)
+              (unit)))
+          (identifier))))))

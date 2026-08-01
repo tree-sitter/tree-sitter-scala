@@ -194,6 +194,18 @@ const statementExpression = $ => choice($.expression, $.do_while_expression);
 const wordName = $ =>
   alias(choice($._alpha_identifier, $._backquoted_id), $.identifier);
 
+// The identifier rule spelled as its alternatives, each aliased back to
+// identifier. A single-token alternative carries its alias on the parent
+// production, so a plain name shifts straight in with no unit reduction.
+const nameChoice = $ =>
+  choice(
+    alias($._alpha_identifier, $.identifier),
+    alias($._backquoted_id, $.identifier),
+    alias($._soft_identifier, $.identifier),
+    alias("this", $.identifier),
+    alias("super", $.identifier),
+  );
+
 // The union operator token as a name (see OP_ID_UNION).
 const opName = $ => alias(OP_ID_UNION, $.operator_identifier);
 
@@ -204,7 +216,7 @@ const wordOrOpName = $ => choice(wordName($), opName($));
 // (lambda parameters, bindings, self types). These must share the identifier
 // rule's per-class tokens: one lexer state cannot hold both flavors of the
 // same string, so swapping a site to $._identifier changes lexing there.
-const operandName = $ => choice($.identifier, $.operator_identifier);
+const operandName = $ => choice(nameChoice($), $.operator_identifier);
 
 // A Scala 3 end marker as the last child of the construct it closes. The
 // leading semicolon keeps `end` out of every expression follow set, and
@@ -280,6 +292,7 @@ module.exports = grammar({
   ],
 
   inline: $ => [
+    $._definition_pattern,
     $._pattern,
     $._semicolon,
     $._definition,
@@ -290,6 +303,11 @@ module.exports = grammar({
     $._param_value_type,
     $._simple_type,
     $.literal,
+    // Every parenthesized argument list reduces through this rule, so it is
+    // one of the most frequent unit reductions in a parse. Inlining it costs
+    // about 600 states and buys 5 to 10 percent of parse time.
+    $._exprs_in_parens,
+    $._argument_list,
     // Small hidden rules that reduce to a token almost immediately. Inlining
     // removes the reduce step and merges states, shrinking parser.c by ~2MB.
     $._asterisk,
@@ -318,6 +336,15 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
+    [$.repeat_pattern, $._simple_expression],
+    [$.tuple_pattern, $._simple_expression],
+    [$.tuple_pattern, $._simple_expression, $.binding],
+    // 'for'  '('  pattern  '='  _xml_open_tag  '/>'  •  ':'  … — the element
+    // and pattern readings of a literal differ only in their content, and the
+    // enumerator admits both once the definition pattern is inlined.
+    [$.xml_element, $.xml_pattern],
+    [$._simple_expression, $._xml_embedded_pattern],
+    [$._simple_expression, $._xml_repeat_pattern],
     // _simple_expression  '('  _simple_expression  •  ':'  — reduce toward an
     // ascribed argument or shift the colon of a Scala 2 vararg `x: _*`.
     [$._infix_operand, $.vararg],
@@ -375,8 +402,6 @@ module.exports = grammar({
     [$._full_enum_def],
     // _start_val  identifier  ','  identifier  •  ':'  …
     [$.identifiers, $.val_declaration],
-    [$.val_declaration, $._definition_pattern],
-    [$.var_declaration, $._definition_pattern],
     // 'enum'  operator_identifier  _automatic_semicolon  '('  ')'  •  ':'  …
     [$.class_parameters],
     // 'for'  operator_identifier  ':'  _annotated_type  •  ':'  …
@@ -406,8 +431,6 @@ module.exports = grammar({
     [$.match_expression, $._simple_expression],
     // _  :  Type  •  '=>'  …
     [$.self_type, $._simple_expression],
-    // _simple_expression  '('  expression  •  ','  …
-    [$._exprs_in_parens],
     // _simple_expression  ':'  '('  name_and_type  ')'  •  '=>'
     // The parenthesized list is either the lambda parameters of a colon
     // argument or a named tuple type on the ascription reading. What follows
@@ -922,7 +945,7 @@ module.exports = grammar({
         prec(
           "self_type",
           seq(
-            choice($.identifier, $.operator_identifier, $.wildcard),
+            choice(nameChoice($), $.operator_identifier, $.wildcard),
             optional($._self_type_ascription),
             fatArrow(),
           ),
@@ -1643,6 +1666,9 @@ module.exports = grammar({
         $.given_pattern,
         $.quote_expression,
         $.literal,
+        // The unit value is a pattern too (`case () =>`). Without it the
+        // parens read as a tuple pattern and recovery invents its element.
+        $.unit,
         $.wildcard,
         $.xml_pattern,
       ),
@@ -1748,7 +1774,7 @@ module.exports = grammar({
      */
     _simple_expression: $ =>
       choice(
-        $.identifier,
+        nameChoice($),
         $.operator_identifier,
         $.literal,
         $.interpolated_string_expression,
@@ -2330,15 +2356,17 @@ module.exports = grammar({
       seq(
         "(",
         choice(
-          $._vararg_arguments,
-          optional($._exprs_in_parens),
+          optional($._argument_list),
           seq("using", $._exprs_in_parens),
         ),
         ")",
       ),
 
-    _vararg_arguments: $ =>
-      seq(optional(seq($._exprs_in_parens, ",")), $.vararg),
+    // One rule for the plain and vararg-tailed forms. Sharing the repeat means
+    // no conflict is needed between continuing the list and starting a vararg,
+    // which in turn lets the list inline away its unit reduction.
+    _argument_list: $ =>
+      seq(sep1(",", choice($.expression, $.vararg)), optional(",")),
 
     vararg: $ =>
       choice(
@@ -2346,8 +2374,12 @@ module.exports = grammar({
         // as the external _postfix_star, which the postfix reading also
         // accepts, so the higher level settles the tie in vararg's favor.
         prec(PREC.imul, seq($._simple_expression, $._postfix_star)),
-        // Scala 2: `args: _*`
-        seq($._simple_expression, ":", token(seq("_", token.immediate("*")))),
+        // Scala 2: `args: _*`. The weight beats the ascription reading of the
+        // same text, which the parser also completes.
+        prec.dynamic(
+          1,
+          seq($._simple_expression, ":", token(seq("_", token.immediate("*")))),
+        ),
       ),
 
     // ExprsInParens     ::=  ExprInParens {‘,’ ExprInParens}
@@ -2368,7 +2400,8 @@ module.exports = grammar({
         seq(
           "'",
           choice(
-            seq("{", $._block, "}"),
+            // `'{}` is a quoted empty block, common in macro code.
+            seq("{", optional($._block), "}"),
             seq("[", $._type, "]"),
             $.identifier,
             $.null_literal,
@@ -2445,9 +2478,9 @@ module.exports = grammar({
 
     // Name contexts take the union token; sites whose states also allow an
     // infix continuation use operandName instead (see its comment).
-    _identifier: $ => choice($.identifier, opName($)),
+    _identifier: $ => choice(nameChoice($), opName($)),
 
-    identifiers: $ => seq($.identifier, ",", commaSep1($.identifier)),
+    identifiers: $ => seq(nameChoice($), ",", commaSep1(nameChoice($))),
 
     wildcard: $ => "_",
 
@@ -2684,7 +2717,7 @@ module.exports = grammar({
           field("interpolator", alias($._raw_string_start, $.identifier)),
           alias($._raw_string, $.interpolated_string),
         ),
-        seq(field("interpolator", $.identifier), $.interpolated_string),
+        seq(field("interpolator", nameChoice($)), $.interpolated_string),
       ),
 
     _dollar_escape: $ =>

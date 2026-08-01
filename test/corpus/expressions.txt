@@ -4454,3 +4454,68 @@ object X {
           (identifier)
           (operator_identifier)
           (identifier))))))
+
+================================================================================
+Empty quoted block
+================================================================================
+
+val a = '{}
+val b = '{ x }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (quote_expression))
+  (val_definition
+    (identifier)
+    (quote_expression
+      (identifier))))
+
+================================================================================
+Fewer-braces colon after a dedented closing paren
+================================================================================
+
+def a =
+  api
+    .zip(
+      b
+        .map:
+          x
+        .map(s)
+    )
+    .map:
+      case p => p
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (field_expression
+          (call_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (arguments
+              (call_expression
+                (field_expression
+                  (call_expression
+                    (field_expression
+                      (identifier)
+                      (identifier))
+                    (colon_argument
+                      (indented_block
+                        (identifier))))
+                  (identifier))
+                (arguments
+                  (identifier)))))
+          (identifier))
+        (colon_argument
+          (indented_cases
+            (case_clause
+              (identifier)
+              (identifier))))))))
