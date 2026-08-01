@@ -1590,7 +1590,14 @@ module.exports = grammar({
     type_case_clause: $ =>
       prec.left(
         PREC.control,
-        seq("case", $._infix_type_choice, field("body", $._arrow_then_type)),
+        // Dotty's typeCaseClause takes one optional `;` after the body, so a
+        // separator is allowed after every clause including the last.
+        seq(
+          "case",
+          $._infix_type_choice,
+          field("body", $._arrow_then_type),
+          optional(";"),
+        ),
       ),
 
     // A plain type wins where both readings are legal (ascription, pattern,
