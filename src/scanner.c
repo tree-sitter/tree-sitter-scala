@@ -89,6 +89,10 @@ typedef struct {
   int16_t last_indentation_size;
   int16_t last_newline_count;
   int16_t last_column;
+  // The lookahead at the position last_column names. Two lines can share a
+  // column, so the character keeps the saved newline from being recovered at
+  // an unrelated position further down.
+  int16_t last_char;
   int16_t after_colon_eol;
 } Scanner;
 
@@ -109,7 +113,7 @@ void tree_sitter_scala_external_scanner_destroy(void *payload) {
 unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *scanner = (Scanner*)payload;
 
-  if ((scanner->indents.size + 4) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+  if ((scanner->indents.size + 5) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
 
@@ -119,6 +123,8 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
   memcpy(buffer + size, &scanner->last_newline_count, sizeof(int16_t));
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->last_column, sizeof(int16_t));
+  size += sizeof(int16_t);
+  memcpy(buffer + size, &scanner->last_char, sizeof(int16_t));
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->after_colon_eol, sizeof(int16_t));
   size += sizeof(int16_t);
@@ -137,6 +143,7 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   array_clear(&scanner->indents);
   scanner->last_indentation_size = -1;
   scanner->last_column = -1;
+  scanner->last_char = 0;
   scanner->last_newline_count = 0;
   scanner->after_colon_eol = 0;
 
@@ -151,6 +158,8 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   scanner->last_newline_count = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
   scanner->last_column = *(int16_t *)&buffer[size];
+  size += sizeof(int16_t);
+  scanner->last_char = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
   scanner->after_colon_eol = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
@@ -1068,6 +1077,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         // decide, carrying the newline through the recovery below.
         scanner->last_newline_count = newline_count;
         scanner->last_column = effective;
+        scanner->last_char = (int16_t)(lexer->lookahead & 0x7FFF);
         return finish_block_comment(lexer);
       }
       case COMMENT_NONE: break;
@@ -1076,8 +1086,10 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     scanner->last_newline_count = newline_count;
     if (lexer->eof(lexer)) {
       scanner->last_column = -1;
+      scanner->last_char = 0;
     } else {
       scanner->last_column = (int16_t)lexer->get_column(lexer);
+      scanner->last_char = (int16_t)(lexer->lookahead & 0x7FFF);
     }
     // Keep the indented block open when the next line starts with a leading
     // infix operator, which continues the previous expression. But a line
@@ -1109,6 +1121,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     if (
         (is_eof && scanner->last_column == -1) ||
         (!is_eof && newline_count == 0 &&
+         (int16_t)(lexer->lookahead & 0x7FFF) == scanner->last_char &&
          lexer->get_column(lexer) == (uint32_t)scanner->last_column)
     ) {
       newline_count += scanner->last_newline_count;
@@ -1217,6 +1230,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
               lexer->eof(lexer))) {
           scanner->last_newline_count = newline_count;
           scanner->last_column = (int16_t)lexer->get_column(lexer);
+          scanner->last_char = (int16_t)(lexer->lookahead & 0x7FFF);
         }
         return finish_block_comment(lexer);
       }
