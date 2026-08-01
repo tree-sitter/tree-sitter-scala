@@ -2739,6 +2739,67 @@ inline def e(inline m: String): Unit =
               (identifier))))))))
 
 ================================================================================
+Type bindings in a quote type block (Scala 3)
+================================================================================
+
+def types(t: Type[?])(using Quotes) = t match {
+  case '[type x <: AnyKind; x] =>
+  case '[ type t <: Tuple; *:[t, t] ] =>
+  case '[
+    type t
+    type u
+    Map[t, u]
+  ] =>
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (parameters
+      (type_identifier))
+    (match_expression
+      (identifier)
+      (case_block
+        (case_clause
+          (quote_expression
+            (type_definition
+              (type_identifier)
+              (upper_bound
+                (type_identifier)))
+            (type_identifier)))
+        (case_clause
+          (quote_expression
+            (type_definition
+              (type_identifier)
+              (upper_bound
+                (type_identifier)))
+            (generic_type
+              (type_identifier)
+              (type_arguments
+                (type_identifier)
+                (type_identifier)))))
+        (case_clause
+          (quote_expression
+            (type_definition
+              (type_identifier))
+            (type_definition
+              (type_identifier))
+            (generic_type
+              (type_identifier)
+              (type_arguments
+                (type_identifier)
+                (type_identifier)))))))))
+
+================================================================================
 Empty statements before a statement
 ================================================================================
 
