@@ -4,7 +4,8 @@
 
 SCALA_SCALA_LIBRARY_EXPECTED=100
 SCALA_SCALA_COMPILER_EXPECTED=100
-DOTTY_COMPILER_EXPECTED=99
+DOTTY_COMPILER_EXPECTED=100
+DOTTY_TESTS_EXPECTED=95
 LILA_MODULES_EXPECTED=100
 SYNTAX_COMPLEXITY_CEILING=1800
 PARSER_MAX_SIZE_MB=33
@@ -38,8 +39,10 @@ run_tree_sitter () {
   local source_dir=$1
   local expected=$2
   local name=$3
-  local files=$(find "$source_dir" -name '*.scala' -type f | tr '\n' ' ')
-  cmd="npm exec -c 'tree-sitter parse $files --quiet --stat' | sort | sed 's%$source_dir%%g'"
+  shift 3
+  local paths_file=$(mktemp)
+  find "$source_dir" -name '*.scala' -type f "$@" > "$paths_file"
+  cmd="npm exec -c 'tree-sitter parse --paths $paths_file --quiet --stat' | sort | sed 's%$source_dir%%g'"
   echo
   echo "Parse $source_dir: $cmd"
   out=$( (eval "$cmd") || true)
@@ -59,6 +62,7 @@ run_tree_sitter () {
     echo -e "::error file=grammar.js,line=1::${source_dir}: expected ${expected}, but got ${actual} instead"
     failed=$((failed + 1))
   fi
+  rm -f "$paths_file"
 }
 
 check_complexity () {
@@ -94,7 +98,16 @@ check_parser_size $PARSER_MAX_SIZE_MB
 
 run_tree_sitter "$SCALA_SCALA_DIR/src/library/"  $SCALA_SCALA_LIBRARY_EXPECTED   scala2-library
 run_tree_sitter "$SCALA_SCALA_DIR/src/compiler/" $SCALA_SCALA_COMPILER_EXPECTED  scala2-compiler
-run_tree_sitter "$DOTTY_DIR/compiler/"           $DOTTY_COMPILER_EXPECTED        dotty-compiler
+# Exclude REPL session logs which contains `scala> `, compiler warnings, caret lines and so on.
+run_tree_sitter "$DOTTY_DIR/compiler/"           $DOTTY_COMPILER_EXPECTED        dotty-compiler \
+  -not -path '*/test-resources/repl/*'
+
+# Exclude test sources scalac is never asked to accept
+run_tree_sitter "$DOTTY_DIR/tests/"              $DOTTY_TESTS_EXPECTED           dotty-tests \
+  -not -path '*/neg*/*' -not -name 'neg*' \
+  -not -path '*/fuzzy/*' -not -path '*/pending/*' \
+  -not -path '*/disabled/*' -not -path '*/invalid/*'
+
 run_tree_sitter "$LILA_DIR/modules/"             $LILA_MODULES_EXPECTED          lila-modules
 
 check_complexity $SYNTAX_COMPLEXITY_CEILING
