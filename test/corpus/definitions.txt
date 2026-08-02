@@ -431,6 +431,31 @@ import tools.nsc.classpath.{given Test, given Test2, Test3}
       (identifier))))
 
 ================================================================================
+Imports: Given by type without braces (Scala 3 syntax)
+================================================================================
+
+import bar.given Foo
+import Ordering.Implicits.given Ordering[?]
+import bar.given
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (import_declaration
+    (identifier)
+    (type_identifier))
+  (import_declaration
+    (identifier)
+    (identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier))))
+  (import_declaration
+    (identifier)
+    (namespace_wildcard)))
+
+================================================================================
 Imports: Rename (Scala 3 Syntax)
 ================================================================================
 

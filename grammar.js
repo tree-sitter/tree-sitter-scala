@@ -661,6 +661,9 @@ module.exports = grammar({
               seq(
                 ".",
                 choice(
+                  // A bound given selector is a WildCardSelector, so it stands
+                  // on its own as well as inside braces.
+                  $._namespace_given_by_type,
                   $.namespace_wildcard,
                   $.namespace_selectors,
                   // Only allowed in Scala 3
