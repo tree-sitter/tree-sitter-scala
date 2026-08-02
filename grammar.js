@@ -289,6 +289,9 @@ module.exports = grammar({
     // The `<` that opens an XML literal. Only valid where the grammar admits
     // a literal, so the operator `<` is untouched everywhere else.
     $._xml_tag_start,
+    // Reserved for the scanner-lexed erased modifier. The scanner does not
+    // emit it yet, so the keyword token still lexes every occurrence.
+    $._erased_modifier,
   ],
 
   inline: $ => [
