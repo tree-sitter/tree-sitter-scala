@@ -278,6 +278,51 @@ type Elem[A] = A match {
         (type_identifier)))))
 
 ================================================================================
+Match type cases separated by a semicolon (Scala 3 syntax)
+================================================================================
+
+type Choice[A] = A match { case Int => Long ; case Long => Int }
+
+type Trailing = X match { case Int => String; }
+
+type Indented = X match
+  case Int => String;
+  case String => Int
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (type_definition
+    (type_identifier)
+    (type_parameters
+      (identifier))
+    (match_type
+      (type_identifier)
+      (type_case_clause
+        (type_identifier)
+        (type_identifier))
+      (type_case_clause
+        (type_identifier)
+        (type_identifier))))
+  (type_definition
+    (type_identifier)
+    (match_type
+      (type_identifier)
+      (type_case_clause
+        (type_identifier)
+        (type_identifier))))
+  (type_definition
+    (type_identifier)
+    (match_type
+      (type_identifier)
+      (type_case_clause
+        (type_identifier)
+        (type_identifier))
+      (type_case_clause
+        (type_identifier)
+        (type_identifier)))))
+
+================================================================================
 Compound types
 ================================================================================
 
