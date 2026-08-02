@@ -2724,3 +2724,113 @@ object T:
             pattern: (identifier)
             value: (integer_literal))
           (identifier))))))
+
+================================================================================
+Erased definitions and parameters (Scala 3)
+================================================================================
+
+erased def d1: Int = 1
+
+def f1(x: Int, erased y: Int) = 0
+
+def f2(using erased y: Int) = 0
+
+infix type throws[R, E] = (erased ct: CanThrow[E]) ?=> R
+
+val l1: (erased e: Ev, i: Int) => Int = (erased ev, x) => x + 2
+
+def f3(x: Int, erased: Int) = 0
+
+def f4(x: Int, erased inline: Int) = 0
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (modifiers
+      (erased_modifier))
+    (identifier)
+    (type_identifier)
+    (integer_literal))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (erased_modifier)
+        (identifier)
+        (type_identifier)))
+    (integer_literal))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (erased_modifier)
+        (identifier)
+        (type_identifier)))
+    (integer_literal))
+  (type_definition
+    (modifiers
+      (infix_modifier))
+    (type_identifier)
+    (type_parameters
+      (identifier)
+      (identifier))
+    (function_type
+      (parameter_types
+        (named_tuple_type
+          (name_and_type
+            (erased_modifier)
+            (identifier)
+            (generic_type
+              (type_identifier)
+              (type_arguments
+                (type_identifier))))))
+      (type_identifier)))
+  (val_definition
+    (identifier)
+    (function_type
+      (parameter_types
+        (named_tuple_type
+          (name_and_type
+            (erased_modifier)
+            (identifier)
+            (type_identifier))
+          (name_and_type
+            (identifier)
+            (type_identifier))))
+      (type_identifier))
+    (lambda_expression
+      (bindings
+        (binding
+          (erased_modifier)
+          (identifier))
+        (binding
+          (identifier)))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (integer_literal))))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (integer_literal))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (erased_modifier)
+        (identifier)
+        (type_identifier)))
+    (integer_literal)))
