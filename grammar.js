@@ -206,6 +206,9 @@ const nameChoice = $ =>
     alias("super", $.identifier),
   );
 
+// The scanner-lexed `erased`, keeping the keyword token's node name.
+const erasedMod = $ => alias($._erased_modifier, $.erased_modifier);
+
 // The union operator token as a name (see OP_ID_UNION).
 const opName = $ => alias(OP_ID_UNION, $.operator_identifier);
 
@@ -289,8 +292,8 @@ module.exports = grammar({
     // The `<` that opens an XML literal. Only valid where the grammar admits
     // a literal, so the operator `<` is untouched everywhere else.
     $._xml_tag_start,
-    // Reserved for the scanner-lexed erased modifier. The scanner does not
-    // emit it yet, so the keyword token still lexes every occurrence.
+    // `erased` is a name too (`nme.erased`), so lexing it as a keyword costs a
+    // soft-identifier alternative in every name position.
     $._erased_modifier,
   ],
 
@@ -353,9 +356,6 @@ module.exports = grammar({
     [$._infix_operand, $.vararg],
     [$.tuple_type, $.parameter_types],
     [$.inline_modifier, $._soft_identifier],
-    // 'erased' at a parameter start is the modifier when a name follows and the
-    // name itself when a colon does, which only the next token settles.
-    [$.erased_modifier, $._soft_identifier],
     // 'extension' • '{' is either an extension definition with a braced body
     // or the soft identifier `extension` (a Scala 2 id) called with a block.
     [$.extension_definition, $._soft_identifier],
@@ -1240,7 +1240,7 @@ module.exports = grammar({
               "override",
               $.access_modifier,
               $.inline_modifier,
-              $.erased_modifier,
+              erasedMod($),
               $.infix_modifier,
               $.into_modifier,
               $.open_modifier,
@@ -1262,10 +1262,6 @@ module.exports = grammar({
     // so a static "mod" win would misparse `inline || x`; fork instead and
     // prefer the modifier only when both readings complete (`inline if`).
     inline_modifier: $ => prec.dynamic(1, "inline"),
-    // No "mod" precedence, unlike its neighbours. `erased` is also a plain name
-    // (`def f(erased: Int)`), and a static win would take the modifier every
-    // time; the declared conflict lets the next token pick instead.
-    erased_modifier: $ => "erased",
     infix_modifier: $ => prec("mod", "infix"),
     into_modifier: $ => prec("mod", "into"),
     open_modifier: $ => prec("mod", "open"),
@@ -1355,7 +1351,7 @@ module.exports = grammar({
         seq(
           repeat($.annotation),
           optional($.inline_modifier),
-          optional($.erased_modifier),
+          optional(erasedMod($)),
           field("name", $._identifier),
           ":",
           field("type", $._param_type),
@@ -1373,7 +1369,7 @@ module.exports = grammar({
         // it, so the typed reading must accept both spellings. Keep in sync
         // with $.binding, whose token path this rule shares.
         seq(
-          optional($.erased_modifier),
+          optional(erasedMod($)),
           field("name", $._identifier),
           colonEol($),
           field("type", $._param_type),
@@ -2075,7 +2071,7 @@ module.exports = grammar({
      */
     binding: $ =>
       seq(
-        optional($.erased_modifier),
+        optional(erasedMod($)),
         choice(field("name", operandName($)), $.wildcard),
         // colonEol here mirrors name_and_type, the shared-token twin of this rule.
         optional(seq(colonEol($), field("type", $._param_type))),
@@ -2466,7 +2462,6 @@ module.exports = grammar({
       prec(
         "soft_id",
         choice(
-          "erased",
           "infix",
           "inline",
           "opaque",

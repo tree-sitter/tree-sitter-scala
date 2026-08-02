@@ -47,7 +47,8 @@ enum TokenType {
   // else, then, or yield) where the grammar allows one, so construct bodies
   // share one follow column instead of per-keyword ones.
   CONTROL_TAIL_GATE,
-  XML_TAG_START
+  XML_TAG_START,
+  ERASED_MODIFIER
 };
 
 // Mirrors enum TokenType above.
@@ -81,7 +82,8 @@ const char* token_name[] = {
   "FLOATING_POINT_WITH_SEPARATORS",
   "END_KEYWORD",
   "CONTROL_TAIL_GATE",
-  "XML_TAG_START"
+  "XML_TAG_START",
+  "ERASED_MODIFIER"
 };
 
 typedef struct {
@@ -412,16 +414,25 @@ static bool word_in(const char *word, const char *const words[],
   return false;
 }
 
-// Whether the lookahead word closes the enclosing indented region.
-// else/catch/finally all can. The line-leading-else hazard that once
-// excluded else is now ruled out by the caller's newline_count == 0 guard.
-static bool is_block_closing_keyword(TSLexer *lexer) {
-  switch (lexer->lookahead) {
-    case 'e': return scan_word(lexer, "else");
-    case 'c': return scan_word(lexer, "catch");
-    case 'f': return scan_word(lexer, "finally");
-    default: return false;
+// Whether a name follows the word just read, which is what makes an `end`
+// tag a marker and an `erased` a modifier. Block comments in between are
+// transparent, as they are to the parser.
+static bool name_follows_word(TSLexer *lexer) {
+  for (;;) {
+    advance_past_blanks(lexer);
+    if (lexer->lookahead != '/') {
+      break;
+    }
+    advance(lexer);
+    if (lexer->lookahead != '*') {
+      break;
+    }
+    advance(lexer);
+    consume_block_comment_body(lexer);
   }
+  return is_alpha(lexer->lookahead) || lexer->lookahead == '_' ||
+         lexer->lookahead == '$' || lexer->lookahead == '`' ||
+         lexer->lookahead > 127;
 }
 
 // True when `class` or `object` follows `case`, marking a definition not a
@@ -1134,26 +1145,10 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   // shape.
   if (valid_symbols[END_KEYWORD] && !valid_symbols[ERROR_SENTINEL] &&
       lexer->lookahead == 'e') {
-    if (scan_word(lexer, "end")) {
-      for (;;) {
-        advance_past_blanks(lexer);
-        if (lexer->lookahead != '/') {
-          break;
-        }
-        advance(lexer);
-        if (lexer->lookahead != '*') {
-          break;
-        }
-        advance(lexer);
-        consume_block_comment_body(lexer);
-      }
-      if (is_alpha(lexer->lookahead) || lexer->lookahead == '_' ||
-          lexer->lookahead == '$' || lexer->lookahead == '`' ||
-          lexer->lookahead > 127) {
-        lexer->mark_end(lexer);
-        lexer->result_symbol = END_KEYWORD;
-        return true;
-      }
+    if (scan_word(lexer, "end") && name_follows_word(lexer)) {
+      lexer->mark_end(lexer);
+      lexer->result_symbol = END_KEYWORD;
+      return true;
     }
     return false;
   }
@@ -1335,11 +1330,13 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   }
 
   // An else/catch/finally that is not directly shiftable must first close the
-  // open indented region (a dedented `else` after a braceless match closes it).
-  // Skipped during error recovery, where every symbol looks valid.
-  if (
+  // open indented region (a dedented `else` after a braceless match closes it),
+  // and `erased` is the modifier when a name follows. Both read the word, so it
+  // is read once here. Skipped during error recovery, where every symbol looks
+  // valid.
+  static const char *const block_closing_words[] = {"else", "catch", "finally"};
+  bool outdent_arm =
       valid_symbols[OUTDENT] &&
-      !valid_symbols[ERROR_SENTINEL] &&
       !valid_symbols[CONTROL_TAIL_GATE] &&
       newline_count == 0 &&
       prev != -1 &&
@@ -1347,20 +1344,43 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         (lexer->lookahead == 'e' && !valid_symbols[ELSE]) ||
         (lexer->lookahead == 'c' && !valid_symbols[CATCH]) ||
         (lexer->lookahead == 'f' && !valid_symbols[FINALLY])
-      )
-  ) {
-    lexer->mark_end(lexer);
-    if (is_block_closing_keyword(lexer)) {
-      if (scanner->indents.size > 0) {
-        array_pop(&scanner->indents);
-      }
-      LOG("    pop\n");
-      LOG("    OUTDENT (mid-line closing keyword)\n");
-      lexer->result_symbol = OUTDENT;
-      return true;
+      );
+  // Character first: it rules out 98% of positions without the array load.
+  bool erased_arm = lexer->lookahead == 'e' && valid_symbols[ERASED_MODIFIER];
+  if (!valid_symbols[ERROR_SENTINEL] && (outdent_arm || erased_arm)) {
+    if (outdent_arm) {
+      // OUTDENT is zero-width at the word, and the lexer cannot rewind once
+      // read_word has consumed it.
+      lexer->mark_end(lexer);
     }
-    // The lexer has advanced past an identifier starting with e/c/f.
-    // Nothing else external can match it, so give up.
+    // Sized for the longest word above.
+    char word[sizeof "finally"];
+    int len = read_word(lexer, word, (int)sizeof word);
+    // read_word returns -1 when the word overflows the buffer, which would
+    // otherwise leave a truncated prefix to compare against.
+    if (len > 0) {
+      if (erased_arm && strcmp(word, "erased") == 0) {
+        // The modifier spans the word, unlike the zero-width OUTDENT.
+        lexer->mark_end(lexer);
+        if (name_follows_word(lexer)) {
+          lexer->result_symbol = ERASED_MODIFIER;
+          return true;
+        }
+        return false;
+      }
+      if (outdent_arm &&
+          word_in(word, block_closing_words,
+                  sizeof(block_closing_words) / sizeof(block_closing_words[0]))) {
+        if (scanner->indents.size > 0) {
+          array_pop(&scanner->indents);
+        }
+        LOG("    pop\n");
+        LOG("    OUTDENT (mid-line closing keyword)\n");
+        lexer->result_symbol = OUTDENT;
+        return true;
+      }
+    }
+    // The lexer has advanced past the word; nothing else can match it.
     return false;
   }
 
