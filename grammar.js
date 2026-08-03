@@ -2386,7 +2386,17 @@ module.exports = grammar({
 
     parenthesized_expression: $ => seq("(", $.expression, ")"),
 
-    type_arguments: $ => seq("[", trailingCommaSep1($._type), "]"),
+    // NamedTypeArg ::= id '=' Type. Scala 3 takes named type arguments the
+    // way it takes named term arguments.
+    type_arguments: $ =>
+      seq(
+        "[",
+        trailingCommaSep1(choice($._type, $.named_type_argument)),
+        "]",
+      ),
+
+    named_type_argument: $ =>
+      seq(field("name", $._identifier), "=", field("type", $._type)),
 
     arguments: $ =>
       seq(
