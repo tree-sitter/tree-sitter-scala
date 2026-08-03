@@ -1691,6 +1691,149 @@ object A:
         (with_template_body)))))
 
 ================================================================================
+Given definitions (Scala 3.6 syntax)
+================================================================================
+
+given Monad[Foo] { def id = "Foo" }
+
+given intFoo: Foo:
+  def i = 1
+
+given Int is FromString = _.toInt
+
+given ListSet is Set:
+  def f = 1
+
+given toExpr: [T] => Liftable[T] => ToExpr[T]()
+
+given Show[String] => Show[String] = ???
+
+given s: "literal" = "literal"
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (given_definition
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (template_body
+      (function_definition
+        (identifier)
+        (string))))
+  (given_definition
+    (identifier)
+    (type_identifier)
+    (with_template_body
+      (function_definition
+        (identifier)
+        (integer_literal))))
+  (given_definition
+    (infix_type
+      (type_identifier)
+      (identifier)
+      (type_identifier))
+    (field_expression
+      (wildcard)
+      (identifier)))
+  (given_definition
+    (infix_type
+      (type_identifier)
+      (identifier)
+      (type_identifier))
+    (template_body
+      (function_definition
+        (identifier)
+        (integer_literal))))
+  (given_definition
+    (identifier)
+    (type_parameters
+      (identifier))
+    (infix_type
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier)))
+      (operator_identifier)
+      (applied_constructor_type
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))
+        (arguments))))
+  (given_definition
+    (infix_type
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier)))
+      (operator_identifier)
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier))))
+    (operator_identifier))
+  (given_definition
+    (identifier)
+    (literal_type
+      (string))
+    (string)))
+
+================================================================================
+Given conditional with a tracked parameter (Scala 3.6 syntax)
+================================================================================
+
+given (tracked val w: IntWidth) => IntCandidate:
+  type Out = w.Out
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (given_definition
+    (given_conditional
+      (parameter
+        (tracked_modifier)
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (with_template_body
+      (type_definition
+        (type_identifier)
+        (stable_type_identifier
+          (identifier)
+          (type_identifier))))))
+
+================================================================================
+Given with several constructors and no body (Scala 3 syntax)
+================================================================================
+
+given A() with B
+
+given ops: A() with B()
+
+given ops2: A(), B
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (given_definition
+    (type_identifier)
+    (arguments)
+    (type_identifier))
+  (given_definition
+    (identifier)
+    (type_identifier)
+    (arguments)
+    (type_identifier)
+    (arguments))
+  (given_definition
+    (identifier)
+    (type_identifier)
+    (arguments)
+    (type_identifier)))
+
+================================================================================
 Given with type parameters (Scala 3.4+ syntax)
 ================================================================================
 
