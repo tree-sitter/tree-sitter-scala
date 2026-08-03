@@ -323,6 +323,74 @@ type Indented = X match
         (type_identifier)))))
 
 ================================================================================
+Refinement as an intersection operand (Scala 3 syntax)
+================================================================================
+
+val c: Cont[Int] & { type A = Int } = ???
+
+val x: this.type & { type UX = Int } = ???
+
+type M = { type T[+A] } & { type T[-A] }
+
+type Q = A & { type X = Int } & C
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (infix_type
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier)))
+      (operator_identifier)
+      (structural_type
+        (type_definition
+          (type_identifier)
+          (type_identifier))))
+    (operator_identifier))
+  (val_definition
+    (identifier)
+    (infix_type
+      (singleton_type
+        (identifier))
+      (operator_identifier)
+      (structural_type
+        (type_definition
+          (type_identifier)
+          (type_identifier))))
+    (operator_identifier))
+  (type_definition
+    (type_identifier)
+    (infix_type
+      (structural_type
+        (type_definition
+          (type_identifier)
+          (type_parameters
+            (covariant_type_parameter
+              (identifier)))))
+      (operator_identifier)
+      (structural_type
+        (type_definition
+          (type_identifier)
+          (type_parameters
+            (contravariant_type_parameter
+              (identifier)))))))
+  (type_definition
+    (type_identifier)
+    (infix_type
+      (infix_type
+        (type_identifier)
+        (operator_identifier)
+        (structural_type
+          (type_definition
+            (type_identifier)
+            (type_identifier))))
+      (operator_identifier)
+      (type_identifier))))
+
+================================================================================
 Compound types
 ================================================================================
 

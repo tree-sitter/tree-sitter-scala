@@ -355,6 +355,8 @@ module.exports = grammar({
     // ascribed argument or shift the colon of a Scala 2 vararg `x: _*`.
     [$._infix_operand, $.vararg],
     [$.tuple_type, $.parameter_types],
+    // Both spell a braced body, so the reduce after `}` is ambiguous.
+    [$._structural_body, $.template_body],
     [$.inline_modifier, $._soft_identifier],
     // 'extension' • '{' is either an extension definition with a braced body
     // or the soft identifier `extension` (a Scala 2 id) called with a block.
@@ -1523,8 +1525,14 @@ module.exports = grammar({
         ),
       ),
 
+    // Braced only, as dotty's refinement(indentOK = false) is. The indented
+    // spelling belongs to the refinement suffix, which keeps template_body.
     _structural_type: $ =>
-      prec("structural_type", alias($.template_body, $.structural_type)),
+      prec("structural_type", alias($._structural_body, $.structural_type)),
+
+    // The dynamic weight keeps `new { "ok" }` an instance expression, which
+    // shares this body and would otherwise tie with it.
+    _structural_body: $ => prec.dynamic(-1, $._braced_template_body),
 
     _refinement: $ => alias($.template_body, $.refinement),
 
@@ -1542,9 +1550,10 @@ module.exports = grammar({
     infix_type: $ =>
       prec.left(
         seq(
-          field("left", $._infix_type_choice),
+          // SimpleType1 admits a bare Refinement: `A & { type X = Int }`.
+          field("left", choice($._infix_type_choice, $._structural_type)),
           field("operator", wordOrOpName($)),
-          field("right", $._infix_type_choice),
+          field("right", choice($._infix_type_choice, $._structural_type)),
         ),
       ),
 
