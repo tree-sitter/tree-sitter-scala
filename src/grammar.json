@@ -3743,8 +3743,13 @@
                 "name": "inline_modifier"
               },
               {
-                "type": "SYMBOL",
-                "name": "erased_modifier"
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_erased_modifier"
+                },
+                "named": true,
+                "value": "erased_modifier"
               },
               {
                 "type": "SYMBOL",
@@ -3829,10 +3834,6 @@
         "type": "STRING",
         "value": "inline"
       }
-    },
-    "erased_modifier": {
-      "type": "STRING",
-      "value": "erased"
     },
     "infix_modifier": {
       "type": "PREC",
@@ -4480,8 +4481,13 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "SYMBOL",
-                "name": "erased_modifier"
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_erased_modifier"
+                },
+                "named": true,
+                "value": "erased_modifier"
               },
               {
                 "type": "BLANK"
@@ -4546,8 +4552,13 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "SYMBOL",
-                "name": "erased_modifier"
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_erased_modifier"
+                },
+                "named": true,
+                "value": "erased_modifier"
               },
               {
                 "type": "BLANK"
@@ -5179,10 +5190,18 @@
         "type": "ALIAS",
         "content": {
           "type": "SYMBOL",
-          "name": "template_body"
+          "name": "_structural_body"
         },
         "named": true,
         "value": "structural_type"
+      }
+    },
+    "_structural_body": {
+      "type": "PREC_DYNAMIC",
+      "value": -1,
+      "content": {
+        "type": "SYMBOL",
+        "name": "_braced_template_body"
       }
     },
     "_refinement": {
@@ -5229,8 +5248,17 @@
             "type": "FIELD",
             "name": "left",
             "content": {
-              "type": "SYMBOL",
-              "name": "_infix_type_choice"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_infix_type_choice"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "_structural_type"
+                }
+              ]
             }
           },
           {
@@ -5292,8 +5320,17 @@
             "type": "FIELD",
             "name": "right",
             "content": {
-              "type": "SYMBOL",
-              "name": "_infix_type_choice"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_infix_type_choice"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "_structural_type"
+                }
+              ]
             }
           }
         ]
@@ -7705,8 +7742,13 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SYMBOL",
-              "name": "erased_modifier"
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_erased_modifier"
+              },
+              "named": true,
+              "value": "erased_modifier"
             },
             {
               "type": "BLANK"
@@ -10357,10 +10399,6 @@
       "content": {
         "type": "CHOICE",
         "members": [
-          {
-            "type": "STRING",
-            "value": "erased"
-          },
           {
             "type": "STRING",
             "value": "infix"
@@ -13124,11 +13162,11 @@
       "parameter_types"
     ],
     [
-      "inline_modifier",
-      "_soft_identifier"
+      "_structural_body",
+      "template_body"
     ],
     [
-      "erased_modifier",
+      "inline_modifier",
       "_soft_identifier"
     ],
     [

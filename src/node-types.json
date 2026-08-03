@@ -2580,11 +2580,6 @@
     }
   },
   {
-    "type": "erased_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "existential_type",
     "named": true,
     "fields": {
@@ -4875,6 +4870,10 @@
             "named": true
           },
           {
+            "type": "structural_type",
+            "named": true
+          },
+          {
             "type": "tuple_type",
             "named": true
           },
@@ -4944,6 +4943,10 @@
           },
           {
             "type": "stable_type_identifier",
+            "named": true
+          },
+          {
+            "type": "structural_type",
             "named": true
           },
           {
@@ -10133,8 +10136,8 @@
     "named": false
   },
   {
-    "type": "erased",
-    "named": false
+    "type": "erased_modifier",
+    "named": true
   },
   {
     "type": "escape_sequence",
