@@ -375,9 +375,6 @@ module.exports = grammar({
     [$._type_identifier, $.ascription_expression],
     [$._given_constructor, $._type_identifier],
     [$.instance_expression],
-    // `end` after a new-with-template closes either the instance or an
-    // enclosing construct.
-    [$._constructor_application, $.instance_expression],
     // A semicolon after a body is either a statement separator or the one
     // in front of an end marker. Fork until the tag decides.
     [$.try_expression],
@@ -426,7 +423,6 @@ module.exports = grammar({
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition_paren, $._simple_expression],
     [$.block, $._braced_template_body1],
-    [$._simple_expression, $._type_identifier],
     // '{'  identifier  •  ':' starts the braced typed lambda, the block
     // lambda param, and a statement alike.
     [$._simple_expression, $._braced_typed_lambda],
