@@ -1142,18 +1142,47 @@ module.exports = grammar({
             repeat($.annotation),
             optional($.modifiers),
             "given",
-            optional($._given_constructor),
-            repeat($._given_sig),
-            choice(
-              field("return_type", $._structural_instance),
-              seq(
-                field("return_type", $._annotated_type),
-                optional(seq("=", field("body", $._indentable_expression))),
-              ),
-            ),
+            $._given_tail,
           ),
         ),
         optional($._end_marker_named_tail),
+      ),
+
+    // Weighted below the old signature so `given (using a: Int): Int` stays a
+    // parameter clause rather than a named tuple joined by an infix `:`.
+    // One rule, so the optional signature before it does not duplicate the
+    // states the type and body choices need.
+    _given_type_and_body: $ =>
+      choice(
+        field("return_type", $._structural_instance),
+        seq(
+          // A given type is an infix chain, which is what makes `X is Y` one.
+          // The plain reading wins the tie so `(using a: Int):` stays a
+          // parameter clause.
+          field(
+            "return_type",
+            choice(
+              $._annotated_type,
+              prec.dynamic(-1, $.literal_type),
+              prec.dynamic(-1, $.infix_type),
+            ),
+          ),
+          // The body needs no `with` in the Scala 3.6 spelling.
+          optional($._given_body),
+        ),
+      ),
+
+    _given_tail: $ =>
+      seq(
+        optional($._given_constructor),
+        repeat($._given_sig),
+        $._given_type_and_body,
+      ),
+
+    _given_body: $ =>
+      choice(
+        seq("=", field("body", $._indentable_expression)),
+        prec.dynamic(-1, field("body", $.template_body)),
       ),
 
     _given_sig: $ => seq($._given_conditional, fatArrow()),
@@ -1181,10 +1210,40 @@ module.exports = grammar({
     _structural_instance: $ =>
       prec.left(
         PREC.compound,
-        seq(
-          $._constructor_application,
-          choice(colonEol($), "with"),
-          field("body", $.with_template_body),
+        choice(
+          seq(
+            $._constructor_application,
+            choice(colonEol($), "with"),
+            field("body", $.with_template_body),
+          ),
+          // Several constructors and no body. The separator is `with` or a
+          // comma. A refinement is a constructor everywhere else, but a brace
+          // here is always the body, so the extras leave it out.
+          seq(
+            $._constructor_application,
+            repeat1(
+              seq(
+                choice("with", ","),
+                field("extra", $._constructor_application_extra),
+              ),
+            ),
+          ),
+        ),
+      ),
+
+    _constructor_application_extra: $ =>
+      prec.left(
+        "constructor_application",
+        choice(
+          $._annotated_type,
+          $.compound_type,
+          seq(
+            $._simple_type,
+            field(
+              "arguments",
+              repeat1(prec("constructor_application", $.arguments)),
+            ),
+          ),
         ),
       ),
 
@@ -1350,6 +1409,9 @@ module.exports = grammar({
           repeat($.annotation),
           optional($.inline_modifier),
           optional(erasedMod($)),
+          // A given conditional clause takes `tracked val`.
+          optional($.tracked_modifier),
+          optional(choice("val", "var")),
           field("name", $._identifier),
           ":",
           field("type", $._param_type),
