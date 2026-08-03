@@ -391,6 +391,44 @@ type Q = A & { type X = Int } & C
       (type_identifier))))
 
 ================================================================================
+Named type arguments (Scala 3 syntax)
+================================================================================
+
+def g(x: Int) = f[T = Any](x)
+
+type A = Foo[K = Int, V = String]
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (call_expression
+      (generic_function
+        (identifier)
+        (type_arguments
+          (named_type_argument
+            (identifier)
+            (type_identifier))))
+      (arguments
+        (identifier))))
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (named_type_argument
+          (identifier)
+          (type_identifier))
+        (named_type_argument
+          (identifier)
+          (type_identifier))))))
+
+================================================================================
 Compound types
 ================================================================================
 
