@@ -2580,11 +2580,6 @@
     }
   },
   {
-    "type": "erased_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "existential_type",
     "named": true,
     "fields": {
@@ -3786,7 +3781,65 @@
             "named": true
           },
           {
+            "type": "template_body",
+            "named": true
+          },
+          {
             "type": "with_template_body",
+            "named": true
+          }
+        ]
+      },
+      "extra": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
+            "type": "arguments",
+            "named": true
+          },
+          {
+            "type": "compound_type",
+            "named": true
+          },
+          {
+            "type": "generic_type",
+            "named": true
+          },
+          {
+            "type": "named_tuple_type",
+            "named": true
+          },
+          {
+            "type": "projected_type",
+            "named": true
+          },
+          {
+            "type": "singleton_type",
+            "named": true
+          },
+          {
+            "type": "stable_type_identifier",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "wildcard",
             "named": true
           }
         ]
@@ -3820,6 +3873,10 @@
         "required": true,
         "types": [
           {
+            "type": ",",
+            "named": false
+          },
+          {
             "type": ":",
             "named": false
           },
@@ -3841,6 +3898,14 @@
           },
           {
             "type": "generic_type",
+            "named": true
+          },
+          {
+            "type": "infix_type",
+            "named": true
+          },
+          {
+            "type": "literal_type",
             "named": true
           },
           {
@@ -4875,6 +4940,10 @@
             "named": true
           },
           {
+            "type": "structural_type",
+            "named": true
+          },
+          {
             "type": "tuple_type",
             "named": true
           },
@@ -4944,6 +5013,10 @@
           },
           {
             "type": "stable_type_identifier",
+            "named": true
+          },
+          {
+            "type": "structural_type",
             "named": true
           },
           {
@@ -6009,6 +6082,104 @@
     }
   },
   {
+    "type": "named_type_argument",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "operator_identifier",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "annotated_type",
+            "named": true
+          },
+          {
+            "type": "applied_constructor_type",
+            "named": true
+          },
+          {
+            "type": "compound_type",
+            "named": true
+          },
+          {
+            "type": "existential_type",
+            "named": true
+          },
+          {
+            "type": "function_type",
+            "named": true
+          },
+          {
+            "type": "generic_type",
+            "named": true
+          },
+          {
+            "type": "infix_type",
+            "named": true
+          },
+          {
+            "type": "literal_type",
+            "named": true
+          },
+          {
+            "type": "match_type",
+            "named": true
+          },
+          {
+            "type": "named_tuple_type",
+            "named": true
+          },
+          {
+            "type": "projected_type",
+            "named": true
+          },
+          {
+            "type": "singleton_type",
+            "named": true
+          },
+          {
+            "type": "stable_type_identifier",
+            "named": true
+          },
+          {
+            "type": "structural_type",
+            "named": true
+          },
+          {
+            "type": "tuple_type",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "type_lambda",
+            "named": true
+          },
+          {
+            "type": "wildcard",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "namespace_selectors",
     "named": true,
     "fields": {},
@@ -6443,6 +6614,10 @@
         },
         {
           "type": "inline_modifier",
+          "named": true
+        },
+        {
+          "type": "tracked_modifier",
           "named": true
         }
       ]
@@ -7904,6 +8079,10 @@
         },
         {
           "type": "named_tuple_type",
+          "named": true
+        },
+        {
+          "type": "named_type_argument",
           "named": true
         },
         {
@@ -10133,8 +10312,8 @@
     "named": false
   },
   {
-    "type": "erased",
-    "named": false
+    "type": "erased_modifier",
+    "named": true
   },
   {
     "type": "escape_sequence",
