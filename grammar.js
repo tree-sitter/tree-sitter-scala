@@ -295,6 +295,24 @@ module.exports = grammar({
     // `erased` is a name too (`nme.erased`), so lexing it as a keyword costs a
     // soft-identifier alternative in every name position.
     $._erased_modifier,
+    // Reserved for the rest of the soft modifiers, which cost the same
+    // soft-identifier alternative that `erased` used to. The scanner does not
+    // emit these yet, so the keyword tokens still lex every occurrence.
+    $._open_modifier,
+    $._opaque_modifier,
+    $._infix_modifier,
+    $._tracked_modifier,
+    $._transparent_modifier,
+    $._inline_modifier,
+    $._into_modifier,
+    // Reserved for the capture checking modifiers, which are ordinary method
+    // names as well. These come last because a scanner has to declare the
+    // tokens ahead of the ones it reads, and the modifiers above land first.
+    $._update_modifier,
+    $._consume_modifier,
+    // `uses` will continue the parent list onto the next line the way
+    // `derives` does, so the scanner has to withhold the separator before it.
+    "uses",
   ],
 
   inline: $ => [
