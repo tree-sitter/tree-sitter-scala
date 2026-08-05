@@ -55,7 +55,10 @@ enum TokenType {
   TRACKED_MODIFIER,
   TRANSPARENT_MODIFIER,
   INLINE_MODIFIER,
-  INTO_MODIFIER
+  INTO_MODIFIER,
+  UPDATE_MODIFIER,
+  CONSUME_MODIFIER,
+  USES
 };
 
 // Mirrors enum TokenType above.
@@ -97,7 +100,10 @@ const char* token_name[] = {
   "TRACKED_MODIFIER",
   "TRANSPARENT_MODIFIER",
   "INLINE_MODIFIER",
-  "INTO_MODIFIER"
+  "INTO_MODIFIER",
+  "UPDATE_MODIFIER",
+  "CONSUME_MODIFIER",
+  "USES"
 };
 
 typedef struct {
@@ -453,11 +459,28 @@ static bool name_follows_word(TSLexer *lexer) {
          lexer->lookahead > 127;
 }
 
+// No modifier precedes a word that continues an expression, so `update match`
+// stays a plain name. `if` is missing on purpose, since `inline if` is real.
+static bool modifier_word_allowed(TSLexer *lexer) {
+  static const char *const expression_tails[] = {
+      "match", "catch", "finally", "else", "then",
+      "do",    "yield", "while",   "with", "extends"};
+  char word[sizeof "finally"];
+  int len = read_word(lexer, word, (int)sizeof word);
+  return len <= 0 ||
+         !word_in(word, expression_tails,
+                  sizeof(expression_tails) / sizeof(expression_tails[0]));
+}
+
+static bool modifier_name_follows(TSLexer *lexer) {
+  return name_follows_word(lexer) && modifier_word_allowed(lexer);
+}
+
 // `inline` also prefixes the scrutinee of `inline 1 match`, and it can end a
 // modifier line whose definition is on the next one.
 static bool inline_modifier_follows(TSLexer *lexer) {
   if (name_follows_word(lexer)) {
-    return true;
+    return modifier_word_allowed(lexer);
   }
   // A scrutinee starts an expression. See canStartExprTokens in the
   // reference parser.
@@ -1367,6 +1390,11 @@ static bool scan_impl(void *payload, TSLexer *lexer,
           return false;
         }
         break;
+      case 'u':
+        if (valid_symbols[USES] && scan_word(lexer, "uses")) {
+          return false;
+        }
+        break;
       case 'm':
         // `match` is a reserved word that never starts a statement, so it
         // always continues the previous expression.
@@ -1413,6 +1441,8 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     {'t', "transparent", TRANSPARENT_MODIFIER},
     {'i', "inline", INLINE_MODIFIER},
     {'i', "into", INTO_MODIFIER},
+    {'u', "update", UPDATE_MODIFIER},
+    {'c', "consume", CONSUME_MODIFIER},
   };
   const unsigned soft_modifier_count =
       sizeof(soft_modifiers) / sizeof(soft_modifiers[0]);
@@ -1452,7 +1482,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         // reading as plain identifiers.
         bool follows = modifier == INLINE_MODIFIER
                            ? inline_modifier_follows(lexer)
-                           : name_follows_word(lexer);
+                           : modifier_name_follows(lexer);
         if (follows) {
           lexer->result_symbol = modifier;
           return true;
