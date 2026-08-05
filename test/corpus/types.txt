@@ -429,6 +429,124 @@ type A = Foo[K = Int, V = String]
           (type_identifier))))))
 
 ================================================================================
+Capturing types (Scala 3 capture checking)
+================================================================================
+
+def f(it: IterableOnce[A]^): Unit = ()
+
+type Cap = C^{cap}
+
+type Two = C^{x, y}
+
+type Narrow = Object^{any.only[Shared].rd}
+
+type Pure = A -> B
+
+type PureCtx = A ?-> B
+
+type Captured = A ->{x} B
+
+trait T:
+  update def put(x: Int): Unit
+
+def drop(consume r: Res): Unit = ()
+
+def h(x: ->{any} I) = x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (capturing_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (type_identifier))))))
+    (type_identifier)
+    (unit))
+  (type_definition
+    (type_identifier)
+    (capturing_type
+      (type_identifier)
+      (capture_set
+        (capture_ref))))
+  (type_definition
+    (type_identifier)
+    (capturing_type
+      (type_identifier)
+      (capture_set
+        (capture_ref
+          (identifier))
+        (capture_ref
+          (identifier)))))
+  (type_definition
+    (type_identifier)
+    (capturing_type
+      (type_identifier)
+      (capture_set
+        (capture_ref
+          (identifier)
+          (type_arguments
+            (type_identifier))))))
+  (type_definition
+    (type_identifier)
+    (function_type
+      (parameter_types
+        (type_identifier))
+      (type_identifier)))
+  (type_definition
+    (type_identifier)
+    (function_type
+      (parameter_types
+        (type_identifier))
+      (type_identifier)))
+  (type_definition
+    (type_identifier)
+    (function_type
+      (parameter_types
+        (type_identifier))
+      (capture_set
+        (capture_ref
+          (identifier)))
+      (type_identifier)))
+  (trait_definition
+    (identifier)
+    (template_body
+      (function_declaration
+        (modifiers
+          (update_modifier))
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier))))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (consume_modifier)
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (unit))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (lazy_parameter_type
+          (capture_set
+            (capture_ref
+              (identifier)))
+          (type_identifier))))
+    (identifier)))
+
+================================================================================
 Compound types
 ================================================================================
 
@@ -1278,3 +1396,121 @@ var xx: (Lambda { type Apply = Arg } { type Arg = Int }) # Apply = uninitialized
               (type_identifier)))))
       (type_identifier))
     (identifier)))
+
+================================================================================
+Capture set variables (Scala 3 capture checking)
+================================================================================
+
+trait Bar:
+  type C^
+
+def foo[C^](x: List[() ->{C} Unit]): Unit = ()
+
+class K[Cap^ <: Any]:
+  type T[Cap^]
+
+type E >: {V, W} <: {U}
+
+type C = {D}
+
+val a = f[{io, async}]
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (type_definition
+        (type_identifier)
+        (capture_variable))))
+  (function_definition
+    (identifier)
+    (type_parameters
+      (identifier)
+      (capture_variable))
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (function_type
+              (parameter_types)
+              (capture_set
+                (capture_ref
+                  (identifier)))
+              (type_identifier))))))
+    (type_identifier)
+    (unit))
+  (class_definition
+    (identifier)
+    (type_parameters
+      (identifier)
+      (capture_variable)
+      (upper_bound
+        (type_identifier)))
+    (template_body
+      (type_definition
+        (type_identifier)
+        (type_parameters
+          (identifier)
+          (capture_variable)))))
+  (type_definition
+    (type_identifier)
+    (lower_bound
+      (capture_set
+        (capture_ref
+          (identifier))
+        (capture_ref
+          (identifier))))
+    (upper_bound
+      (capture_set
+        (capture_ref
+          (identifier)))))
+  (type_definition
+    (type_identifier)
+    (capture_set
+      (capture_ref
+        (identifier))))
+  (val_definition
+    (identifier)
+    (generic_function
+      (identifier)
+      (type_arguments
+        (capture_set
+          (capture_ref
+            (identifier))
+          (capture_ref
+            (identifier)))))))
+
+================================================================================
+An operator name starting with a pure arrow (Scala 3 capture checking)
+================================================================================
+
+type ->>[K, V] = V
+
+def f[K](k: K): K ->> V = ???
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (type_definition
+    (type_identifier)
+    (type_parameters
+      (identifier)
+      (identifier))
+    (type_identifier))
+  (function_definition
+    (identifier)
+    (type_parameters
+      (identifier))
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (infix_type
+      (type_identifier)
+      (operator_identifier)
+      (type_identifier))
+    (operator_identifier)))

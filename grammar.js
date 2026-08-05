@@ -165,6 +165,16 @@ const fatArrow = () => choice("=>", alias("⇒", "=>"));
 // `=>` or the context-function arrow `?=>`.
 const anyArrow = () => choice(fatArrow(), "?=>");
 
+// The arrow of a function type. `->` and `?->` are the pure spellings, and
+// either may carry the set of capabilities the function captures. Only types
+// take them: `->` is an ordinary infix operator in an expression, where it
+// builds a pair.
+// Two literals rather than one token with a precedence. A lexical precedence
+// outranks match length, so a combined arrow would take the head of `->>`.
+const pureArrow = () => choice("->", "?->");
+
+const typeArrow = () => choice(fatArrow(), "?=>", pureArrow());
+
 // XML Name (SLS §10 / XML spec), covering namespaced names like `x:ga`.
 const XML_NAME = /[_\p{L}][-.:_\p{L}\p{Nd}]*/;
 
@@ -216,6 +226,8 @@ const transparentMod = $ =>
   alias($._transparent_modifier, $.transparent_modifier);
 const intoMod = $ => alias($._into_modifier, $.into_modifier);
 const inlineMod = $ => alias($._inline_modifier, $.inline_modifier);
+const updateMod = $ => alias($._update_modifier, $.update_modifier);
+const consumeMod = $ => alias($._consume_modifier, $.consume_modifier);
 
 // The union operator token as a name (see OP_ID_UNION).
 const opName = $ => alias(OP_ID_UNION, $.operator_identifier);
@@ -310,13 +322,10 @@ module.exports = grammar({
     $._transparent_modifier,
     $._inline_modifier,
     $._into_modifier,
-    // Reserved for the capture checking modifiers, which are ordinary method
-    // names as well. These come last because a scanner has to declare the
-    // tokens ahead of the ones it reads, and the modifiers above land first.
     $._update_modifier,
     $._consume_modifier,
-    // `uses` will continue the parent list onto the next line the way
-    // `derives` does, so the scanner has to withhold the separator before it.
+    // `uses` continues the parent list onto the next line the way `derives`
+    // does, so the scanner has to withhold the separator before it.
     "uses",
   ],
 
@@ -365,6 +374,7 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
+    [$._if_rest],
     [$.repeat_pattern, $._simple_expression],
     [$.tuple_pattern, $._simple_expression],
     [$.tuple_pattern, $._simple_expression, $.binding],
@@ -380,6 +390,9 @@ module.exports = grammar({
     [$.tuple_type, $.parameter_types],
     // Both spell a braced body, so the reduce after `}` is ambiguous.
     [$._structural_body, $.template_body],
+    // `->{` opens the captured set of an arrow or the block a plain arrow
+    // takes, and a bare name reads as either until the brace closes.
+    [$.capture_ref, $._simple_expression],
     // 'extension' • '{' is either an extension definition with a braced body
     // or the soft identifier `extension` (a Scala 2 id) called with a block.
     [$.extension_definition, $._soft_identifier],
@@ -580,7 +593,7 @@ module.exports = grammar({
         "enum",
         $._class_constructor,
         field("extend", optional($.extends_clause)),
-        field("derive", optional($.derives_clause)),
+        field("derive", optional(choice($.derives_clause, $.uses_clause))),
         field("body", $.enum_body),
         optional($._end_marker_named_tail),
       ),
@@ -754,7 +767,7 @@ module.exports = grammar({
           seq(
             field("name", $._identifier),
             field("extend", optional($.extends_clause)),
-            field("derive", optional($.derives_clause)),
+            field("derive", optional(choice($.derives_clause, $.uses_clause))),
             field("body", optional($._definition_body)),
           ),
         ),
@@ -774,7 +787,7 @@ module.exports = grammar({
       seq(
         $._class_constructor,
         field("extend", optional($.extends_clause)),
-        field("derive", optional($.derives_clause)),
+        field("derive", optional(choice($.derives_clause, $.uses_clause))),
         field("body", optional($._definition_body)),
         optional($._end_marker_named_tail),
       ),
@@ -838,6 +851,7 @@ module.exports = grammar({
     _type_parameter: $ =>
       seq(
         field("name", choice($.wildcard, $._identifier)),
+        optional(alias("^", $.capture_variable)),
         field("type_parameters", optional($.type_parameters)),
         field("bound", optional($.lower_bound)),
         field("bound", optional($.upper_bound)),
@@ -845,9 +859,9 @@ module.exports = grammar({
         field("bound", optional($._context_bounds)),
       ),
 
-    upper_bound: $ => seq("<:", field("type", $._type)),
+    upper_bound: $ => seq("<:", field("type", choice($._type, $.capture_set))),
 
-    lower_bound: $ => seq(">:", field("type", $._type)),
+    lower_bound: $ => seq(">:", field("type", choice($._type, $.capture_set))),
 
     view_bound: $ => seq("<%", field("type", $._type)),
 
@@ -1065,7 +1079,7 @@ module.exports = grammar({
           optional(opaqueMod($)),
           "type",
           $._type_constructor,
-          optional(seq("=", field("type", $._type))),
+          optional(seq("=", field("type", choice($._type, $.capture_set)))),
         ),
       ),
 
@@ -1074,6 +1088,7 @@ module.exports = grammar({
       prec.left(
         seq(
           field("name", $._type_identifier),
+          optional(alias("^", $.capture_variable)),
           field("type_parameters", optional($.type_parameters)),
           field("bound", optional($.lower_bound)),
           field("bound", optional($.upper_bound)),
@@ -1323,6 +1338,8 @@ module.exports = grammar({
               openMod($),
               trackedMod($),
               transparentMod($),
+              updateMod($),
+              consumeMod($),
             ),
           ),
         ),
@@ -1341,15 +1358,14 @@ module.exports = grammar({
     extends_clause: $ =>
       prec.left(seq("extends", field("type", $._constructor_applications))),
 
-    derives_clause: $ =>
-      prec.left(
-        seq(
-          "derives",
-          commaSep1(
-            field("type", choice($._type_identifier, $.stable_type_identifier)),
-          ),
-        ),
+    _derived_names: $ =>
+      commaSep1(
+        field("type", choice($._type_identifier, $.stable_type_identifier)),
       ),
+
+    derives_clause: $ => prec.left(seq("derives", $._derived_names)),
+
+    uses_clause: $ => prec.left(seq("uses", $._derived_names)),
 
     class_parameters: $ =>
       prec(
@@ -1376,9 +1392,11 @@ module.exports = grammar({
      * DefParamClause    ::=  [nl] ‘(’ DefParams ‘)’ | UsingParamClause
      * DefParams         ::=  DefParam {‘,’ DefParam}
      */
+    _parameters_tail: $ => seq(trailingCommaSep($.parameter), ")"),
+
     parameters: $ =>
       choice(
-        seq("(", optional("implicit"), trailingCommaSep($.parameter), ")"),
+        seq("(", optional("implicit"), $._parameters_tail),
         $._using_parameters_clause,
       ),
 
@@ -1418,7 +1436,7 @@ module.exports = grammar({
         seq(
           repeat($.annotation),
           optional(inlineMod($)),
-          optional(erasedMod($)),
+          optional(choice(erasedMod($), consumeMod($))),
           // A given conditional clause takes `tracked val`.
           optional(trackedMod($)),
           optional(choice("val", "var")),
@@ -1515,6 +1533,7 @@ module.exports = grammar({
       choice(
         $.function_type,
         $.compound_type,
+        $.capturing_type,
         $.infix_type,
         $.match_type,
         $._annotated_type,
@@ -1595,6 +1614,46 @@ module.exports = grammar({
 
     // Braced only, as dotty's refinement(indentOK = false) is. The indented
     // spelling belongs to the refinement suffix, which keeps template_body.
+    // A type followed by `^`, optionally with the set of capabilities it
+    // captures. The braced set outweighs the refinement reading of the same
+    // braces.
+    capturing_type: $ =>
+      choice(
+        prec.left(
+          2,
+          seq(
+            field("base", choice($._annotated_type, $.compound_type)),
+            "^",
+            field("capture_set", $.capture_set),
+          ),
+        ),
+        prec.left(
+          1,
+          seq(field("base", choice($._annotated_type, $.compound_type)), "^"),
+        ),
+      ),
+
+    capture_set: $ => seq("{", optional(sep1(",", $.capture_ref)), "}"),
+
+    // A capability, with any run of the suffixes that narrow it: `.only[C]`
+    // and `.except[C]` take a class, `.rd` takes none.
+    capture_ref: $ =>
+      seq(
+        choice($._identifier, $.stable_identifier, "cap"),
+        repeat(
+          seq(
+            ".",
+            choice(
+              seq(
+                choice("only", "except"),
+                field("type_arguments", $.type_arguments),
+              ),
+              "rd",
+            ),
+          ),
+        ),
+      ),
+
     _structural_type: $ =>
       prec("structural_type", alias($._structural_body, $.structural_type)),
 
@@ -1609,6 +1668,7 @@ module.exports = grammar({
       prec.left(
         choice(
           $.compound_type,
+          $.capturing_type,
           $.infix_type,
           $._annotated_type,
           $.literal_type,
@@ -1710,11 +1770,18 @@ module.exports = grammar({
       ),
 
     _arrow_then_type: $ =>
-      prec.right(seq(anyArrow(), field("return_type", $._type))),
+      prec.right(
+        seq(
+          typeArrow(),
+          optional(field("capture_set", $.capture_set)),
+          field("return_type", $._type),
+        ),
+      ),
 
     parameter_types: $ =>
       choice(
         $._annotated_type,
+        $.capturing_type,
         // Prioritize a parenthesized param list over a single tuple_type.
         prec.dynamic(1, seq("(", trailingCommaSep($._param_type), ")")),
         $.compound_type,
@@ -1729,7 +1796,11 @@ module.exports = grammar({
     repeated_parameter_type: $ => seq(field("type", $._type), $._asterisk),
 
     lazy_parameter_type: $ =>
-      seq(fatArrow(), field("type", $._param_value_type)),
+      seq(
+        choice(fatArrow(), pureArrow()),
+        optional(field("capture_set", $.capture_set)),
+        field("type", $._param_value_type),
+      ),
 
     _type_identifier: $ => alias($._identifier, $.type_identifier),
 
@@ -2003,9 +2074,10 @@ module.exports = grammar({
      *  ::=  [‘inline’] ‘if’ ‘(’ Expr ‘)’ {nl} Expr [[semi] ‘else’ Expr]
      *    |  [‘inline’] ‘if’  Expr ‘then’ Expr [[semi] ‘else’ Expr]
      */
-    if_expression: $ =>
+    if_expression: $ => seq(optional(inlineMod($)), $._if_rest),
+
+    _if_rest: $ =>
       seq(
-        optional(inlineMod($)),
         "if",
         choice(
           // No marker slot here. Paren-if marker heads multiply the block
@@ -2457,7 +2529,13 @@ module.exports = grammar({
     // NamedTypeArg ::= id '=' Type. Scala 3 takes named type arguments the
     // way it takes named term arguments.
     type_arguments: $ =>
-      seq("[", trailingCommaSep1(choice($._type, $.named_type_argument)), "]"),
+      seq(
+        "[",
+        trailingCommaSep1(
+          choice($._type, $.capture_set, $.named_type_argument),
+        ),
+        "]",
+      ),
 
     named_type_argument: $ =>
       seq(field("name", $._identifier), "=", field("type", $._type)),

@@ -3002,3 +3002,86 @@ def f4(x: Int, erased inline: Int) = 0
         (identifier)
         (type_identifier)))
     (integer_literal)))
+
+================================================================================
+Uses clause (Scala 3 capture checking)
+================================================================================
+
+class Foo uses Pkg2.this.io:
+  def m: Int = 1
+
+class P(b: Boolean) extends View[A]
+    uses Partition.this.underlying, Partition.this.p:
+  def it: Int = 1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (uses_clause
+      (stable_type_identifier
+        (stable_identifier
+          (identifier)
+          (identifier))
+        (type_identifier)))
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal))))
+  (class_definition
+    (identifier)
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier)))
+    (extends_clause
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier))))
+    (uses_clause
+      (stable_type_identifier
+        (stable_identifier
+          (identifier)
+          (identifier))
+        (type_identifier))
+      (stable_type_identifier
+        (stable_identifier
+          (identifier)
+          (identifier))
+        (type_identifier)))
+    (template_body
+      (function_definition
+        (identifier)
+        (type_identifier)
+        (integer_literal)))))
+
+================================================================================
+A capture checking modifier as a name (Scala 3 capture checking)
+================================================================================
+
+def f(update: U, consume: C) =
+  update match
+    case _ => consume
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (wildcard)
+            (identifier)))))))
