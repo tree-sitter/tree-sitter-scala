@@ -4580,3 +4580,46 @@ def a =
             (case_clause
               (identifier)
               (identifier))))))))
+
+================================================================================
+Inline modifier at the end of its line (Scala 3)
+================================================================================
+
+object O:
+  private[O] inline
+  def isolated[T](inline op: Boolean) = op
+
+  inline (a + b) match
+    case _ => 3
+
+--------------------------------------------------------------------------------
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (modifiers
+          (access_modifier
+            (access_qualifier
+              (identifier)))
+          (inline_modifier))
+        (identifier)
+        (type_parameters
+          (identifier))
+        (parameters
+          (parameter
+            (inline_modifier)
+            (identifier)
+            (type_identifier)))
+        (identifier))
+      (match_expression
+        (inline_modifier)
+        (parenthesized_expression
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (identifier)))
+        (indented_cases
+          (case_clause
+            (wildcard)
+            (integer_literal)))))))
