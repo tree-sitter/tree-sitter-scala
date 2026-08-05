@@ -165,10 +165,12 @@
   "with"
   "given"
   "using"
-  "end"
   "implicit"
   "with"
 ] @keyword
+
+; `end` is scanner-lexed, so the marker node is the only thing to match.
+(end_marker) @keyword
 
 ; `extension` is a soft keyword. Highlight it only where it starts an
 ; extension definition, not when used as a plain identifier.

@@ -206,8 +206,16 @@ const nameChoice = $ =>
     alias("super", $.identifier),
   );
 
-// The scanner-lexed `erased`, keeping the keyword token's node name.
+// The scanner-lexed soft modifiers, each keeping its keyword token's node name.
 const erasedMod = $ => alias($._erased_modifier, $.erased_modifier);
+const openMod = $ => alias($._open_modifier, $.open_modifier);
+const opaqueMod = $ => alias($._opaque_modifier, $.opaque_modifier);
+const infixMod = $ => alias($._infix_modifier, $.infix_modifier);
+const trackedMod = $ => alias($._tracked_modifier, $.tracked_modifier);
+const transparentMod = $ =>
+  alias($._transparent_modifier, $.transparent_modifier);
+const intoMod = $ => alias($._into_modifier, $.into_modifier);
+const inlineMod = $ => alias($._inline_modifier, $.inline_modifier);
 
 // The union operator token as a name (see OP_ID_UNION).
 const opName = $ => alias(OP_ID_UNION, $.operator_identifier);
@@ -292,12 +300,9 @@ module.exports = grammar({
     // The `<` that opens an XML literal. Only valid where the grammar admits
     // a literal, so the operator `<` is untouched everywhere else.
     $._xml_tag_start,
-    // `erased` is a name too (`nme.erased`), so lexing it as a keyword costs a
+    // Each of these is a name as well, so a keyword token would cost a
     // soft-identifier alternative in every name position.
     $._erased_modifier,
-    // Reserved for the rest of the soft modifiers, which cost the same
-    // soft-identifier alternative that `erased` used to. The scanner does not
-    // emit these yet, so the keyword tokens still lex every occurrence.
     $._open_modifier,
     $._opaque_modifier,
     $._infix_modifier,
@@ -375,7 +380,6 @@ module.exports = grammar({
     [$.tuple_type, $.parameter_types],
     // Both spell a braced body, so the reduce after `}` is ambiguous.
     [$._structural_body, $.template_body],
-    [$.inline_modifier, $._soft_identifier],
     // 'extension' • '{' is either an extension definition with a braced body
     // or the soft identifier `extension` (a Scala 2 id) called with a block.
     [$.extension_definition, $._soft_identifier],
@@ -1058,7 +1062,7 @@ module.exports = grammar({
         seq(
           repeat($.annotation),
           optional($.modifiers),
-          optional($.opaque_modifier),
+          optional(opaqueMod($)),
           "type",
           $._type_constructor,
           optional(seq("=", field("type", $._type))),
@@ -1117,8 +1121,6 @@ module.exports = grammar({
           optional($._automatic_semicolon),
         ),
       ),
-
-    opaque_modifier: $ => prec("mod", "opaque"),
 
     /**
      *   Extension         ::=  'extension' [DefTypeParamClause] {UsingParamClause}
@@ -1314,13 +1316,13 @@ module.exports = grammar({
               "lazy",
               "override",
               $.access_modifier,
-              $.inline_modifier,
+              inlineMod($),
               erasedMod($),
-              $.infix_modifier,
-              $.into_modifier,
-              $.open_modifier,
-              $.tracked_modifier,
-              $.transparent_modifier,
+              infixMod($),
+              intoMod($),
+              openMod($),
+              trackedMod($),
+              transparentMod($),
             ),
           ),
         ),
@@ -1332,16 +1334,6 @@ module.exports = grammar({
       ),
 
     access_qualifier: $ => seq("[", $._identifier, "]"),
-
-    // Unlike other soft modifiers `inline` is also valid at expression start,
-    // so a static "mod" win would misparse `inline || x`; fork instead and
-    // prefer the modifier only when both readings complete (`inline if`).
-    inline_modifier: $ => prec.dynamic(1, "inline"),
-    infix_modifier: $ => prec("mod", "infix"),
-    into_modifier: $ => prec("mod", "into"),
-    open_modifier: $ => prec("mod", "open"),
-    tracked_modifier: $ => prec("mod", "tracked"),
-    transparent_modifier: $ => prec("mod", "transparent"),
 
     /**
      * InheritClauses    ::=  ['extends' ConstrApps] ['derives' QualId {',' QualId}]
@@ -1425,10 +1417,10 @@ module.exports = grammar({
         PREC.control,
         seq(
           repeat($.annotation),
-          optional($.inline_modifier),
+          optional(inlineMod($)),
           optional(erasedMod($)),
           // A given conditional clause takes `tracked val`.
-          optional($.tracked_modifier),
+          optional(trackedMod($)),
           optional(choice("val", "var")),
           field("name", $._identifier),
           ":",
@@ -2013,7 +2005,7 @@ module.exports = grammar({
      */
     if_expression: $ =>
       seq(
-        optional($.inline_modifier),
+        optional(inlineMod($)),
         "if",
         choice(
           // No marker slot here. Paren-if marker heads multiply the block
@@ -2082,7 +2074,7 @@ module.exports = grammar({
     match_expression: $ =>
       choice(
         seq(
-          optional($.inline_modifier),
+          optional(inlineMod($)),
           field("value", $.expression),
           "match",
           // A braced case block takes no marker. Real code never writes
@@ -2549,20 +2541,7 @@ module.exports = grammar({
     _super_identifier: $ => "super",
 
     // https://docs.scala-lang.org/scala3/reference/soft-modifier.html
-    _soft_identifier: $ =>
-      prec(
-        "soft_id",
-        choice(
-          "infix",
-          "inline",
-          "opaque",
-          "open",
-          "tracked",
-          "transparent",
-          "end",
-          "extension",
-        ),
-      ),
+    _soft_identifier: $ => prec("soft_id", "extension"),
 
     /**
      * alphaid          ::=  upper idrest

@@ -21,7 +21,7 @@
 
 "}" @indent.end
 
-"end" @indent.end
+(end_marker) @indent.end
 
 [
   ")"

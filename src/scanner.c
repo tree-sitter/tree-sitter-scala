@@ -48,7 +48,14 @@ enum TokenType {
   // share one follow column instead of per-keyword ones.
   CONTROL_TAIL_GATE,
   XML_TAG_START,
-  ERASED_MODIFIER
+  ERASED_MODIFIER,
+  OPEN_MODIFIER,
+  OPAQUE_MODIFIER,
+  INFIX_MODIFIER,
+  TRACKED_MODIFIER,
+  TRANSPARENT_MODIFIER,
+  INLINE_MODIFIER,
+  INTO_MODIFIER
 };
 
 // Mirrors enum TokenType above.
@@ -83,7 +90,14 @@ const char* token_name[] = {
   "END_KEYWORD",
   "CONTROL_TAIL_GATE",
   "XML_TAG_START",
-  "ERASED_MODIFIER"
+  "ERASED_MODIFIER",
+  "OPEN_MODIFIER",
+  "OPAQUE_MODIFIER",
+  "INFIX_MODIFIER",
+  "TRACKED_MODIFIER",
+  "TRANSPARENT_MODIFIER",
+  "INLINE_MODIFIER",
+  "INTO_MODIFIER"
 };
 
 typedef struct {
@@ -415,24 +429,62 @@ static bool word_in(const char *word, const char *const words[],
 }
 
 // Whether a name follows the word just read, which is what makes an `end`
-// tag a marker and an `erased` a modifier. Block comments in between are
+// tag a marker and an `open` a modifier. Block comments in between are
 // transparent, as they are to the parser.
-static bool name_follows_word(TSLexer *lexer) {
+static void skip_blanks_and_block_comments(TSLexer *lexer) {
   for (;;) {
     advance_past_blanks(lexer);
     if (lexer->lookahead != '/') {
-      break;
+      return;
     }
     advance(lexer);
     if (lexer->lookahead != '*') {
-      break;
+      return;
     }
     advance(lexer);
     consume_block_comment_body(lexer);
   }
+}
+
+static bool name_follows_word(TSLexer *lexer) {
+  skip_blanks_and_block_comments(lexer);
   return is_alpha(lexer->lookahead) || lexer->lookahead == '_' ||
          lexer->lookahead == '$' || lexer->lookahead == '`' ||
          lexer->lookahead > 127;
+}
+
+// `inline` also prefixes the scrutinee of `inline 1 match`, and it can end a
+// modifier line whose definition is on the next one.
+static bool inline_modifier_follows(TSLexer *lexer) {
+  if (name_follows_word(lexer)) {
+    return true;
+  }
+  // A scrutinee starts an expression. See canStartExprTokens in the
+  // reference parser.
+  if ((lexer->lookahead >= '0' && lexer->lookahead <= '9') ||
+      lexer->lookahead == '"' || lexer->lookahead == '\'' ||
+      lexer->lookahead == '(' || lexer->lookahead == '{' ||
+      lexer->lookahead == '-') {
+    return true;
+  }
+  if (lexer->lookahead != '\n' && lexer->lookahead != '\r') {
+    return false;
+  }
+  while (is_space(lexer->lookahead)) {
+    advance(lexer);
+  }
+  // Across a line break only a reserved word counts. A soft modifier there
+  // would be a name too, and `val b = inline` followed by such a line is a
+  // value rather than a modifier list.
+  static const char *const definition_starts[] = {
+      "def",     "val",       "var",    "type",     "given",    "class",
+      "object",  "trait",     "enum",   "final",    "lazy",     "override",
+      "private", "protected", "sealed", "abstract", "implicit"};
+  char word[sizeof "transparent"];
+  int len = read_word(lexer, word, (int)sizeof word);
+  return len > 0 &&
+         word_in(word, definition_starts,
+                 sizeof(definition_starts) / sizeof(definition_starts[0]));
 }
 
 // True when `class` or `object` follows `case`, marking a definition not a
@@ -1345,25 +1397,64 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         (lexer->lookahead == 'c' && !valid_symbols[CATCH]) ||
         (lexer->lookahead == 'f' && !valid_symbols[FINALLY])
       );
-  // Character first: it rules out 98% of positions without the array load.
-  bool erased_arm = lexer->lookahead == 'e' && valid_symbols[ERASED_MODIFIER];
-  if (!valid_symbols[ERROR_SENTINEL] && (outdent_arm || erased_arm)) {
+  // These are names too, and an alternative for each in every name position
+  // cost the parse tables about 150KB per word. Lexing them here means the
+  // parser only sees one where a modifier can stand.
+  static const struct {
+    char first;
+    const char *word;
+    TSSymbol symbol;
+  } soft_modifiers[] = {
+    {'e', "erased", ERASED_MODIFIER},
+    {'o', "open", OPEN_MODIFIER},
+    {'o', "opaque", OPAQUE_MODIFIER},
+    {'i', "infix", INFIX_MODIFIER},
+    {'t', "tracked", TRACKED_MODIFIER},
+    {'t', "transparent", TRANSPARENT_MODIFIER},
+    {'i', "inline", INLINE_MODIFIER},
+    {'i', "into", INTO_MODIFIER},
+  };
+  const unsigned soft_modifier_count =
+      sizeof(soft_modifiers) / sizeof(soft_modifiers[0]);
+  // Character first: it rules out most positions without the array load.
+  bool modifier_arm = false;
+  for (unsigned i = 0; i < soft_modifier_count; i++) {
+    if (lexer->lookahead == soft_modifiers[i].first &&
+        valid_symbols[soft_modifiers[i].symbol]) {
+      modifier_arm = true;
+      break;
+    }
+  }
+  if (!valid_symbols[ERROR_SENTINEL] && (outdent_arm || modifier_arm)) {
     if (outdent_arm) {
       // OUTDENT is zero-width at the word, and the lexer cannot rewind once
       // read_word has consumed it.
       lexer->mark_end(lexer);
     }
     // Sized for the longest word above.
-    char word[sizeof "finally"];
+    char word[sizeof "transparent"];
     int len = read_word(lexer, word, (int)sizeof word);
     // read_word returns -1 when the word overflows the buffer, which would
     // otherwise leave a truncated prefix to compare against.
     if (len > 0) {
-      if (erased_arm && strcmp(word, "erased") == 0) {
+      TSSymbol modifier = 0;
+      for (unsigned i = 0; i < soft_modifier_count; i++) {
+        if (valid_symbols[soft_modifiers[i].symbol] &&
+            strcmp(word, soft_modifiers[i].word) == 0) {
+          modifier = soft_modifiers[i].symbol;
+          break;
+        }
+      }
+      if (modifier != 0) {
         // The modifier spans the word, unlike the zero-width OUTDENT.
         lexer->mark_end(lexer);
-        if (name_follows_word(lexer)) {
-          lexer->result_symbol = ERASED_MODIFIER;
+        // A name follows a modifier, so `def open(p)` and `a.infix` keep
+        // reading as plain identifiers.
+        bool follows = modifier == INLINE_MODIFIER
+                           ? inline_modifier_follows(lexer)
+                           : name_follows_word(lexer);
+        if (follows) {
+          lexer->result_symbol = modifier;
           return true;
         }
         return false;
