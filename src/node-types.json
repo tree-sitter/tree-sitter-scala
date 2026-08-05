@@ -4695,11 +4695,6 @@
     }
   },
   {
-    "type": "infix_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "infix_pattern",
     "named": true,
     "fields": {
@@ -5036,11 +5031,6 @@
     }
   },
   {
-    "type": "inline_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "instance_expression",
     "named": true,
     "fields": {
@@ -5195,11 +5185,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "into_modifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "lambda_expression",
@@ -6354,16 +6339,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "opaque_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "open_modifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "operator_identifier",
@@ -7773,11 +7748,6 @@
     }
   },
   {
-    "type": "tracked_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "trait_definition",
     "named": true,
     "fields": {
@@ -7868,11 +7838,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "transparent_modifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "try_expression",
@@ -10304,10 +10269,6 @@
     "named": false
   },
   {
-    "type": "end",
-    "named": false
-  },
-  {
     "type": "enum",
     "named": false
   },
@@ -10372,20 +10333,20 @@
     "named": false
   },
   {
-    "type": "infix",
-    "named": false
+    "type": "infix_modifier",
+    "named": true
   },
   {
-    "type": "inline",
-    "named": false
+    "type": "inline_modifier",
+    "named": true
   },
   {
     "type": "integer_literal",
     "named": true
   },
   {
-    "type": "into",
-    "named": false
+    "type": "into_modifier",
+    "named": true
   },
   {
     "type": "lazy",
@@ -10412,12 +10373,12 @@
     "named": false
   },
   {
-    "type": "opaque",
-    "named": false
+    "type": "opaque_modifier",
+    "named": true
   },
   {
-    "type": "open",
-    "named": false
+    "type": "open_modifier",
+    "named": true
   },
   {
     "type": "override",
@@ -10460,16 +10421,16 @@
     "named": false
   },
   {
-    "type": "tracked",
-    "named": false
+    "type": "tracked_modifier",
+    "named": true
   },
   {
     "type": "trait",
     "named": false
   },
   {
-    "type": "transparent",
-    "named": false
+    "type": "transparent_modifier",
+    "named": true
   },
   {
     "type": "true",
