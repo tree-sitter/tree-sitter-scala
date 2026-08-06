@@ -498,17 +498,31 @@ static bool name_follows_word(TSLexer *lexer) {
          lexer->lookahead > 127;
 }
 
-// No modifier precedes a word that continues an expression, so `update match`
-// stays a plain name. `if` is missing on purpose, since `inline if` is real.
-static bool modifier_word_allowed(TSLexer *lexer) {
+// The words that continue the expression before them instead of starting one.
+// `if` is missing on purpose, since it does start one. A word longer than the
+// buffer reads as -1, so grow the buffer along with the table.
+static bool word_is_expression_tail(TSLexer *lexer) {
   static const char *const expression_tails[] = {
       "match", "catch", "finally", "else", "then",
       "do",    "yield", "while",   "with", "extends"};
   char word[sizeof "finally"];
   int len = read_word(lexer, word, (int)sizeof word);
-  return len <= 0 ||
-         !word_in(word, expression_tails,
-                  sizeof(expression_tails) / sizeof(expression_tails[0]));
+  return len > 0 && word_in(word, expression_tails,
+                            sizeof(expression_tails) /
+                                sizeof(expression_tails[0]));
+}
+
+// No modifier precedes such a word, so `update match` stays a plain name. A
+// definition keyword does follow one (`inline val`), which is why the two
+// readers below keep their own names over the one table.
+static bool modifier_word_allowed(TSLexer *lexer) {
+  return !word_is_expression_tail(lexer);
+}
+
+// The right operand of an operator has to start an expression, so `??? match`
+// on its own line is a statement rather than the tail of the line above.
+static bool operand_word_allowed(TSLexer *lexer) {
+  return !word_is_expression_tail(lexer);
 }
 
 static bool modifier_name_follows(TSLexer *lexer) {
@@ -695,8 +709,8 @@ static bool rest_of_line_is_blank_or_comments(TSLexer *lexer) {
 }
 
 // Whether a real operand follows the operator. Comments and line breaks are
-// transparent, so scalac reads the next real token across them and only a
-// comment-only tail to EOF means there is none.
+// transparent, so scalac reads the next real token across them. A comment-only
+// tail to EOF, a closing delimiter and a list separator are all no operand.
 static bool has_operand(TSLexer *lexer) {
   for (;;) {
     if (lexer->eof(lexer)) {
@@ -707,7 +721,7 @@ static bool has_operand(TSLexer *lexer) {
       continue;
     }
     if (lexer->lookahead != '/') {
-      return true;
+      return !is_close_or_separator(lexer->lookahead);
     }
     advance(lexer);
     if (lexer->lookahead == '/') {
@@ -724,6 +738,12 @@ static bool has_operand(TSLexer *lexer) {
   }
 }
 
+// Blanks and then something that can be the right operand.
+static bool operand_follows(TSLexer *lexer) {
+  return advance_past_blanks(lexer) && has_operand(lexer) &&
+         operand_word_allowed(lexer);
+}
+
 // Returns true if the lookahead starts a leading infix operator — a symbolic
 // operator or back-ticked identifier followed by whitespace and then an
 // operand. Such a line is a continuation of the previous expression, so
@@ -735,7 +755,7 @@ static bool is_leading_infix_continuation(TSLexer *lexer) {
     while (is_op_char(lexer->lookahead)) {
       advance(lexer);
     }
-    return advance_past_blanks(lexer) && has_operand(lexer);
+    return operand_follows(lexer);
   }
   if (lexer->lookahead == '`') {
     advance(lexer);
@@ -746,7 +766,7 @@ static bool is_leading_infix_continuation(TSLexer *lexer) {
       return false;
     }
     advance(lexer);
-    return advance_past_blanks(lexer) && has_operand(lexer);
+    return operand_follows(lexer);
   }
   return false;
 }
@@ -1685,16 +1705,9 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       lexer->result_symbol = postfix_sym;
       return true;
     }
-    // A next real token that closes a delimiter or list also means the
-    // operator was postfix.
-    if (is_close_or_separator(lexer->lookahead)) {
-      lexer->result_symbol = postfix_sym;
-      return true;
-    }
-    // A lone `/`, a `.`, or a `=` next also ends the infix reading, but those
-    // lines read best with the internal tokens, as before.
-    if (lexer->lookahead == '.' || lexer->lookahead == '=' ||
-        lexer->lookahead == '/') {
+    // A `.` or a `=` next also ends the infix reading, but those lines read
+    // best with the internal tokens, as before.
+    if (lexer->lookahead == '.' || lexer->lookahead == '=') {
       return false;
     }
     // No expression starts with `@` either. The next line is an annotated
