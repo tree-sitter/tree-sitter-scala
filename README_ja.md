@@ -1,8 +1,9 @@
 # tree-sitter-scala
 
 <!-- hy-mt2-i18n:start -->
-**English** · [中文](./README_zh-CN.md) · [日本語](./README_ja.md) · [Español](./README_es.md)
+[English](./README.md) | [中文](./README_zh-CN.md) | **日本語** | [Español](./README_es.md)
 <!-- hy-mt2-i18n:end -->
+
 
 [![CI][ci]](https://github.com/tree-sitter/tree-sitter-scala/actions/workflows/ci.yml)
 [![discord][discord]](https://discord.gg/w7nTvsVJhm)
@@ -10,10 +11,10 @@
 [![crates][crates]](https://crates.io/crates/tree-sitter-scala)
 [![npm][npm]](https://www.npmjs.com/package/tree-sitter-scala)
 
-Scala grammar for [tree-sitter](https://github.com/tree-sitter/tree-sitter)
-covering both Scala 2 and 3.
+[tree-sitter](https://github.com/tree-sitter/tree-sitter)向けのScala文法で、
+Scala 2とScala 3の両方に対応しています。
 
-## References
+## 参考資料
 
 _Scala 2_
 
@@ -24,10 +25,9 @@ _Scala 3_
 
 - [Scala 3 Syntax Summary](https://docs.scala-lang.org/scala3/reference/syntax.html)
 
-## Development and Contributing
+## 開発と寄稿について
 
-Please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on
-getting set up.
+環境構築の手順については、[CONTRIBUTING.md](./CONTRIBUTING.md)をご覧ください。
 
 [ci]: https://img.shields.io/github/actions/workflow/status/tree-sitter/tree-sitter-scala/ci.yml?logo=github&label=CI
 [discord]: https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord

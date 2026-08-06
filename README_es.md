@@ -1,8 +1,9 @@
 # tree-sitter-scala
 
 <!-- hy-mt2-i18n:start -->
-**English** · [中文](./README_zh-CN.md) · [日本語](./README_ja.md) · [Español](./README_es.md)
+[English](./README.md) | [中文](./README_zh-CN.md) | [日本語](./README_ja.md) | **Español**
 <!-- hy-mt2-i18n:end -->
+
 
 [![CI][ci]](https://github.com/tree-sitter/tree-sitter-scala/actions/workflows/ci.yml)
 [![discord][discord]](https://discord.gg/w7nTvsVJhm)
@@ -10,24 +11,24 @@
 [![crates][crates]](https://crates.io/crates/tree-sitter-scala)
 [![npm][npm]](https://www.npmjs.com/package/tree-sitter-scala)
 
-Scala grammar for [tree-sitter](https://github.com/tree-sitter/tree-sitter)
-covering both Scala 2 and 3.
+Gramática en Scala para [tree-sitter](https://github.com/tree-sitter/tree-sitter)
+que abarca tanto Scala 2 como Scala 3.
 
-## References
+## Referencias
 
 _Scala 2_
 
-- [The Scala 2 Language Specification](https://www.scala-lang.org/files/archive/spec/2.13/)
-- [Scala 2 Syntax Summary](https://www.scala-lang.org/files/archive/spec/2.13/13-syntax-summary.html)
+- [Especificación del lenguaje Scala 2](https://www.scala-lang.org/files/archive/spec/2.13/)
+- [Resumen de la sintaxis de Scala 2](https://www.scala-lang.org/files/archive/spec/2.13/13-syntax-summary.html)
 
 _Scala 3_
 
-- [Scala 3 Syntax Summary](https://docs.scala-lang.org/scala3/reference/syntax.html)
+- [Resumen de la sintaxis de Scala 3](https://docs.scala-lang.org/scala3/reference/syntax.html)
 
-## Development and Contributing
+## Desarrollo y contribuciones
 
-Please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on
-getting set up.
+Consulte el documento [CONTRIBUTING.md](./CONTRIBUTING.md) para obtener instrucciones
+sobre cómo comenzar.
 
 [ci]: https://img.shields.io/github/actions/workflow/status/tree-sitter/tree-sitter-scala/ci.yml?logo=github&label=CI
 [discord]: https://img.shields.io/discord/1063097320771698699?logo=discord&label=discord
