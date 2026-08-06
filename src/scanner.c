@@ -58,7 +58,17 @@ enum TokenType {
   INTO_MODIFIER,
   UPDATE_MODIFIER,
   CONSUME_MODIFIER,
-  USES
+  USES,
+  OP_LEFT_OR,
+  OP_LEFT_XOR,
+  OP_LEFT_AND,
+  OP_LEFT_EQ,
+  OP_LEFT_REL,
+  OP_LEFT_COLON,
+  OP_LEFT_ADD,
+  OP_LEFT_MUL,
+  OP_LEFT_OTHER,
+  OP_NAME
 };
 
 // Mirrors enum TokenType above.
@@ -103,7 +113,17 @@ const char* token_name[] = {
   "INTO_MODIFIER",
   "UPDATE_MODIFIER",
   "CONSUME_MODIFIER",
-  "USES"
+  "USES",
+  "OP_LEFT_OR",
+  "OP_LEFT_XOR",
+  "OP_LEFT_AND",
+  "OP_LEFT_EQ",
+  "OP_LEFT_REL",
+  "OP_LEFT_COLON",
+  "OP_LEFT_ADD",
+  "OP_LEFT_MUL",
+  "OP_LEFT_OTHER",
+  "OP_NAME"
 };
 
 typedef struct {
@@ -250,6 +270,25 @@ static bool is_op_char(int32_t c) {
       return true;
     default:
       return false;
+  }
+}
+
+// SLS 6.12.3 gives an operator its precedence by its first character. An
+// operator ending in `/` is never right-associative and never an assignment,
+// so the left-associative class is the whole answer. The partition matches
+// OP_TOKEN in grammar.js, whose first-character sets it has to agree with.
+// `/` is absent because is_op_char rejects it, so no caller can pass one.
+static enum TokenType op_left_class(int32_t first) {
+  switch (first) {
+    case '|': return OP_LEFT_OR;
+    case '^': return OP_LEFT_XOR;
+    case '&': return OP_LEFT_AND;
+    case '=': case '!': return OP_LEFT_EQ;
+    case '<': case '>': return OP_LEFT_REL;
+    case ':': return OP_LEFT_COLON;
+    case '+': case '-': return OP_LEFT_ADD;
+    case '*': case '%': return OP_LEFT_MUL;
+    default: return OP_LEFT_OTHER;
   }
 }
 
@@ -1539,9 +1578,13 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   // tokens: since the postfix reading only exists through this branch, the
   // internal tokens admit no statement split after `left op`.
   // COLON_EOL only ever lexes a lone `:`, so that leg needs a colon first.
-  if (((valid_symbols[COLON_EOL] && lexer->lookahead == ':') ||
-       valid_symbols[POSTFIX_OP] || valid_symbols[POSTFIX_STAR]) &&
-      !valid_symbols[ERROR_SENTINEL] && is_op_char(lexer->lookahead)) {
+  // The branch also carries every operator ending in `/`, which the internal
+  // tokens cannot express, so an operator class alone opens it too.
+  if (!valid_symbols[ERROR_SENTINEL] && is_op_char(lexer->lookahead) &&
+      ((valid_symbols[COLON_EOL] && lexer->lookahead == ':') ||
+       valid_symbols[POSTFIX_OP] || valid_symbols[POSTFIX_STAR] ||
+       valid_symbols[op_left_class(lexer->lookahead)] ||
+       valid_symbols[OP_NAME])) {
     // Collect the operator. Only the first 3 chars are kept, since anything
     // longer cannot be one of the reserved sequences checked below. The
     // entry condition already checked the first character.
@@ -1555,13 +1598,48 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       advance(lexer);
     } while (is_op_char(lexer->lookahead));
     lexer->mark_end(lexer);
-    if (op_len == 1 && op[0] == ':') {
+    // A `/` next carries the operator on, so the colon is not a lone one.
+    if (op_len == 1 && op[0] == ':' && lexer->lookahead != '/') {
       // A lone `:` ending its line is the fewer-braces colon (scalac's
       // COLONeol). Deciding it at the token level kills the cross-newline
       // ascription fork that GLR would otherwise keep alive across the region.
       if (valid_symbols[COLON_EOL] &&
           rest_of_line_is_blank_or_comments(lexer)) {
         lexer->result_symbol = COLON_EOL;
+        return true;
+      }
+      return false;
+    }
+    // An operator may end in `/` when that `/` does not open a comment. A
+    // regex cannot see the character after it, so this is the only reading,
+    // and the first character alone fixes the SLS 6.12.3 precedence class.
+    // `#!` opens a script header, whose path is not part of an operator.
+    bool shebang = op_len >= 2 && op[0] == '#' && op[1] == '!';
+    enum TokenType op_class = op_left_class(op[0]);
+    if (lexer->lookahead == '/' && !shebang &&
+        (valid_symbols[op_class] || valid_symbols[OP_NAME])) {
+      // One step per OP_STEP in grammar.js. A `/` is taken only when what
+      // follows it cannot open a comment, so the token never needs to give
+      // characters back and the end is marked once, on the way out.
+      bool ends_in_slash = false;
+      bool at_comment = false;
+      while (!at_comment) {
+        int32_t c = lexer->lookahead;
+        if (c == '/') {
+          advance(lexer);
+          at_comment = lexer->lookahead == '/' || lexer->lookahead == '*';
+        } else if (is_op_char(c)) {
+          advance(lexer);
+        } else {
+          break;
+        }
+        ends_in_slash = !at_comment && c == '/';
+      }
+      // A Unicode opchar would carry the operator past what this reads, so
+      // hand the whole token back to the internal lexer.
+      if (ends_in_slash && lexer->lookahead < 0x80) {
+        lexer->mark_end(lexer);
+        lexer->result_symbol = valid_symbols[op_class] ? op_class : OP_NAME;
         return true;
       }
       return false;

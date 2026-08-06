@@ -43,20 +43,35 @@ const SM_NONASCII =
   "\\u00ac\\u00b1\\u00d7\\u00f7\\u03f6\\u0606-\\u0608\\u2044\\u2052\\u207a-\\u207c\\u208a-\\u208c\\u2118\\u2140-\\u2144\\u214b\\u2190-\\u2194\\u219a-\\u219b\\u21a0\\u21a3\\u21a6\\u21ae\\u21ce-\\u21cf\\u21d2\\u21d4\\u21f4-\\u22ff\\u2320-\\u2321\\u237c\\u239b-\\u23b3\\u23dc-\\u23e1\\u25b7\\u25c1\\u25f8-\\u25ff\\u266f\\u27c0-\\u27c4\\u27c7-\\u27e5\\u27f0-\\u27ff\\u2900-\\u2982\\u2999-\\u29d7\\u29dc-\\u29fb\\u29fe-\\u2aff\\u2b30-\\u2b44\\u2b47-\\u2b4c\\ufb29\\ufe62\\ufe64-\\ufe66\\uff0b\\uff1c-\\uff1e\\uff5c\\uff5e\\uffe2\\uffe9-\\uffec" +
   "\u{10d8e}-\u{10d8f}\u{1cef0}\u{1d6c1}\u{1d6db}\u{1d6fb}\u{1d715}\u{1d735}\u{1d74f}\u{1d76f}\u{1d789}\u{1d7a9}\u{1d7c3}\u{1eef0}-\u{1eef1}\u{1f8d0}-\u{1f8d8}";
 
-// Regex class bodies over SLS 1.1 opchar. OP is the full set. OP_NSS drops
-// `/` and `*`, the characters that cannot follow a leading `/` (comment
-// starts). OP_END_LEFT drops `:` and `=`, the endings that change an
-// operator's precedence class. OP_NO_COLON only drops `:`, for operators
-// starting with `=` whose `=` ending does not demote them to assignment.
+// Regex class bodies over SLS 1.1 opchar. OP is the full set. OP_END_LEFT
+// drops `:` and `=`, the endings that change an operator's precedence class.
+// OP_NO_COLON only drops `:`, for operators starting with `=` whose `=`
+// ending does not demote them to assignment.
 const OP = "\\-!#%&*+/\\\\:<=>?@\\u005e\\u007c~\\p{Sm}\\p{So}";
-const OP_NSS = "\\-!#%&+\\\\:<=>?@\\u005e\\u007c~\\p{Sm}\\p{So}";
 const OP_END_LEFT =
   "\\-!#%&*+/\\\\<>?@\\u005e\\u007c~" + SM_NONASCII + "\\p{So}";
 const OP_NO_COLON = "\\-!#%&*+/\\\\<=>?@\\u005e\\u007c~\\p{Sm}\\p{So}";
-// The NSS and END_LEFT restrictions at once, for the second character of a
-// two-character operator starting with `/`.
-const OP_NSS_END_LEFT =
-  "\\-!#%&+\\\\<>?@\\u005e\\u007c~" + SM_NONASCII + "\\p{So}";
+
+// SLS 1.1: an operator ends where a comment begins, so no `/` in one may be
+// followed by `/` or `*`. Every `/` is bound to the character after it, which
+// also means an operator of two or more characters cannot end in `/`.
+// Each class body holds one `/` and one `*`, so removing the first is enough.
+const noSlash = cls => cls.replace("/", "");
+const noSlashStar = cls => noSlash(cls).replace("*", "");
+// One character of a class, or a `/` bound to a character that cannot open a
+// comment. A tail character out of the same class reads the same way.
+const opStep = cls => `(?:[${noSlash(cls)}]|/[${noSlashStar(cls)}])`;
+const OP_NSS = noSlashStar(OP);
+const OP_NSS_END_LEFT = noSlashStar(OP_END_LEFT);
+const OP_STEP = opStep(OP);
+const OP_RUN = `${OP_STEP}*`;
+// A run before a tail that is neither `/` nor `*` may itself end in `/`.
+const OP_RUN_SLASH = `${OP_RUN}/?`;
+// The same with at least one character, for the `<=`, `>=` and `!=` forms
+// that need something between the first character and the final `=`.
+const OP_RUN1_SLASH = `(?:${OP_STEP}+/?|/)`;
+const OP_TAIL_LEFT = opStep(OP_END_LEFT);
+const OP_TAIL_NO_COLON = opStep(OP_NO_COLON);
 // The restricted single-character set of the old token: technically any \p{Sm}
 // should be allowed, but that includes `=`, and `⇒` must stay lexable as the
 // Scala 2 `=>` (see fatArrow below).
@@ -76,84 +91,98 @@ const opRegex = body => new RegExp(body, "u");
 const OP_TOKEN = {
   assign: token(
     choice(
-      opRegex(`[&:+\\-*%\\u005e\\u007c${OP_OTHER_FIRST}][${OP}]*=`),
-      opRegex(`[<>!][${OP}]+=`),
+      opRegex(`[&:+\\-*%\\u005e\\u007c${OP_OTHER_FIRST}]${OP_RUN_SLASH}=`),
+      opRegex(`[<>!]${OP_RUN1_SLASH}=`),
       opRegex(`/=`),
-      opRegex(`/[${OP_NSS}][${OP}]*=`),
+      opRegex(`/[${OP_NSS}]${OP_RUN_SLASH}=`),
     ),
   ),
   orLeft: token(
-    choice(opRegex("\\u007c"), opRegex(`\\u007c[${OP}]*[${OP_END_LEFT}]`)),
+    choice(opRegex("\\u007c"), opRegex(`\\u007c${OP_RUN}${OP_TAIL_LEFT}`)),
   ),
-  orRight: token(opRegex(`\\u007c[${OP}]*:`)),
+  orRight: token(opRegex(`\\u007c${OP_RUN_SLASH}:`)),
   xorLeft: token(
-    choice(opRegex("\\u005e"), opRegex(`\\u005e[${OP}]*[${OP_END_LEFT}]`)),
+    choice(opRegex("\\u005e"), opRegex(`\\u005e${OP_RUN}${OP_TAIL_LEFT}`)),
   ),
-  xorRight: token(opRegex(`\\u005e[${OP}]*:`)),
-  andLeft: token(choice(opRegex("&"), opRegex(`&[${OP}]*[${OP_END_LEFT}]`))),
-  andRight: token(opRegex(`&[${OP}]*:`)),
+  xorRight: token(opRegex(`\\u005e${OP_RUN_SLASH}:`)),
+  andLeft: token(choice(opRegex("&"), opRegex(`&${OP_RUN}${OP_TAIL_LEFT}`))),
+  andRight: token(opRegex(`&${OP_RUN_SLASH}:`)),
   eqLeft: token(
     choice(
       opRegex("!"),
       // The SLS 6.12.4 assignment exceptions (!=, <=, >=) are spelled as
       // literals for visibility; inside token() they lex like the regexes.
       "!=",
-      opRegex(`![${OP}]*[${OP_END_LEFT}]`),
-      opRegex(`=[${OP}]*[${OP_NO_COLON}]`),
+      opRegex(`!${OP_RUN}${OP_TAIL_LEFT}`),
+      opRegex(`=${OP_RUN}${OP_TAIL_NO_COLON}`),
     ),
   ),
-  eqRight: token(opRegex(`[=!][${OP}]*:`)),
+  eqRight: token(opRegex(`[=!]${OP_RUN_SLASH}:`)),
   relLeft: token(
     choice(
       opRegex("[<>]"),
       "<=",
       ">=",
-      opRegex(`[<>][${OP}]*[${OP_END_LEFT}]`),
+      opRegex(`[<>]${OP_RUN}${OP_TAIL_LEFT}`),
     ),
   ),
-  relRight: token(opRegex(`[<>][${OP}]*:`)),
-  colonLeft: token(opRegex(`:[${OP}]*[${OP_END_LEFT}]`)),
-  colonRight: token(opRegex(`:[${OP}]*:`)),
+  relRight: token(opRegex(`[<>]${OP_RUN_SLASH}:`)),
+  colonLeft: token(opRegex(`:${OP_RUN}${OP_TAIL_LEFT}`)),
+  colonRight: token(opRegex(`:${OP_RUN_SLASH}:`)),
   addLeft: token(
-    choice(opRegex("[+\\-]"), opRegex(`[+\\-][${OP}]*[${OP_END_LEFT}]`)),
+    choice(opRegex("[+\\-]"), opRegex(`[+\\-]${OP_RUN}${OP_TAIL_LEFT}`)),
   ),
-  addRight: token(opRegex(`[+\\-][${OP}]*:`)),
+  addRight: token(opRegex(`[+\\-]${OP_RUN_SLASH}:`)),
   mulLeft: token(
     choice(
       opRegex("[/%]"),
-      opRegex(`[*%][${OP}]*[${OP_END_LEFT}]`),
+      opRegex(`[*%]${OP_RUN}${OP_TAIL_LEFT}`),
       opRegex(`/[${OP_NSS_END_LEFT}]`),
-      opRegex(`/[${OP_NSS}][${OP}]*[${OP_END_LEFT}]`),
+      opRegex(`/[${OP_NSS}]${OP_RUN}${OP_TAIL_LEFT}`),
     ),
   ),
   mulRight: token(
     choice(
-      opRegex(`[*%][${OP}]*:`),
+      opRegex(`[*%]${OP_RUN_SLASH}:`),
       opRegex("/:"),
-      opRegex(`/[${OP_NSS}][${OP}]*:`),
+      opRegex(`/[${OP_NSS}]${OP_RUN_SLASH}:`),
     ),
   ),
   otherLeft: token(
     choice(
       opRegex(`[#?\\\\~${OP_SINGLE_UNICODE}]`),
-      opRegex(`[${OP_OTHER_FIRST}][${OP}]*[${OP_END_LEFT}]`),
+      opRegex(`[${OP_OTHER_FIRST}]${OP_RUN}${OP_TAIL_LEFT}`),
     ),
   ),
-  otherRight: token(opRegex(`[${OP_OTHER_FIRST}][${OP}]*:`)),
+  otherRight: token(opRegex(`[${OP_OTHER_FIRST}]${OP_RUN_SLASH}:`)),
 };
+
+// The left-associative classes are the only ones that can end in `/`, since a
+// `:` or `=` ending rules that out. Each is external as well, so the scanner
+// can claim that one form, and the token above stays the lexer's fallback.
+// The order here is the externals order, which src/scanner.c mirrors.
+const OP_LEFT = [
+  "or",
+  "xor",
+  "and",
+  "eq",
+  "rel",
+  "colon",
+  "add",
+  "mul",
+  "other",
+];
+const opLeft = ($, key) => $[`_op_left_${key}`];
 
 // The pre-split operator identifier as one token, for pure name contexts
 // (definitions, imports, types, patterns). A state that also allows an infix
 // continuation needs the per-class tokens instead, because one lexer state
 // cannot hold both flavors of the same string (see _identifier).
-const OP_NO_SLASH = OP.replace("/", "");
 const OP_ID_UNION = token(
   choice(
     opRegex(`[${OP_SINGLE_UNICODE}\\-!#%&*+/\\\\<>?\\u005e\\u007c~]`),
-    // 2+ characters: no `//` or `/*` comment start, so either the first
-    // character is not `/`, or the second is neither `/` nor `*`.
-    opRegex(`[${OP_NO_SLASH}][${OP}]+`),
-    opRegex(`[${OP}][${OP_NSS}][${OP}]*`),
+    opRegex(`[${noSlash(OP)}]${OP_STEP}+`),
+    opRegex(`/[${OP_NSS}]${OP_RUN}`),
   ),
 );
 
@@ -230,7 +259,7 @@ const updateMod = $ => alias($._update_modifier, $.update_modifier);
 const consumeMod = $ => alias($._consume_modifier, $.consume_modifier);
 
 // The union operator token as a name (see OP_ID_UNION).
-const opName = $ => alias(OP_ID_UNION, $.operator_identifier);
+const opName = $ => alias($._op_name, $.operator_identifier);
 
 // A name or symbolic name with the same narrow-token property.
 const wordOrOpName = $ => choice(wordName($), opName($));
@@ -327,6 +356,12 @@ module.exports = grammar({
     // `uses` continues the parent list onto the next line the way `derives`
     // does, so the scanner has to withhold the separator before it.
     "uses",
+    // The left-associative operator classes (see OP_LEFT) and the union name
+    // token. The scanner only claims an operator ending in `/`, since a regex
+    // cannot see whether that `/` opens a comment, and declines every other
+    // one so the lexer falls back to the grammar definition.
+    ...OP_LEFT.map(key => opLeft($, key)),
+    $._op_name,
   ],
 
   inline: $ => [
@@ -2449,32 +2484,29 @@ module.exports = grammar({
       return choice(
         production(PREC.iname, "left", wordName($)),
         production(PREC.iassign, "left", op(OP_TOKEN.assign)),
-        production(PREC.ior, "left", op(OP_TOKEN.orLeft)),
+        production(PREC.ior, "left", op($._op_left_or)),
         production(PREC.ior, "right", op(OP_TOKEN.orRight)),
-        production(PREC.ixor, "left", op(OP_TOKEN.xorLeft)),
+        production(PREC.ixor, "left", op($._op_left_xor)),
         production(PREC.ixor, "right", op(OP_TOKEN.xorRight)),
-        production(PREC.iand, "left", op(OP_TOKEN.andLeft)),
+        production(PREC.iand, "left", op($._op_left_and)),
         production(PREC.iand, "right", op(OP_TOKEN.andRight)),
-        production(PREC.ieq, "left", op(OP_TOKEN.eqLeft)),
+        production(PREC.ieq, "left", op($._op_left_eq)),
         production(PREC.ieq, "right", op(OP_TOKEN.eqRight)),
-        production(PREC.irel, "left", op(OP_TOKEN.relLeft)),
+        production(PREC.irel, "left", op($._op_left_rel)),
         production(PREC.irel, "right", op(OP_TOKEN.relRight)),
-        production(PREC.icolon, "left", op(OP_TOKEN.colonLeft)),
+        production(PREC.icolon, "left", op($._op_left_colon)),
         production(PREC.icolon, "right", op(OP_TOKEN.colonRight)),
-        production(PREC.iadd, "left", op(OP_TOKEN.addLeft)),
+        production(PREC.iadd, "left", op($._op_left_add)),
         production(PREC.iadd, "right", op(OP_TOKEN.addRight)),
         production(
           PREC.imul,
           "left",
           // A lone `*` lexes as the shared _asterisk token, so mulLeft's
           // single-character alternative omits it (see _asterisk).
-          choice(
-            alias($._asterisk, $.operator_identifier),
-            op(OP_TOKEN.mulLeft),
-          ),
+          choice(alias($._asterisk, $.operator_identifier), op($._op_left_mul)),
         ),
         production(PREC.imul, "right", op(OP_TOKEN.mulRight)),
-        production(PREC.iother, "left", op(OP_TOKEN.otherLeft)),
+        production(PREC.iother, "left", op($._op_left_other)),
         production(PREC.iother, "right", op(OP_TOKEN.otherRight)),
       );
     },
@@ -2621,17 +2653,25 @@ module.exports = grammar({
     // https://docs.scala-lang.org/scala3/reference/soft-modifier.html
     _soft_identifier: $ => prec("soft_id", "extension"),
 
-    /**
-     * alphaid          ::=  upper idrest
-     *                       |  varid
-     * We approximate the above as:
-     * /[A-Za-z\$_][A-Z\$_a-z0-9]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)?/,
-     *
-     * The following is more accurate, but the state count goes over the unsigned short int, and should be comparable.
-     * /([\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)?|[\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F_][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9]*(_[\-!#%&*+/\\:<=>?@\u005e\u007c~]+)?|[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)|[\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F_][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)?/,
-     */
+    // alphaid          ::=  upper idrest
+    //                       |  varid
+    // We approximate the above as:
+    // /[A-Za-z\$_][A-Z\$_a-z0-9]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)?/,
+    //
+    // The following is more accurate, but the state count goes over the unsigned short int, and should be comparable.
+    // /([\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)?|[\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F_][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9]*(_[\-!#%&*+/\\:<=>?@\u005e\u007c~]+)?|[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)|[\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F_][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~]+)?/,
+    //
+    // The `_`-prefixed operator tail follows the same comment rule as an
+    // operator, so `setter_=/*c*/` ends at the `=` (see OP_STEP). A bare `_/`
+    // is carved out for names like `Int_/`, which the scanner cannot rescue
+    // the way it does operators, so `x_//c` still takes the `/` as the name.
     _alpha_identifier: $ =>
-      /[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9\$_\p{Ll}]*(_[\-!#%&*+\/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}]+)?/,
+      token(
+        seq(
+          /[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9\$_\p{Ll}]*/,
+          optional(opRegex(`_(?:${OP_STEP}+|/)`)),
+        ),
+      ),
 
     /**
      * Despite what the lexical syntax suggests, the alphaid rule doesn't apply
@@ -2670,14 +2710,24 @@ module.exports = grammar({
     // delimiter it arrives as the external _postfix_star (see vararg).
     _asterisk: $ => "*",
 
-    /**
-     * The union of the per-precedence operator tokens (see OP_TOKEN at the
-     * top), so every use site outside infix_expression accepts any class and
-     * the partition never changes which strings lex as an operator. The
-     * classes avoid matching // and /* comment starts, but can still
-     * technically match illegal tokens such as val ?// = 1
-     */
-    operator_identifier: $ => choice($._asterisk, ...Object.values(OP_TOKEN)),
+    // The union of the per-precedence operator tokens (see OP_TOKEN at the
+    // top), so every use site outside infix_expression accepts any class and
+    // the partition never changes which strings lex as an operator.
+    operator_identifier: $ =>
+      choice(
+        $._asterisk,
+        ...OP_LEFT.map(key => opLeft($, key)),
+        ...Object.entries(OP_TOKEN)
+          .filter(([key]) => !key.endsWith("Left"))
+          .map(([, tok]) => tok),
+      ),
+
+    // A rule per left-associative class so it can also be external, and the
+    // union name for the same reason (see OP_LEFT).
+    ...Object.fromEntries(
+      OP_LEFT.map(key => [`_op_left_${key}`, () => OP_TOKEN[`${key}Left`]]),
+    ),
+    _op_name: $ => OP_ID_UNION,
 
     // XML literals (SLS §10). The external token $._xml_tag_start decides
     // where markup starts. Comment, CDATA and processing instruction
