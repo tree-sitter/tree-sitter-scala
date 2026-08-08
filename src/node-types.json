@@ -2008,6 +2008,10 @@
           "named": true
         },
         {
+          "type": "erased_modifier",
+          "named": true
+        },
+        {
           "type": "lazy_parameter_type",
           "named": true
         },
@@ -3946,6 +3950,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "erased_modifier",
+          "named": true
+        },
         {
           "type": "lazy_parameter_type",
           "named": true
@@ -7003,6 +7011,10 @@
           "named": true
         },
         {
+          "type": "erased_modifier",
+          "named": true
+        },
+        {
           "type": "generic_type",
           "named": true
         },
@@ -7140,6 +7152,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "erased_modifier",
+          "named": true
+        },
         {
           "type": "lazy_parameter_type",
           "named": true
