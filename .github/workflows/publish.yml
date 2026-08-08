@@ -11,24 +11,16 @@ permissions:
 
 jobs:
   github:
-    uses: tree-sitter/workflows/.github/workflows/release.yml@6a7388cecfbc00765d032b2fca8f8abbe092ae8d
-    with:
-      generate: true
+    uses: tree-sitter/workflows/.github/workflows/release.yml@10c66d66e558b37df92e2a8ec5321218a6547b04
   npm:
-    uses: tree-sitter/workflows/.github/workflows/package-npm.yml@6a7388cecfbc00765d032b2fca8f8abbe092ae8d
+    uses: tree-sitter/workflows/.github/workflows/package-npm.yml@10c66d66e558b37df92e2a8ec5321218a6547b04
     secrets:
       NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-    with:
-      generate: true
   crates:
-    uses: tree-sitter/workflows/.github/workflows/package-crates.yml@6a7388cecfbc00765d032b2fca8f8abbe092ae8d
+    uses: tree-sitter/workflows/.github/workflows/package-crates.yml@10c66d66e558b37df92e2a8ec5321218a6547b04
     secrets:
       CARGO_REGISTRY_TOKEN: ${{secrets.CARGO_REGISTRY_TOKEN}}
-    with:
-      generate: true
   pypi:
-    uses: tree-sitter/workflows/.github/workflows/package-pypi.yml@6a7388cecfbc00765d032b2fca8f8abbe092ae8d
+    uses: tree-sitter/workflows/.github/workflows/package-pypi.yml@10c66d66e558b37df92e2a8ec5321218a6547b04
     secrets:
       PYPI_API_TOKEN: ${{secrets.PYPI_API_TOKEN}}
-    with:
-      generate: true
