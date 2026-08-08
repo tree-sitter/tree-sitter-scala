@@ -1685,6 +1685,10 @@ module.exports = grammar({
     capture_ref: $ =>
       seq(
         choice($._identifier, $.stable_identifier, "cap"),
+        // The reach capability `xs*`, which stands for what the elements of
+        // `xs` capture. It comes before the narrowing suffixes. Right before
+        // the closing brace the star arrives as the external token instead.
+        optional(choice($._asterisk, $._postfix_star)),
         repeat(
           seq(
             ".",

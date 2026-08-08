@@ -547,6 +547,55 @@ def h(x: ->{any} I) = x
     (identifier)))
 
 ================================================================================
+Reach capability in a capture set (Scala 3 capture checking)
+================================================================================
+
+def add(fut: Future[T]^{futs*}) = ???
+
+type F = () ->{c.procs*} Unit
+
+type G = List[() ->{xs*} Unit]
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (capturing_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (type_identifier)))
+          (capture_set
+            (capture_ref
+              (identifier))))))
+    (operator_identifier))
+  (type_definition
+    (type_identifier)
+    (function_type
+      (parameter_types)
+      (capture_set
+        (capture_ref
+          (stable_identifier
+            (identifier)
+            (identifier))))
+      (type_identifier)))
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (function_type
+          (parameter_types)
+          (capture_set
+            (capture_ref
+              (identifier)))
+          (type_identifier))))))
+
+================================================================================
 Compound types
 ================================================================================
 
