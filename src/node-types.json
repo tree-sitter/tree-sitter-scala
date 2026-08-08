@@ -395,6 +395,10 @@
           "named": true
         },
         {
+          "type": "literal_type",
+          "named": true
+        },
+        {
           "type": "named_tuple_type",
           "named": true
         },

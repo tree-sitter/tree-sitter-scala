@@ -5288,8 +5288,17 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "_simple_type"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "_simple_type"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "literal_type"
+              }
+            ]
           },
           {
             "type": "REPEAT1",
@@ -9315,8 +9324,11 @@
                 }
               },
               {
-                "type": "SYMBOL",
-                "name": "annotation"
+                "type": "REPEAT1",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "annotation"
+                }
               }
             ]
           }
