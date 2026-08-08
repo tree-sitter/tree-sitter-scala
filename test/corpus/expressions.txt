@@ -4623,3 +4623,49 @@ object O:
           (case_clause
             (wildcard)
             (integer_literal)))))))
+
+================================================================================
+A leading operator does not continue the line before a word that cannot start
+an expression
+================================================================================
+
+class C {
+  val a = 1
+  ??? match {
+    case _ => 2
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (integer_literal))
+      (match_expression
+        (operator_identifier)
+        (case_block
+          (case_clause
+            (wildcard)
+            (integer_literal)))))))
+
+================================================================================
+A leading operator does not continue the line before a closing brace
+================================================================================
+
+class C {
+  null
+  ???
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (null_literal)
+      (operator_identifier))))
