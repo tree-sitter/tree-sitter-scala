@@ -14246,6 +14246,14 @@
     {
       "type": "SYMBOL",
       "name": "_using_directive_start"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_case_definition_keyword"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_def_semicolon"
     }
   ],
   "inline": [
