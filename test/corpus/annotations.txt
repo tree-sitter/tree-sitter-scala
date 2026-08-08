@@ -108,3 +108,31 @@ case class B2(s: String) extends Base @Second(3, "e") @Third(4)
         (annotation
           (type_identifier)
           (arguments (integer_literal)))))))
+
+================================================================================
+Ascription with several annotations
+================================================================================
+
+object A:
+  val a = (1: @unchecked @switch)
+  val b = c: @nowarn @unchecked
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (parenthesized_expression
+          (ascription_expression
+            (integer_literal)
+            (annotation (type_identifier))
+            (annotation (type_identifier)))))
+      (val_definition
+        (identifier)
+        (ascription_expression
+          (identifier)
+          (annotation (type_identifier))
+          (annotation (type_identifier)))))))

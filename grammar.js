@@ -2452,7 +2452,8 @@ module.exports = grammar({
                 repeat1(ascriptionArrowTail($)),
               ),
             ),
-            $.annotation,
+            // SLS 6.13: `Ascription ::= ':' Annotation {Annotation}`.
+            repeat1($.annotation),
           ),
         ),
       ),
