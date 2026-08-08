@@ -3514,6 +3514,67 @@ def transformType =
           (identifier))))))
 
 ================================================================================
+Comma-separated imports in an indented body
+================================================================================
+
+final class A:
+  import B.*, C.*
+  def f = 1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (modifiers)
+    (identifier)
+    (template_body
+      (import_declaration
+        (identifier)
+        (namespace_wildcard)
+        (identifier)
+        (namespace_wildcard))
+      (function_definition
+        (identifier)
+        (integer_literal)))))
+
+================================================================================
+Indented argument block closed by the comma before the next argument
+================================================================================
+
+def f(xs: List[Int]) =
+  assert(
+    if xs.isEmpty then
+      true
+    else
+      false, "fail")
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (indented_block
+      (call_expression
+        (identifier)
+        (arguments
+          (if_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (indented_block
+              (boolean_literal))
+            (indented_block
+              (boolean_literal)))
+          (string))))))
+
+================================================================================
 Backquoted then on a leading infix continuation line
 ================================================================================
 
