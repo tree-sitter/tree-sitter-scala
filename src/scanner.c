@@ -68,7 +68,8 @@ enum TokenType {
   OP_LEFT_ADD,
   OP_LEFT_MUL,
   OP_LEFT_OTHER,
-  OP_NAME
+  OP_NAME,
+  USING_DIRECTIVE_START
 };
 
 // Mirrors enum TokenType above.
@@ -123,7 +124,8 @@ const char* token_name[] = {
   "OP_LEFT_ADD",
   "OP_LEFT_MUL",
   "OP_LEFT_OTHER",
-  "OP_NAME"
+  "OP_NAME",
+  "USING_DIRECTIVE_START"
 };
 
 typedef struct {
@@ -974,6 +976,21 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     }
   }
   #endif
+
+  // The `>` of a using directive. It is immediate after the `//`, so this has
+  // to run before the blanks are skipped below.
+  if (valid_symbols[USING_DIRECTIVE_START] && !valid_symbols[ERROR_SENTINEL] &&
+      lexer->lookahead == '>') {
+    advance(lexer);
+    lexer->mark_end(lexer);
+    advance_past_blanks(lexer);
+    if (!scan_word(lexer, "using")) {
+      return false;
+    }
+    lexer->result_symbol = USING_DIRECTIVE_START;
+    LOG("    USING_DIRECTIVE_START\n");
+    return true;
+  }
 
   Scanner *scanner = (Scanner *)payload;
   int16_t prev = scanner->indents.size > 0 ? *array_back(&scanner->indents) : -1;

@@ -1,6 +1,5 @@
 const PREC = {
   comment: 1,
-  using_directive: 2,
   control: 1,
   stable_type_id: 2,
   type: 2,
@@ -362,6 +361,10 @@ module.exports = grammar({
     // one so the lexer falls back to the grammar definition.
     ...OP_LEFT.map(key => opLeft($, key)),
     $._op_name,
+    // The `>` of `//>`. A regex would have to swallow the `using` after it to
+    // see it, and highlighting needs that keyword as a token of its own, so
+    // the scanner looks ahead instead and declines the `>` of a plain comment.
+    $._using_directive_start,
   ],
 
   inline: $ => [
@@ -3238,7 +3241,7 @@ module.exports = grammar({
 
     using_directive: $ =>
       seq(
-        token.immediate(prec(PREC.using_directive, ">")),
+        alias($._using_directive_start, ">"),
         token("using"),
         $.using_directive_key,
         $.using_directive_value,

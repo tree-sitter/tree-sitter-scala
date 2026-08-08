@@ -14134,6 +14134,10 @@
     {
       "type": "SYMBOL",
       "name": "_op_name"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_using_directive_start"
     }
   ],
   "inline": [
