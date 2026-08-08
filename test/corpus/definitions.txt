@@ -3004,6 +3004,47 @@ def f4(x: Int, erased inline: Int) = 0
     (integer_literal)))
 
 ================================================================================
+Erased parameter with no name (Scala 3)
+================================================================================
+
+def f(g: (erased Int) => Int) = 1
+
+type T = (erased C[E]) ?=> R
+
+def h(using erased Int) = 0
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (function_type
+          (parameter_types
+            (erased_modifier)
+            (type_identifier))
+          (type_identifier))))
+    (integer_literal))
+  (type_definition
+    (type_identifier)
+    (function_type
+      (parameter_types
+        (erased_modifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier))))
+      (type_identifier)))
+  (function_definition
+    (identifier)
+    (parameters
+      (erased_modifier)
+      (type_identifier))
+    (integer_literal)))
+
+================================================================================
 Uses clause (Scala 3 capture checking)
 ================================================================================
 
