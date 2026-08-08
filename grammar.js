@@ -365,6 +365,16 @@ module.exports = grammar({
     // see it, and highlighting needs that keyword as a token of its own, so
     // the scanner looks ahead instead and declines the `>` of a plain comment.
     $._using_directive_start,
+    // The `case` that opens a `case class` or a `case object`. Inside a case
+    // clause body the plain word is already the start of the next clause, and
+    // only the word after it tells the two apart, which the scanner can see
+    // and the parser cannot.
+    $._case_definition_keyword,
+    // A line break Scala disables inside a def header, before a parameter
+    // clause or before the return type. It arrives as its own token so the
+    // parser can tell it from the break that ends the declaration, which it
+    // cannot see past.
+    $._def_semicolon,
   ],
 
   inline: $ => [
