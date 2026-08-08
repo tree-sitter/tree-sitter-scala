@@ -420,50 +420,6 @@ static bool consume_block_comment_body_on_line(TSLexer *lexer) {
   return consume_block_comment_body_ex(lexer, true);
 }
 
-// Whether the rest of the line closes a bracket that was already open. Such a
-// comma separates the arguments of a call, so it also ends any block that one
-// of them opened. A comma with more code after it and no closer continues the
-// statement it is in instead (`import a.b, c.d`, `extends A, B`, `case A, B`).
-static bool line_closes_bracket(TSLexer *lexer) {
-  int16_t depth = 0;
-  for (;;) {
-    if (lexer->eof(lexer) || lexer->lookahead == '\n' ||
-        lexer->lookahead == '\r') {
-      return false;
-    }
-    switch (lexer->lookahead) {
-      case '(':
-      case '[':
-      case '{':
-        depth++;
-        break;
-      case ')':
-      case ']':
-      case '}':
-        if (depth == 0) {
-          return true;
-        }
-        depth--;
-        break;
-      case '/':
-        advance(lexer);
-        if (lexer->lookahead == '/') {
-          return false;
-        }
-        if (lexer->lookahead == '*') {
-          advance(lexer);
-          if (!consume_block_comment_body_on_line(lexer)) {
-            return false;
-          }
-        }
-        continue;  // a lone '/' is code
-      default:
-        break;
-    }
-    advance(lexer);
-  }
-}
-
 static bool finish_block_comment(TSLexer *lexer) {
   lexer->mark_end(lexer);
   lexer->result_symbol = BLOCK_COMMENT;
@@ -1055,10 +1011,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
 
   // COMMA_OUTDENT is a distinct token so tree-sitter only makes it valid
   // where comma termination is expected (colon_argument,
-  // _indentable_expression). A comma terminates the indented block when it
-  // ends its line, a trailing comment included, or when the rest of the line
-  // closes a bracket that was already open. Otherwise it is internal to the
-  // statement and leaves the block alone.
+  // _indentable_expression).
   if (valid_symbols[COMMA_OUTDENT] && lexer->lookahead == ',' && prev != -1) {
     lexer->mark_end(lexer);
     // Error recovery makes every symbol valid, so keep the eager pop there.
@@ -1086,7 +1039,10 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         advance(lexer);
         consume_block_comment_body(lexer);
       }
-      if (!ends_line && !line_closes_bracket(lexer)) {
+      // A comma that ends its line closes the block. So does one whose line
+      // goes on to close an enclosing bracket, since that comma separates
+      // arguments. `import a.b, c.d` and `extends A, B` reach no such closer.
+      if (!ends_line && !scan_rest_of_line(lexer).closes_bracket) {
         return false;
       }
     }

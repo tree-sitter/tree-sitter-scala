@@ -3575,6 +3575,60 @@ def f(xs: List[Int]) =
           (string))))))
 
 ================================================================================
+A comment opener inside the next argument is not a comment
+================================================================================
+
+f(
+  if p then
+    1
+  else
+    2, g("http://x"))
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    (identifier)
+    (arguments
+      (if_expression
+        (identifier)
+        (indented_block
+          (integer_literal))
+        (indented_block
+          (integer_literal)))
+      (call_expression
+        (identifier)
+        (arguments
+          (string))))))
+
+================================================================================
+Brackets of the next argument do not count as the closer
+================================================================================
+
+f(
+  if p then
+    1
+  else
+    2, g('('))
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    (identifier)
+    (arguments
+      (if_expression
+        (identifier)
+        (indented_block
+          (integer_literal))
+        (indented_block
+          (integer_literal)))
+      (call_expression
+        (identifier)
+        (arguments
+          (character_literal))))))
+
+================================================================================
 Backquoted then on a leading infix continuation line
 ================================================================================
 
