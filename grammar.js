@@ -1589,7 +1589,12 @@ module.exports = grammar({
 
     _annotated_type: $ => prec.right(choice($.annotated_type, $._simple_type)),
 
-    annotated_type: $ => prec.right(seq($._simple_type, repeat1($.annotation))),
+    // A literal type carries annotations too (`val x: "abc" @deprecated`), and
+    // it is not one of the simple types.
+    annotated_type: $ =>
+      prec.right(
+        seq(choice($._simple_type, $.literal_type), repeat1($.annotation)),
+      ),
 
     _simple_type: $ =>
       choice(

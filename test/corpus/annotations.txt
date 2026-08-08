@@ -136,3 +136,33 @@ object A:
           (identifier)
           (annotation (type_identifier))
           (annotation (type_identifier)))))))
+
+================================================================================
+Annotated literal type
+================================================================================
+
+object A:
+  val a: "abc" @deprecated = "abc"
+  val b: List[7 @Ann] = ???
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (annotated_type
+          (literal_type (string))
+          (annotation (type_identifier)))
+        (string))
+      (val_definition
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (annotated_type
+              (literal_type (integer_literal))
+              (annotation (type_identifier)))))
+        (operator_identifier)))))
