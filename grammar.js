@@ -1,6 +1,5 @@
 const PREC = {
   comment: 1,
-  using_directive: 2,
   control: 1,
   stable_type_id: 2,
   type: 2,
@@ -3242,7 +3241,7 @@ module.exports = grammar({
 
     using_directive: $ =>
       seq(
-        token.immediate(prec(PREC.using_directive, ">")),
+        alias($._using_directive_start, ">"),
         token("using"),
         $.using_directive_key,
         $.using_directive_value,
