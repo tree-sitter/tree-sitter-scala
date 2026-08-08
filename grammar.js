@@ -1416,7 +1416,9 @@ module.exports = grammar({
               "using",
               choice(
                 trailingCommaSep1($.class_parameter),
-                trailingCommaSep1($._param_type),
+                // `erased` sits once after `using`. The named parameters carry
+                // their own, so only the unnamed types take it here.
+                seq(optional(erasedMod($)), trailingCommaSep1($._param_type)),
               ),
             ),
             seq(optional("implicit"), trailingCommaSep($.class_parameter)),
@@ -1449,7 +1451,7 @@ module.exports = grammar({
         "using",
         choice(
           trailingCommaSep1($.parameter),
-          trailingCommaSep1($._param_type),
+          seq(optional(erasedMod($)), trailingCommaSep1($._param_type)),
         ),
         ")",
       ),
@@ -1826,7 +1828,18 @@ module.exports = grammar({
         $._annotated_type,
         $.capturing_type,
         // Prioritize a parenthesized param list over a single tuple_type.
-        prec.dynamic(1, seq("(", trailingCommaSep($._param_type), ")")),
+        // The reference parser reads `erased` once, right after the paren, and
+        // it applies to a parameter that has no name. Keeping it out of the
+        // comma repeat leaves the tuple reading of the same parens alone.
+        prec.dynamic(
+          1,
+          seq(
+            "(",
+            optional(erasedMod($)),
+            trailingCommaSep($._param_type),
+            ")",
+          ),
+        ),
         $.compound_type,
         $.infix_type,
       ),
