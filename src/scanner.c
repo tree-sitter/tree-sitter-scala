@@ -69,7 +69,9 @@ enum TokenType {
   OP_LEFT_MUL,
   OP_LEFT_OTHER,
   OP_NAME,
-  USING_DIRECTIVE_START
+  USING_DIRECTIVE_START,
+  CASE_DEFINITION_KEYWORD,
+  DEF_SEMICOLON
 };
 
 // Mirrors enum TokenType above.
@@ -125,7 +127,9 @@ const char* token_name[] = {
   "OP_LEFT_MUL",
   "OP_LEFT_OTHER",
   "OP_NAME",
-  "USING_DIRECTIVE_START"
+  "USING_DIRECTIVE_START",
+  "CASE_DEFINITION_KEYWORD",
+  "DEF_SEMICOLON"
 };
 
 typedef struct {
@@ -1039,10 +1043,11 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         advance(lexer);
         consume_block_comment_body(lexer);
       }
-      // A comma that ends its line closes the block. So does one whose line
-      // goes on to close an enclosing bracket, since that comma separates
-      // arguments. `import a.b, c.d` and `extends A, B` reach no such closer.
-      if (!ends_line && !scan_rest_of_line(lexer).closes_bracket) {
+      // POSTFIX_OP is offered only where an operand just ended, so the comma
+      // separates arguments rather than continuing a list of names. The closer
+      // catches what is left, where no operand ended before the comma.
+      if (!ends_line && !valid_symbols[POSTFIX_OP] &&
+          !scan_rest_of_line(lexer).closes_bracket) {
         return false;
       }
     }
@@ -1304,6 +1309,18 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     return false;
   }
 
+  // Runs before the plain semicolon below, so the header break wins where the
+  // parser offers it.
+  if (valid_symbols[DEF_SEMICOLON] && !valid_symbols[ERROR_SENTINEL] &&
+      newline_count > 0 &&
+      (lexer->lookahead == '(' || lexer->lookahead == '[' ||
+       lexer->lookahead == ':')) {
+    lexer->mark_end(lexer);
+    lexer->result_symbol = DEF_SEMICOLON;
+    LOG("    DEF_SEMICOLON\n");
+    return true;
+  }
+
   if (valid_symbols[AUTOMATIC_SEMICOLON] && newline_count > 0) {
     // AUTOMATIC_SEMICOLON should not be issued in the middle of expressions
     // Thus, we exit this branch when encountering comments, else/catch clauses, etc.
@@ -1531,7 +1548,12 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       break;
     }
   }
-  if (!valid_symbols[ERROR_SENTINEL] && (outdent_arm || modifier_arm)) {
+  // The reader below cannot rewind, so `case` compares there rather than
+  // scanning on its own and eating the start of another word.
+  bool case_definition_arm =
+      valid_symbols[CASE_DEFINITION_KEYWORD] && lexer->lookahead == 'c';
+  if (!valid_symbols[ERROR_SENTINEL] &&
+      (outdent_arm || modifier_arm || case_definition_arm)) {
     if (outdent_arm) {
       // OUTDENT is zero-width at the word, and the lexer cannot rewind once
       // read_word has consumed it.
@@ -1543,6 +1565,15 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // read_word returns -1 when the word overflows the buffer, which would
     // otherwise leave a truncated prefix to compare against.
     if (len > 0) {
+      if (case_definition_arm && strcmp(word, "case") == 0) {
+        lexer->mark_end(lexer);
+        if (is_case_definition_word(lexer)) {
+          lexer->result_symbol = CASE_DEFINITION_KEYWORD;
+          LOG("    CASE_DEFINITION_KEYWORD\n");
+          return true;
+        }
+        return false;
+      }
       TSSymbol modifier = 0;
       for (unsigned i = 0; i < soft_modifier_count; i++) {
         if (valid_symbols[soft_modifiers[i].symbol] &&

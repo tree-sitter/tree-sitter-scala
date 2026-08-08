@@ -211,6 +211,11 @@ const XML_NAME = /[_\p{L}][-.:_\p{L}\p{Nd}]*/;
 // such a colon must handle it.
 const colonEol = $ => choice(":", alias($._colon_eol, ":"));
 
+// Inside a case clause body the parser cannot tell this `case` from the one
+// that opens the next clause. The scanner reads past the word and can.
+const caseKeyword = $ =>
+  choice("case", alias($._case_definition_keyword, "case"));
+
 const ascriptionArrowTail = $ =>
   seq(anyArrow(), field("return_type", $._param_type));
 
@@ -669,7 +674,15 @@ module.exports = grammar({
             $._outdent,
           ),
         ),
-        seq("{", optional($.self_type), optional($._enum_block), "}"),
+        // Unlike _definition_body this needs no dynamic weight, since the
+        // enum body is not optional and so ties with nothing.
+        seq(
+          optional($._automatic_semicolon),
+          "{",
+          optional($.self_type),
+          optional($._enum_block),
+          "}",
+        ),
       ),
 
     enum_case_definitions: $ =>
@@ -804,7 +817,7 @@ module.exports = grammar({
       seq(
         repeat($.annotation),
         optional($.modifiers),
-        optional("case"),
+        optional(caseKeyword($)),
         "object",
         $._object_definition,
       ),
@@ -826,7 +839,7 @@ module.exports = grammar({
       seq(
         repeat($.annotation),
         optional($.modifiers),
-        optional("case"),
+        optional(caseKeyword($)),
         "class",
         $._class_definition,
       ),
@@ -1163,7 +1176,6 @@ module.exports = grammar({
           optional($.modifiers),
           "def",
           $._function_constructor,
-          optional(seq(":", field("return_type", $._type))),
         ),
       ),
 
@@ -1176,12 +1188,17 @@ module.exports = grammar({
             "parameters",
             repeat(
               seq(
-                optional($._automatic_semicolon),
+                optional($._def_semicolon),
                 choice($.parameters, $.type_parameters),
               ),
             ),
           ),
-          optional($._automatic_semicolon),
+          // The return type lives here rather than in _function_declaration so
+          // that no reduction separates it from the clauses. Across a reduce
+          // the parser cannot see which of the two a break precedes.
+          optional(
+            seq(optional($._def_semicolon), ":", field("return_type", $._type)),
+          ),
         ),
       ),
 
@@ -2595,7 +2612,9 @@ module.exports = grammar({
         ")",
       ),
 
-    parenthesized_expression: $ => seq("(", $.expression, ")"),
+    // The reference compiler drops the trailing comma, so the parens keep
+    // holding the value rather than turning into a tuple.
+    parenthesized_expression: $ => seq("(", $.expression, optional(","), ")"),
 
     // NamedTypeArg ::= id '=' Type. Scala 3 takes named type arguments the
     // way it takes named term arguments.
@@ -3108,10 +3127,13 @@ module.exports = grammar({
 
     unit: $ => prec(PREC.unit, seq("(", ")")),
 
+    // Not _indentable_expression like throw below. The value is optional, and
+    // an empty indent stack counts any width as deeper, so a bare `return`
+    // would swallow the next definition.
     return_expression: $ =>
       prec.left(seq("return", optional(statementExpression($)))),
 
-    throw_expression: $ => prec.left(seq("throw", $.expression)),
+    throw_expression: $ => prec.left(seq("throw", $._indentable_expression)),
 
     /*
      *   Expr1             ::=  'while' '(' Expr ')' {nl} Expr
@@ -3130,7 +3152,9 @@ module.exports = grammar({
               // The do-form branch makes the scanner emit a semicolon
               // here.
               optional($._automatic_semicolon),
-              field("body", $.expression),
+              // Matches the paren form of `if`, which already wraps an
+              // indented body in an indented_block.
+              field("body", $._indentable_expression),
             ),
           ),
           seq(
@@ -3161,7 +3185,9 @@ module.exports = grammar({
           "do",
           field("body", $.expression),
           "while",
-          field("condition", $.parenthesized_expression),
+          // Scala 2 wants parens here. Taking any expression, the way the
+          // migration mode does, would collide with `while cond do body`.
+          field("condition", choice($.parenthesized_expression, $.block)),
         ),
       ),
 
