@@ -1890,9 +1890,12 @@ module.exports = grammar({
         $.xml_pattern,
       ),
 
+    // The type arguments are the ones an extractor takes explicitly
+    // (`case Foo[Int](x)`), which SLS 8.1.8 admits before the patterns.
     case_class_pattern: $ =>
       seq(
         field("type", choice($._type_identifier, $.stable_type_identifier)),
+        optional(field("type_arguments", $.type_arguments)),
         "(",
         choice(
           field("pattern", trailingCommaSep($._pattern)),
