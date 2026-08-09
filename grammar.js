@@ -380,6 +380,9 @@ module.exports = grammar({
     // parser can tell it from the break that ends the declaration, which it
     // cannot see past.
     $._def_semicolon,
+    // The `?` of a bounded wildcard. Only the bound tells it from the plain
+    // one, and the parser cannot see that far.
+    $._wildcard_bound_start,
   ],
 
   inline: $ => [
