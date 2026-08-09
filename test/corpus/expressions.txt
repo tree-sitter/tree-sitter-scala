@@ -330,6 +330,129 @@ foo(o =>
             body: (identifier)))))))
 
 ================================================================================
+Trailing comma after the only element in parens
+================================================================================
+
+val g = (
+  23,
+  )
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (parenthesized_expression
+      (integer_literal))))
+
+================================================================================
+Thrown value as an indented block
+================================================================================
+
+def foo =
+  throw
+    val ex = E()
+    ex
+  x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (throw_expression
+        (indented_block
+          (val_definition
+            (identifier)
+            (call_expression
+              (identifier)
+              (arguments)))
+          (identifier)))
+      (identifier))))
+
+================================================================================
+Comma closing an indented argument when the paren closes on a later line
+================================================================================
+
+def raise =
+  assert(
+    throw
+      null, "ok"
+  )
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (identifier)
+        (arguments
+          (throw_expression
+            (indented_block
+              (null_literal)))
+          (string))))))
+
+================================================================================
+Case class definition opening a case clause body
+================================================================================
+
+object T {
+  1 match {
+    case 1 =>
+      case class C()
+      case object D
+      Nil
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (match_expression
+        (integer_literal)
+        (case_block
+          (case_clause
+            (integer_literal)
+            (class_definition
+              (identifier)
+              (class_parameters))
+            (object_definition
+              (identifier))
+            (identifier)))))))
+
+================================================================================
+Do while with a braced condition (Scala 2)
+================================================================================
+
+class T {
+  do {
+    val x = 1
+  } while {
+    true
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (do_while_expression
+        (block
+          (val_definition
+            (identifier)
+            (integer_literal)))
+        (block
+          (boolean_literal))))))
+
+================================================================================
 Leading infix operator at lower indent continues the expression across dedent
 ================================================================================
 
@@ -4510,9 +4633,37 @@ def g() = {
       (while_expression
         (parenthesized_expression
           (identifier))
-        (call_expression
-          (identifier)
-          (arguments))))))
+        (indented_block
+          (call_expression
+            (identifier)
+            (arguments)))))))
+
+================================================================================
+Parenthesized while with an indented body of several statements
+================================================================================
+
+def f =
+  while (false)
+    val x = 1
+    println(x)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (while_expression
+        (parenthesized_expression
+          (boolean_literal))
+        (indented_block
+          (val_definition
+            (identifier)
+            (integer_literal))
+          (call_expression
+            (identifier)
+            (arguments
+              (identifier))))))))
 
 ================================================================================
 Curried typed lambda in braces (Scala 3 syntax)

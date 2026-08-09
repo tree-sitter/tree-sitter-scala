@@ -2616,6 +2616,49 @@ enum SymbolKind derives CanEqual:
           (identifier))))))
 
 ================================================================================
+Enum body opening on the next line
+================================================================================
+
+enum Bomb
+{
+  case Kaboom
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (enum_definition
+    (identifier)
+    (enum_body
+      (enum_case_definitions
+        (simple_enum_case
+          (identifier))))))
+
+================================================================================
+Declarations with no result type, one after another (Scala 2)
+================================================================================
+
+trait Message {
+  def first(x: Int)
+  def second
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (template_body
+      (function_declaration
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier))))
+      (function_declaration
+        (identifier)))))
+
+================================================================================
 Unicode arrow in for comprehension generators
 ================================================================================
 
