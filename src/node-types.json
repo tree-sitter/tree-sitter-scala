@@ -2533,6 +2533,10 @@
         "required": true,
         "types": [
           {
+            "type": "block",
+            "named": true
+          },
+          {
             "type": "parenthesized_expression",
             "named": true
           }
@@ -8082,7 +8086,19 @@
       "required": true,
       "types": [
         {
+          "type": "do_while_expression",
+          "named": true
+        },
+        {
           "type": "expression",
+          "named": true
+        },
+        {
+          "type": "indented_block",
+          "named": true
+        },
+        {
+          "type": "indented_cases",
           "named": true
         }
       ]

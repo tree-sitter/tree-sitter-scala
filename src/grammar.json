@@ -388,6 +388,18 @@
           "type": "SEQ",
           "members": [
             {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_automatic_semicolon"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
               "type": "STRING",
               "value": "{"
             },
@@ -1119,8 +1131,22 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "STRING",
-              "value": "case"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "case"
+                },
+                {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_case_definition_keyword"
+                  },
+                  "named": false,
+                  "value": "case"
+                }
+              ]
             },
             {
               "type": "BLANK"
@@ -1254,8 +1280,22 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "STRING",
-              "value": "case"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "case"
+                },
+                {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_case_definition_keyword"
+                  },
+                  "named": false,
+                  "value": "case"
+                }
+              ]
             },
             {
               "type": "BLANK"
@@ -3206,31 +3246,6 @@
           {
             "type": "SYMBOL",
             "name": "_function_constructor"
-          },
-          {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SEQ",
-                "members": [
-                  {
-                    "type": "STRING",
-                    "value": ":"
-                  },
-                  {
-                    "type": "FIELD",
-                    "name": "return_type",
-                    "content": {
-                      "type": "SYMBOL",
-                      "name": "_type"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
           }
         ]
       }
@@ -3262,7 +3277,7 @@
                     "members": [
                       {
                         "type": "SYMBOL",
-                        "name": "_automatic_semicolon"
+                        "name": "_def_semicolon"
                       },
                       {
                         "type": "BLANK"
@@ -3290,8 +3305,33 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "SYMBOL",
-                "name": "_automatic_semicolon"
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "_def_semicolon"
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "STRING",
+                    "value": ":"
+                  },
+                  {
+                    "type": "FIELD",
+                    "name": "return_type",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "_type"
+                    }
+                  }
+                ]
               },
               {
                 "type": "BLANK"
@@ -10488,6 +10528,18 @@
           "name": "expression"
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": ","
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "STRING",
           "value": ")"
         }
@@ -13045,7 +13097,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "expression"
+            "name": "_indentable_expression"
           }
         ]
       }
@@ -13091,7 +13143,7 @@
                   "name": "body",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "expression"
+                    "name": "_indentable_expression"
                   }
                 }
               ]
@@ -13193,8 +13245,17 @@
             "type": "FIELD",
             "name": "condition",
             "content": {
-              "type": "SYMBOL",
-              "name": "parenthesized_expression"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "parenthesized_expression"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "block"
+                }
+              ]
             }
           }
         ]
