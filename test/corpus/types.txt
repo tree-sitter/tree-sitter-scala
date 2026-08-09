@@ -1081,6 +1081,62 @@ class A[
         (type_identifier)))))
 
 ================================================================================
+Wildcard bounded by a type lambda (Scala 3)
+================================================================================
+
+type W = Map[?, ? <: [X, Y] =>> Map[X, Y], ?]
+type V = Map[? >: [X] =>> List[X]]
+type U = Map[? <: List[Int]]
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_lambda
+            (identifier)
+            (identifier)
+            (generic_type
+              (type_identifier)
+              (type_arguments
+                (type_identifier)
+                (type_identifier)))))
+        (type_identifier))))
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (type_lambda
+            (identifier)
+            (generic_type
+              (type_identifier)
+              (type_arguments
+                (type_identifier))))))))
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (infix_type
+          (type_identifier)
+          (operator_identifier)
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (type_identifier))))))))
+
+================================================================================
 Union and Intersection Types (Scala 3)
 ================================================================================
 

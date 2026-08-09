@@ -514,6 +514,8 @@ module.exports = grammar({
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition_paren, $._simple_expression],
     [$.block, $._braced_template_body1],
+    // type_parameters  '=>'  '{'  '}'  •  '['  …
+    [$.block, $.capture_set],
     // '{'  identifier  •  ':' starts the braced typed lambda, the block
     // lambda param, and a statement alike.
     [$._simple_expression, $._braced_typed_lambda],
@@ -1611,6 +1613,17 @@ module.exports = grammar({
         $._structural_type,
         $.type_lambda,
         $.existential_type,
+        alias($._wildcard_bounded_type, $.infix_type),
+      ),
+
+    // SimpleType ::= '?' TypeBounds. The scanner hands over the `?` only where
+    // a type lambda bounds it, so the lambda stays out of every other operand
+    // position, where it would cost the whole type sublanguage a second copy.
+    _wildcard_bounded_type: $ =>
+      seq(
+        field("left", alias($._wildcard_bound_start, $.type_identifier)),
+        field("operator", wordOrOpName($)),
+        field("right", $.type_lambda),
       ),
 
     // Scala 2 existential type (SLS §3.2.12): `P[T] forSome { type T }`
@@ -2079,19 +2092,28 @@ module.exports = grammar({
         1,
         prec.right(
           "lambda",
-          seq(
-            optional(
-              seq(field("type_parameters", $.type_parameters), fatArrow()),
+          choice(
+            seq(
+              optional(
+                seq(field("type_parameters", $.type_parameters), fatArrow()),
+              ),
+              field(
+                "parameters",
+                // No unparenthesized typed parameter here. It is only legal
+                // inside braces, and `OWrites: c => body` must stay a colon
+                // argument.
+                choice($.bindings, $.wildcard, $._single_lambda_param),
+              ),
+              anyArrow(),
+              $._indentable_expression,
             ),
-            field(
-              "parameters",
-              // No unparenthesized typed parameter here. It is only legal
-              // inside braces, and `OWrites: c => body` must stay a colon
-              // argument.
-              choice($.bindings, $.wildcard, $._single_lambda_param),
+            // Neither of these can open a binding list, so the branch above
+            // stays reachable without lookahead.
+            seq(
+              field("type_parameters", $.type_parameters),
+              fatArrow(),
+              choice($.parenthesized_expression, $.block),
             ),
-            anyArrow(),
-            $._indentable_expression,
           ),
         ),
       ),

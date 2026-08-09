@@ -4935,3 +4935,75 @@ class C {
     (template_body
       (null_literal)
       (operator_identifier))))
+
+================================================================================
+Polymorphic function with a parenthesized or braced body
+================================================================================
+
+object O {
+  val a: [T] => T => T = [T] => ((x: T) => x)
+  val b: [T] => T => T = [T] => { (x: T) => x }
+  val c: [T] => T => T = [T] => (x: T) => x
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (function_type
+          (type_parameters
+            (identifier))
+          (function_type
+            (parameter_types
+              (type_identifier))
+            (type_identifier)))
+        (lambda_expression
+          (type_parameters
+            (identifier))
+          (parenthesized_expression
+            (lambda_expression
+              (bindings
+                (binding
+                  (identifier)
+                  (type_identifier)))
+              (identifier)))))
+      (val_definition
+        (identifier)
+        (function_type
+          (type_parameters
+            (identifier))
+          (function_type
+            (parameter_types
+              (type_identifier))
+            (type_identifier)))
+        (lambda_expression
+          (type_parameters
+            (identifier))
+          (block
+            (lambda_expression
+              (bindings
+                (binding
+                  (identifier)
+                  (type_identifier)))
+              (identifier)))))
+      (val_definition
+        (identifier)
+        (function_type
+          (type_parameters
+            (identifier))
+          (function_type
+            (parameter_types
+              (type_identifier))
+            (type_identifier)))
+        (lambda_expression
+          (type_parameters
+            (identifier))
+          (bindings
+            (binding
+              (identifier)
+              (type_identifier)))
+          (identifier))))))

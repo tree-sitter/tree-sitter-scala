@@ -71,7 +71,8 @@ enum TokenType {
   OP_NAME,
   USING_DIRECTIVE_START,
   CASE_DEFINITION_KEYWORD,
-  DEF_SEMICOLON
+  DEF_SEMICOLON,
+  WILDCARD_BOUND_START
 };
 
 // Mirrors enum TokenType above.
@@ -129,7 +130,8 @@ const char* token_name[] = {
   "OP_NAME",
   "USING_DIRECTIVE_START",
   "CASE_DEFINITION_KEYWORD",
-  "DEF_SEMICOLON"
+  "DEF_SEMICOLON",
+  "WILDCARD_BOUND_START"
 };
 
 typedef struct {
@@ -993,6 +995,36 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     }
     lexer->result_symbol = USING_DIRECTIVE_START;
     LOG("    USING_DIRECTIVE_START\n");
+    return true;
+  }
+
+  // The grammar takes this `?` only in front of a type lambda, so the bracket
+  // has to be here before the word is handed over. The blanks are skipped
+  // rather than advanced, which keeps them out of the token.
+  if (valid_symbols[WILDCARD_BOUND_START] && !valid_symbols[ERROR_SENTINEL]) {
+    while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+      skip(lexer);
+    }
+  }
+  if (valid_symbols[WILDCARD_BOUND_START] && !valid_symbols[ERROR_SENTINEL] &&
+      lexer->lookahead == '?') {
+    advance(lexer);
+    lexer->mark_end(lexer);
+    advance_past_blanks(lexer);
+    if (lexer->lookahead != '<' && lexer->lookahead != '>') {
+      return false;
+    }
+    advance(lexer);
+    if (lexer->lookahead != ':') {
+      return false;
+    }
+    advance(lexer);
+    advance_past_blanks(lexer);
+    if (lexer->lookahead != '[') {
+      return false;
+    }
+    lexer->result_symbol = WILDCARD_BOUND_START;
+    LOG("    WILDCARD_BOUND_START\n");
     return true;
   }
 
