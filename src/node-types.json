@@ -5266,6 +5266,10 @@
             "named": true
           },
           {
+            "type": "type_lambda",
+            "named": true
+          },
+          {
             "type": "wildcard",
             "named": true
           }
@@ -5435,7 +5439,7 @@
     "fields": {
       "parameters": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": ":",
@@ -10968,6 +10972,10 @@
   {
     "type": "type",
     "named": false
+  },
+  {
+    "type": "type_identifier",
+    "named": true
   },
   {
     "type": "update_modifier",
