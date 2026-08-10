@@ -14315,6 +14315,10 @@
     {
       "type": "SYMBOL",
       "name": "_def_semicolon"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_wildcard_bound_start"
     }
   ],
   "inline": [
