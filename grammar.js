@@ -514,6 +514,10 @@ module.exports = grammar({
     // 'if'  parenthesized_expression  •  '{'  …
     [$._if_condition_paren, $._simple_expression],
     [$.block, $._braced_template_body1],
+    // 'class'  identifier  '@'  _type_identifier  •  '('  …
+    [$._constructor_annotation],
+    [$._constructor_annotation_arguments, $.arguments],
+    [$._constructor_annotation, $.applied_constructor_type],
     // type_parameters  '=>'  '{'  '}'  •  '['  …
     [$.block, $.capture_set],
     // '{'  identifier  •  ':' starts the braced typed lambda, the block
@@ -874,7 +878,7 @@ module.exports = grammar({
       seq(
         field("name", $._identifier),
         field("type_parameters", optional($.type_parameters)),
-        optional(alias($._constructor_annotation, $.annotation)),
+        repeat(alias($._constructor_annotation, $.annotation)),
         optional($.access_modifier),
         field(
           "class_parameters",
@@ -1073,28 +1077,34 @@ module.exports = grammar({
         ),
       ),
 
-    // Only allows 0 or 1 argument lists as these annotations
-    // usually come from Java, where multiple argument lists are not allowed
     _constructor_annotation: $ =>
-      prec(
-        "annotation",
-        seq(
-          "@",
-          field("name", $._simple_type),
-          optional(
-            alias(
-              seq(
-                // token.immediate here carries an assumption that there are no spaces between
-                // an annotation name and its argument list, otherwise this list should be
-                // classified as a class constructor list
-                token.immediate("("),
-                optional($._exprs_in_parens),
-                ")",
-              ),
-              $.arguments,
-            ),
+      seq(
+        "@",
+        // Not _simple_type. The applied constructor type would take the
+        // parenthesis into the name, and the class parameters already compete
+        // for it.
+        field(
+          "name",
+          choice(
+            $.generic_type,
+            $.projected_type,
+            $.stable_type_identifier,
+            $._type_identifier,
           ),
         ),
+        field(
+          "arguments",
+          repeat(alias($._constructor_annotation_arguments, $.arguments)),
+        ),
+      ),
+
+    // The same parenthesis may open the class parameters. An empty list is an
+    // argument list, and anything the parameters can hold is theirs, which is
+    // how the reference parser reads it.
+    _constructor_annotation_arguments: $ =>
+      choice(
+        prec.dynamic(1, seq("(", ")")),
+        prec.dynamic(-1, seq("(", $._exprs_in_parens, ")")),
       ),
 
     val_definition: $ =>

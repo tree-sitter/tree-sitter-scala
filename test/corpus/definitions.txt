@@ -189,6 +189,53 @@ val val = ???
 --------------------------------------------------------------------------------
 
 ================================================================================
+Constructor annotation before the class parameters
+================================================================================
+
+class Baz @deprecated(implicit c: C)
+class Bam @ann(obj)(obj, "h")(n: String)
+class Bar @publicInBinary(@publicInBinary private[Bar] val x: Int)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (annotation
+      (type_identifier))
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier))))
+  (class_definition
+    (identifier)
+    (annotation
+      (type_identifier)
+      (arguments
+        (identifier))
+      (arguments
+        (identifier)
+        (string)))
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier))))
+  (class_definition
+    (identifier)
+    (annotation
+      (type_identifier))
+    (class_parameters
+      (class_parameter
+        (annotation
+          (type_identifier))
+        (modifiers
+          (access_modifier
+            (access_qualifier
+              (identifier))))
+        (identifier)
+        (type_identifier)))))
+
+================================================================================
 Package
 ================================================================================
 
@@ -821,7 +868,6 @@ class A @ann ()(x: Int, y: Int)
     (identifier)
     (annotation
       (type_identifier)
-      (arguments)
       (arguments))
     (class_parameters
       (class_parameter
@@ -834,7 +880,6 @@ class A @ann ()(x: Int, y: Int)
     (identifier)
     (annotation
       (type_identifier)
-      (arguments)
       (arguments))
     (class_parameters
       (class_parameter
@@ -846,8 +891,8 @@ class A @ann ()(x: Int, y: Int)
   (class_definition
     (identifier)
     (annotation
-      (type_identifier))
-    (class_parameters)
+      (type_identifier)
+      (arguments))
     (class_parameters
       (class_parameter
         (identifier)
@@ -897,10 +942,8 @@ class A @ann(1) (x: Int, y: Int)
     (identifier)
     (annotation
       (type_identifier)
-      (arguments)
       (arguments
-        (integer_literal))
-      (arguments))
+        (integer_literal)))
     (class_parameters
       (class_parameter
         (identifier)
