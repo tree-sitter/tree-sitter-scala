@@ -5007,3 +5007,56 @@ object O {
               (identifier)
               (type_identifier)))
           (identifier))))))
+
+================================================================================
+Implicit lambda parameters (Scala 2)
+================================================================================
+
+object O {
+  val a = { implicit (x: Int) => x + x }
+  val b = implicit (x: Int, y: Int) => x + y
+  val c = { implicit x: Int => x + x }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (block
+          (lambda_expression
+            (bindings
+              (binding
+                (identifier)
+                (type_identifier)))
+            (infix_expression
+              (identifier)
+              (operator_identifier)
+              (identifier)))))
+      (val_definition
+        (identifier)
+        (lambda_expression
+          (bindings
+            (binding
+              (identifier)
+              (type_identifier))
+            (binding
+              (identifier)
+              (type_identifier)))
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (identifier))))
+      (val_definition
+        (identifier)
+        (block
+          (lambda_expression
+            (identifier)
+            (type_identifier)
+            (infix_expression
+              (identifier)
+              (operator_identifier)
+              (identifier))))))))

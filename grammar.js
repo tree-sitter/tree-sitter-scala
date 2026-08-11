@@ -2092,8 +2092,11 @@ module.exports = grammar({
     method_value: $ =>
       prec.left(PREC.call, seq($._simple_expression, $.wildcard)),
 
+    // The parenthesized list rides along so that `implicit` is read in the
+    // state that already expects it. Scala 2 spelled a context function this
+    // way, and the reference parser still reads it.
     _single_lambda_param: $ =>
-      prec.right(seq(optional("implicit"), operandName($))),
+      prec.right(seq(optional("implicit"), choice(operandName($), $.bindings))),
 
     // Keeps a braced `{ x: T => ... }` a lambda instead of a fewer-braces colon
     // argument on `x`.
@@ -2112,7 +2115,7 @@ module.exports = grammar({
                 // No unparenthesized typed parameter here. It is only legal
                 // inside braces, and `OWrites: c => body` must stay a colon
                 // argument.
-                choice($.bindings, $.wildcard, $._single_lambda_param),
+                choice($.wildcard, $._single_lambda_param),
               ),
               anyArrow(),
               $._indentable_expression,
@@ -2141,10 +2144,7 @@ module.exports = grammar({
         "lambda",
         choice(
           seq(
-            field(
-              "parameters",
-              choice($.bindings, $.wildcard, $._single_lambda_param),
-            ),
+            field("parameters", choice($.wildcard, $._single_lambda_param)),
             anyArrow(),
             optional(
               choice(
@@ -2166,10 +2166,7 @@ module.exports = grammar({
       prec.right(
         "lambda",
         seq(
-          field(
-            "parameters",
-            choice($.bindings, $.wildcard, $._single_lambda_param),
-          ),
+          field("parameters", choice($.wildcard, $._single_lambda_param)),
           anyArrow(),
           optional($._block),
         ),
