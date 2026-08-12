@@ -7600,55 +7600,64 @@
                 "type": "CHOICE",
                 "members": [
                   {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "SYMBOL",
-                      "name": "_alpha_identifier"
-                    },
-                    "named": true,
-                    "value": "identifier"
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "_alpha_identifier"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "_backquoted_id"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "_soft_identifier"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "this"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "super"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      }
+                    ]
                   },
                   {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "SYMBOL",
-                      "name": "_backquoted_id"
-                    },
-                    "named": true,
-                    "value": "identifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "SYMBOL",
-                      "name": "_soft_identifier"
-                    },
-                    "named": true,
-                    "value": "identifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "this"
-                    },
-                    "named": true,
-                    "value": "identifier"
-                  },
-                  {
-                    "type": "ALIAS",
-                    "content": {
-                      "type": "STRING",
-                      "value": "super"
-                    },
-                    "named": true,
-                    "value": "identifier"
+                    "type": "SYMBOL",
+                    "name": "operator_identifier"
                   }
                 ]
               },
               {
                 "type": "SYMBOL",
-                "name": "operator_identifier"
+                "name": "bindings"
               }
             ]
           }
@@ -7712,10 +7721,6 @@
                   "content": {
                     "type": "CHOICE",
                     "members": [
-                      {
-                        "type": "SYMBOL",
-                        "name": "bindings"
-                      },
                       {
                         "type": "SYMBOL",
                         "name": "wildcard"
@@ -7825,10 +7830,6 @@
                   "members": [
                     {
                       "type": "SYMBOL",
-                      "name": "bindings"
-                    },
-                    {
-                      "type": "SYMBOL",
                       "name": "wildcard"
                     },
                     {
@@ -7912,10 +7913,6 @@
             "content": {
               "type": "CHOICE",
               "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "bindings"
-                },
                 {
                   "type": "SYMBOL",
                   "name": "wildcard"
