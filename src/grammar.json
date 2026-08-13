@@ -2242,7 +2242,7 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "_block"
+                  "name": "_braced_template_body1"
                 },
                 {
                   "type": "BLANK"
@@ -3838,6 +3838,31 @@
                     }
                   ]
                 }
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SEQ",
+                    "members": [
+                      {
+                        "type": "STRING",
+                        "value": "with"
+                      },
+                      {
+                        "type": "FIELD",
+                        "name": "body",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "with_template_body"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
               }
             ]
           }
