@@ -1619,3 +1619,72 @@ def f[K](k: K): K ->> V = ???
       (operator_identifier)
       (type_identifier))
     (operator_identifier)))
+
+================================================================================
+An infix type whose operator is a lone asterisk
+================================================================================
+
+val t: (2 * 7 + 1) % 10 = 5
+
+def f(a: Int, b: Int)(using ev: (a.type * b.type) =:= (b.type * a.type)) = true
+
+def g(x: Int*) = x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (infix_type
+      (tuple_type
+        (infix_type
+          (infix_type
+            (literal_type
+              (integer_literal))
+            (operator_identifier)
+            (literal_type
+              (integer_literal)))
+          (operator_identifier)
+          (literal_type
+            (integer_literal))))
+      (operator_identifier)
+      (literal_type
+        (integer_literal)))
+    (integer_literal))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (parameters
+      (parameter
+        (identifier)
+        (infix_type
+          (tuple_type
+            (infix_type
+              (singleton_type
+                (identifier))
+              (operator_identifier)
+              (singleton_type
+                (identifier))))
+          (operator_identifier)
+          (tuple_type
+            (infix_type
+              (singleton_type
+                (identifier))
+              (operator_identifier)
+              (singleton_type
+                (identifier)))))))
+    (boolean_literal))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (repeated_parameter_type
+          (type_identifier))))
+    (identifier)))

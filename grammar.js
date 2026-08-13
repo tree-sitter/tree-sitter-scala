@@ -1783,7 +1783,13 @@ module.exports = grammar({
         seq(
           // SimpleType1 admits a bare Refinement: `A & { type X = Int }`.
           field("left", choice($._infix_type_choice, $._structural_type)),
-          field("operator", wordOrOpName($)),
+          // A repeated parameter makes the shared `*` token valid after a type,
+          // and it then wins over the operator regex, so the infix reading has
+          // to admit it too (see _asterisk).
+          field(
+            "operator",
+            choice(wordOrOpName($), alias($._asterisk, $.operator_identifier)),
+          ),
           field("right", choice($._infix_type_choice, $._structural_type)),
         ),
       ),
