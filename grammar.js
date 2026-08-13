@@ -2679,8 +2679,14 @@ module.exports = grammar({
     // One rule for the plain and vararg-tailed forms. Sharing the repeat means
     // no conflict is needed between continuing the list and starting a vararg,
     // which in turn lets the list inline away its unit reduction.
+    // The binder is here for an extractor inside a quoted pattern, whose
+    // arguments are patterns. Nothing tells the parser it is in one, so the
+    // binder is admitted in every argument list.
     _argument_list: $ =>
-      seq(sep1(",", choice($.expression, $.vararg)), optional(",")),
+      seq(
+        sep1(",", choice($.expression, $.vararg, $.capture_pattern)),
+        optional(","),
+      ),
 
     vararg: $ =>
       choice(
@@ -2702,10 +2708,16 @@ module.exports = grammar({
     // The opening is a single two-character token so that a bare `$` used as
     // an ordinary identifier (e.g. `$(selector)`) still lexes as an
     // identifier. A `$ident` splice already lexes as one identifier anyway.
+    // ExprSplice ::= '$' '{' Pattern '}' inside a quoted pattern. Only the
+    // binder is listed, since the block reads every other pattern shape, and
+    // an extractor head here would take the type flavor of its identifier.
     splice_expression: $ =>
       prec.left(
         PREC.macro,
-        choice(seq("${", $._block, "}"), seq("$[", $._type, "]")),
+        choice(
+          seq("${", choice($._block, $.capture_pattern), "}"),
+          seq("$[", $._type, "]"),
+        ),
       ),
 
     quote_expression: $ =>

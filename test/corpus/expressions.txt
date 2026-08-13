@@ -5060,3 +5060,73 @@ object O {
               (identifier)
               (operator_identifier)
               (identifier))))))))
+
+================================================================================
+A binder in a splice pattern (Scala 3)
+================================================================================
+
+def impl(expr: Expr[Any])(using Quotes) = expr match
+  case '{ foo(${bound@MyMatcher(x)}) } => '{($bound, $x)}
+  case '{ foo(${MyMatcher(y@MyMatcher2())}) } => y
+  case '{ foo(${y@'{bar($_)}}) } => y
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (parameters
+      (type_identifier))
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (quote_expression
+            (call_expression
+              (identifier)
+              (arguments
+                (splice_expression
+                  (capture_pattern
+                    (identifier)
+                    (case_class_pattern
+                      (type_identifier)
+                      (identifier)))))))
+          (quote_expression
+            (tuple_expression
+              (identifier)
+              (identifier))))
+        (case_clause
+          (quote_expression
+            (call_expression
+              (identifier)
+              (arguments
+                (splice_expression
+                  (call_expression
+                    (identifier)
+                    (arguments
+                      (capture_pattern
+                        (identifier)
+                        (case_class_pattern
+                          (type_identifier)))))))))
+          (identifier))
+        (case_clause
+          (quote_expression
+            (call_expression
+              (identifier)
+              (arguments
+                (splice_expression
+                  (capture_pattern
+                    (identifier)
+                    (quote_expression
+                      (call_expression
+                        (identifier)
+                        (arguments
+                          (identifier)))))))))
+          (identifier))))))
