@@ -1014,7 +1014,7 @@ module.exports = grammar({
           PREC.control,
           seq($._indent, optional($.self_type), $._block, $._outdent),
         ),
-        seq("{", optional($._block), "}"),
+        seq("{", optional($._braced_template_body1), "}"),
       ),
 
     _extension_template_body: $ =>
@@ -1331,9 +1331,9 @@ module.exports = grammar({
             choice(colonEol($), "with"),
             field("body", $.with_template_body),
           ),
-          // Several constructors and no body. The separator is `with` or a
-          // comma. A refinement is a constructor everywhere else, but a brace
-          // here is always the body, so the extras leave it out.
+          // Several constructors. The separator is `with` or a comma. A
+          // refinement is a constructor everywhere else, but a brace here is
+          // always the body, so the extras leave it out.
           seq(
             $._constructor_application,
             repeat1(
@@ -1342,6 +1342,7 @@ module.exports = grammar({
                 field("extra", $._constructor_application_extra),
               ),
             ),
+            optional(seq("with", field("body", $.with_template_body))),
           ),
         ),
       ),
