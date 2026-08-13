@@ -1918,6 +1918,111 @@ object A:
         body: (identifier)))))
 
 ================================================================================
+Self type in a braced given body
+================================================================================
+
+given a: Show[Int] with { self =>
+  def show(x: Int) = ""
+}
+
+given b[T]: Show[T] with { self: Show[T] =>
+  def show(x: T) = ""
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (given_definition
+    (identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (with_template_body
+      (self_type
+        (identifier))
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (string))))
+  (given_definition
+    (identifier)
+    (type_parameters
+      (identifier))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (with_template_body
+      (self_type
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier))))
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (string)))))
+
+================================================================================
+Given body after several constructors
+================================================================================
+
+given g: Show[Int] with Read[Int] with {
+  def show(x: Int) = ""
+}
+
+given h: Show[Int] with Read[Int] with
+  def show(x: Int) = ""
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (given_definition
+    (identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (with_template_body
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (string))))
+  (given_definition
+    (identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (with_template_body
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (string)))))
+
+================================================================================
 Class with using type-only parameters (Scala 3 syntax)
 ================================================================================
 
