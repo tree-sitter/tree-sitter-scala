@@ -6011,28 +6011,42 @@
               "type": "CHOICE",
               "members": [
                 {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "SYMBOL",
-                        "name": "_alpha_identifier"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "ALIAS",
+                      "content": {
+                        "type": "CHOICE",
+                        "members": [
+                          {
+                            "type": "SYMBOL",
+                            "name": "_alpha_identifier"
+                          },
+                          {
+                            "type": "SYMBOL",
+                            "name": "_backquoted_id"
+                          }
+                        ]
                       },
-                      {
+                      "named": true,
+                      "value": "identifier"
+                    },
+                    {
+                      "type": "ALIAS",
+                      "content": {
                         "type": "SYMBOL",
-                        "name": "_backquoted_id"
-                      }
-                    ]
-                  },
-                  "named": true,
-                  "value": "identifier"
+                        "name": "_op_name"
+                      },
+                      "named": true,
+                      "value": "operator_identifier"
+                    }
+                  ]
                 },
                 {
                   "type": "ALIAS",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "_op_name"
+                    "name": "_asterisk"
                   },
                   "named": true,
                   "value": "operator_identifier"
@@ -10878,6 +10892,10 @@
                 {
                   "type": "SYMBOL",
                   "name": "vararg"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "capture_pattern"
                 }
               ]
             },
@@ -10900,6 +10918,10 @@
                       {
                         "type": "SYMBOL",
                         "name": "vararg"
+                      },
+                      {
+                        "type": "SYMBOL",
+                        "name": "capture_pattern"
                       }
                     ]
                   }
@@ -11036,8 +11058,17 @@
                 "value": "${"
               },
               {
-                "type": "SYMBOL",
-                "name": "_block"
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_block"
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "capture_pattern"
+                  }
+                ]
               },
               {
                 "type": "STRING",
