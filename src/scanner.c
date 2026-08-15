@@ -752,6 +752,42 @@ static bool operand_follows(TSLexer *lexer) {
          operand_word_allowed(lexer);
 }
 
+// Reads the run of opchars at the lookahead into `op`. Only the first 3 are
+// kept, since a longer run is never a symbolic keyword. Returns the full
+// length and advances the lexer past the run.
+static int read_op_chars(TSLexer *lexer, char op[4]) {
+  int len = 0;
+  while (is_op_char(lexer->lookahead)) {
+    if (len < 3) {
+      op[len] = (char)lexer->lookahead;
+    }
+    len++;
+    advance(lexer);
+  }
+  op[len < 3 ? len : 3] = '\0';
+  return len;
+}
+
+// The keywords made of opchars, `<%` aside, which is Scala 2 only. Each lexes
+// as its own token and never as an identifier, so the leading infix test,
+// which asks for an identifier, always rejects one.
+// See: https://docs.scala-lang.org/scala3/reference/syntax.html#regular-keywords
+static bool is_symbolic_keyword(const char *op, int len) {
+  switch (len) {
+    case 1:
+      return op[0] == '=' || op[0] == ':' || op[0] == '#' || op[0] == '@';
+    case 2:
+      return (op[0] == '=' && op[1] == '>') ||
+             (op[0] == '<' && (op[1] == '-' || op[1] == ':' || op[1] == '%')) ||
+             (op[0] == '>' && op[1] == ':');
+    case 3:
+      return (op[0] == '?' && op[1] == '=' && op[2] == '>') ||
+             (op[0] == '=' && op[1] == '>' && op[2] == '>');
+    default:
+      return false;
+  }
+}
+
 // Returns true if the lookahead starts a leading infix operator — a symbolic
 // operator or back-ticked identifier followed by whitespace and then an
 // operand. Such a line is a continuation of the previous expression, so
@@ -759,9 +795,10 @@ static bool operand_follows(TSLexer *lexer) {
 // the lexer; the caller must not rely on position.
 static bool is_leading_infix_continuation(TSLexer *lexer) {
   if (is_op_char(lexer->lookahead)) {
-    advance(lexer);
-    while (is_op_char(lexer->lookahead)) {
-      advance(lexer);
+    char op[4] = {0};
+    int len = read_op_chars(lexer, op);
+    if (is_symbolic_keyword(op, len)) {
+      return false;
     }
     return operand_follows(lexer);
   }
@@ -1436,7 +1473,20 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // Checked before the keyword scans so neither reads a position the
     // other advanced past (`m|| x` after a failed `match` scan). A blank
     // line still separates the statements.
-    if (is_op_char(lexer->lookahead) || lexer->lookahead == '`') {
+    if (is_op_char(lexer->lookahead)) {
+      char op[4] = {0};
+      int len = read_op_chars(lexer, op);
+      // No statement break before a symbolic keyword, which cannot start a
+      // statement. `@` is the one that can, since it opens an annotation.
+      if (is_symbolic_keyword(op, len)) {
+        return len == 1 && op[0] == '@';
+      }
+      if (newline_count == 1 && operand_follows(lexer)) {
+        return false;
+      }
+      return true;
+    }
+    if (lexer->lookahead == '`') {
       if (newline_count == 1 && is_leading_infix_continuation(lexer)) {
         return false;
       }
