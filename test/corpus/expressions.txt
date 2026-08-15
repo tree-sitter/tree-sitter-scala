@@ -5130,3 +5130,91 @@ def impl(expr: Expr[Any])(using Quotes) = expr match
                         (arguments
                           (identifier)))))))))
           (identifier))))))
+
+================================================================================
+A colon argument opened by a colon on its own line (Scala 3)
+================================================================================
+
+def main =
+  foo
+  : () =>
+    val x = 42
+    43
+  foo
+  :
+    () =>
+      val x = 42
+      43
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (call_expression
+        (identifier)
+        (colon_argument
+          (bindings)
+          (indented_block
+            (val_definition
+              (identifier)
+              (integer_literal))
+            (integer_literal))))
+      (call_expression
+        (identifier)
+        (colon_argument
+          (indented_block
+            (lambda_expression
+              (bindings)
+              (indented_block
+                (val_definition
+                  (identifier)
+                  (integer_literal))
+                (integer_literal)))))))))
+
+================================================================================
+A case arrow after a colon argument in a guard (Scala 3)
+================================================================================
+
+def f(x: Any) =
+  x match
+  case s: String if g:
+    s.length > 4
+  => s
+  case x => x.toString
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (indented_block
+      (match_expression
+        (identifier)
+        (indented_cases
+          (case_clause
+            (typed_pattern
+              (identifier)
+              (type_identifier))
+            (guard
+              (call_expression
+                (identifier)
+                (colon_argument
+                  (indented_block
+                    (infix_expression
+                      (field_expression
+                        (identifier)
+                        (identifier))
+                      (operator_identifier)
+                      (integer_literal))))))
+            (identifier))
+          (case_clause
+            (identifier)
+            (field_expression
+              (identifier)
+              (identifier))))))))
