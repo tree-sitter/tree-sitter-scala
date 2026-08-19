@@ -5218,3 +5218,57 @@ def f(x: Any) =
             (field_expression
               (identifier)
               (identifier))))))))
+
+================================================================================
+A leading operator does not continue the line before a symbolic keyword
+================================================================================
+
+def f =
+  val x: Any = null
+  ??? : T[x.type]
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (identifier)
+        (type_identifier)
+        (null_literal))
+      (ascription_expression
+        (operator_identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (singleton_type
+              (identifier))))))))
+
+================================================================================
+A back-quoted name does not continue the line before a symbolic keyword
+================================================================================
+
+def f =
+  for
+    case (t1, t2) <- xs
+    `t1` <- ys
+  yield t2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (for_expression
+        (enumerators
+          (enumerator
+            (tuple_pattern
+              (identifier)
+              (identifier))
+            (identifier))
+          (enumerator
+            (identifier)
+            (identifier)))
+        (identifier)))))
