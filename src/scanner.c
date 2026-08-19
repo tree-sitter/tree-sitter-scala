@@ -746,12 +746,6 @@ static bool has_operand(TSLexer *lexer) {
   }
 }
 
-// Blanks and then something that can be the right operand.
-static bool operand_follows(TSLexer *lexer) {
-  return advance_past_blanks(lexer) && has_operand(lexer) &&
-         operand_word_allowed(lexer);
-}
-
 // Reads the run of opchars at the lookahead into `op`. Only the first 3 are
 // kept, since a longer run is never a symbolic keyword. Returns the full
 // length and advances the lexer past the run.
@@ -786,6 +780,21 @@ static bool is_symbolic_keyword(const char *op, int len) {
     default:
       return false;
   }
+}
+
+// Blanks and then something that can be the right operand.
+static bool operand_follows(TSLexer *lexer) {
+  if (!advance_past_blanks(lexer) || !has_operand(lexer)) {
+    return false;
+  }
+  if (is_op_char(lexer->lookahead)) {
+    char op[4] = {0};
+    int len = read_op_chars(lexer, op);
+    // A symbolic keyword starts no expression, so the operator ahead of it is
+    // not a leading infix one either.
+    return !is_symbolic_keyword(op, len);
+  }
+  return operand_word_allowed(lexer);
 }
 
 // Returns true if the lookahead starts a leading infix operator — a symbolic
