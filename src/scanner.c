@@ -782,6 +782,14 @@ static bool is_symbolic_keyword(const char *op, int len) {
   }
 }
 
+// The operator names that can start an expression. Every other one is binary,
+// so it leaves no operand for the operator ahead of it. See isUnary in the
+// reference compiler.
+static bool is_unary_op(const char *op, int len) {
+  return len == 1 &&
+         (op[0] == '-' || op[0] == '+' || op[0] == '~' || op[0] == '!');
+}
+
 // Blanks and then something that can be the right operand.
 static bool operand_follows(TSLexer *lexer) {
   if (!advance_past_blanks(lexer) || !has_operand(lexer)) {
@@ -790,9 +798,8 @@ static bool operand_follows(TSLexer *lexer) {
   if (is_op_char(lexer->lookahead)) {
     char op[4] = {0};
     int len = read_op_chars(lexer, op);
-    // A symbolic keyword starts no expression, so the operator ahead of it is
-    // not a leading infix one either.
-    return !is_symbolic_keyword(op, len);
+    // This also covers the symbolic keywords, none of which is unary.
+    return is_unary_op(op, len);
   }
   return operand_word_allowed(lexer);
 }

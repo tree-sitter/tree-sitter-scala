@@ -5272,3 +5272,27 @@ def f =
             (identifier)
             (identifier)))
         (identifier)))))
+
+================================================================================
+A back-quoted name does not continue the line before a binary operator
+================================================================================
+
+def f =
+  var `i'` = 0
+  `i'` += 1
+  `i'`
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (var_definition
+        (identifier)
+        (integer_literal))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (integer_literal))
+      (identifier))))
