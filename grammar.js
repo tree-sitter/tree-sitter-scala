@@ -405,6 +405,7 @@ module.exports = grammar({
     // Small hidden rules that reduce to a token almost immediately. Inlining
     // removes the reduce step and merges states, shrinking parser.c by ~2MB.
     $._asterisk,
+    $._prefix_operator,
     $._super_identifier,
     $._this_identifier,
     $._non_null_literal,
@@ -2073,6 +2074,7 @@ module.exports = grammar({
       choice(
         nameChoice($),
         $.operator_identifier,
+        alias($._prefix_operator, $.operator_identifier),
         $.literal,
         $.interpolated_string_expression,
         $.unit,
@@ -2640,7 +2642,7 @@ module.exports = grammar({
      * PrefixExpr        ::=  [PrefixOperator] SimpleExpr
      */
     prefix_expression: $ =>
-      prec(PREC.prefix, seq(choice("+", "-", "!", "~"), $._simple_expression)),
+      prec(PREC.prefix, seq($._prefix_operator, $._simple_expression)),
 
     tuple_expression: $ =>
       seq(
@@ -2818,6 +2820,11 @@ module.exports = grammar({
     // states lex a lone `*` through OP_ID_UNION instead). Before a closing
     // delimiter it arrives as the external _postfix_star (see vararg).
     _asterisk: $ => "*",
+
+    // The prefix operators, shared for the same reason as _asterisk. A lone
+    // one is a name rather than an operator missing its operand, so the
+    // expression side has to admit it through this rule too.
+    _prefix_operator: $ => choice("+", "-", "!", "~"),
 
     // The union of the per-precedence operator tokens (see OP_TOKEN at the
     // top), so every use site outside infix_expression accepts any class and
