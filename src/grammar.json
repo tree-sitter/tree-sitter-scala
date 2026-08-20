@@ -7523,6 +7523,15 @@
           "name": "operator_identifier"
         },
         {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_prefix_operator"
+          },
+          "named": true,
+          "value": "operator_identifier"
+        },
+        {
           "type": "SYMBOL",
           "name": "literal"
         },
@@ -10626,25 +10635,8 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "STRING",
-                "value": "+"
-              },
-              {
-                "type": "STRING",
-                "value": "-"
-              },
-              {
-                "type": "STRING",
-                "value": "!"
-              },
-              {
-                "type": "STRING",
-                "value": "~"
-              }
-            ]
+            "type": "SYMBOL",
+            "name": "_prefix_operator"
           },
           {
             "type": "SYMBOL",
@@ -11505,6 +11497,27 @@
     "_asterisk": {
       "type": "STRING",
       "value": "*"
+    },
+    "_prefix_operator": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "+"
+        },
+        {
+          "type": "STRING",
+          "value": "-"
+        },
+        {
+          "type": "STRING",
+          "value": "!"
+        },
+        {
+          "type": "STRING",
+          "value": "~"
+        }
+      ]
     },
     "operator_identifier": {
       "type": "CHOICE",
@@ -14550,6 +14563,7 @@
     "_exprs_in_parens",
     "_argument_list",
     "_asterisk",
+    "_prefix_operator",
     "_super_identifier",
     "_this_identifier",
     "_non_null_literal",
