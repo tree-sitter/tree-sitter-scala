@@ -5296,3 +5296,45 @@ def f =
         (operator_identifier)
         (integer_literal))
       (identifier))))
+
+================================================================================
+A prefix operator with no operand is a name
+================================================================================
+
+object O:
+  val g: Int => Int = +
+  g(1)
+  val y = +.x
+  val z = println(a + !)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (function_type
+          (parameter_types
+            (type_identifier))
+          (type_identifier))
+        (operator_identifier))
+      (call_expression
+        (identifier)
+        (arguments
+          (integer_literal)))
+      (val_definition
+        (identifier)
+        (field_expression
+          (operator_identifier)
+          (identifier)))
+      (val_definition
+        (identifier)
+        (call_expression
+          (identifier)
+          (arguments
+            (infix_expression
+              (identifier)
+              (operator_identifier)
+              (operator_identifier))))))))
