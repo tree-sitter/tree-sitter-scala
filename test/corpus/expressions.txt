@@ -5298,6 +5298,50 @@ def f =
       (identifier))))
 
 ================================================================================
+A name that ends in an operator continues the line
+================================================================================
+
+def f =
+  c ! "a"
+    send_! "b"
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (string))
+        (identifier)
+        (string)))))
+
+================================================================================
+A lone underscore before an arrow is the wildcard
+================================================================================
+
+def f =
+  for
+    _<- xs
+  yield 1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (for_expression
+        (enumerators
+          (enumerator
+            (wildcard)
+            (identifier)))
+        (integer_literal)))))
+
+================================================================================
 A prefix operator with no operand is a name
 ================================================================================
 
