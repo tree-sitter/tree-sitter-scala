@@ -236,6 +236,10 @@ static inline bool is_alnum(int32_t c) {
   return is_alpha(c) || (c >= '0' && c <= '9');
 }
 
+static inline bool is_word_start(int32_t c) {
+  return is_alpha(c) || c == '_' || c == '$';
+}
+
 static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void skip(TSLexer *lexer) { lexer->advance(lexer, true); }
@@ -454,9 +458,14 @@ static bool scan_word(TSLexer *lexer, const char* const word) {
 // Reads one identifier-like word into `buf`. Returns -1 when the word
 // cannot be an ASCII keyword. The whole word is always consumed, so a
 // failed keyword check never leaves the lexer mid-identifier.
-static int read_word(TSLexer *lexer, char *buf, int cap) {
+// `underscore_tail`, when asked for, reports a final `_` that is not the
+// whole word. The reference scanner reads a lone `_` as the wildcard.
+static int read_word(TSLexer *lexer, char *buf, int cap,
+                     bool *underscore_tail) {
   int len = 0;
+  int count = 0;
   bool not_keyword = false;
+  int32_t last = 0;
   while (is_alnum(lexer->lookahead) || lexer->lookahead == '_' ||
          lexer->lookahead == '$') {
     if (lexer->lookahead > 127 || len >= cap - 1) {
@@ -465,9 +474,14 @@ static int read_word(TSLexer *lexer, char *buf, int cap) {
       buf[len] = (char)lexer->lookahead;
       len++;
     }
+    last = lexer->lookahead;
+    count++;
     advance(lexer);
   }
   buf[len] = '\0';
+  if (underscore_tail != NULL) {
+    *underscore_tail = count > 1 && last == '_';
+  }
   return not_keyword ? -1 : len;
 }
 
@@ -514,7 +528,7 @@ static bool word_is_expression_tail(TSLexer *lexer) {
       "match", "catch", "finally", "else", "then",
       "do",    "yield", "while",   "with", "extends"};
   char word[sizeof "finally"];
-  int len = read_word(lexer, word, (int)sizeof word);
+  int len = read_word(lexer, word, (int)sizeof word, NULL);
   return len > 0 && word_in(word, expression_tails,
                             sizeof(expression_tails) /
                                 sizeof(expression_tails[0]));
@@ -565,7 +579,7 @@ static bool inline_modifier_follows(TSLexer *lexer) {
       "object",  "trait",     "enum",   "final",    "lazy",     "override",
       "private", "protected", "sealed", "abstract", "implicit"};
   char word[sizeof "transparent"];
-  int len = read_word(lexer, word, (int)sizeof word);
+  int len = read_word(lexer, word, (int)sizeof word, NULL);
   return len > 0 &&
          word_in(word, definition_starts,
                  sizeof(definition_starts) / sizeof(definition_starts[0]));
@@ -577,7 +591,7 @@ static bool inline_modifier_follows(TSLexer *lexer) {
 static bool is_case_definition_word(TSLexer *lexer) {
   advance_past_blanks(lexer);
   char word[sizeof "object"];
-  int len = read_word(lexer, word, (int)sizeof word);
+  int len = read_word(lexer, word, (int)sizeof word, NULL);
   return len > 0 &&
          (strcmp(word, "class") == 0 || strcmp(word, "object") == 0);
 }
@@ -808,7 +822,9 @@ static bool operand_follows(TSLexer *lexer) {
 // operator or back-ticked identifier followed by whitespace and then an
 // operand. Such a line is a continuation of the previous expression, so
 // neither AUTOMATIC_SEMICOLON nor OUTDENT should fire ahead of it. Advances
-// the lexer; the caller must not rely on position.
+// the lexer; the caller must not rely on position. A name ending in operator
+// characters is one too, but it is left out here because the OUTDENT caller
+// reads a word of its own right after this call.
 static bool is_leading_infix_continuation(TSLexer *lexer) {
   if (is_op_char(lexer->lookahead)) {
     char op[4] = {0};
@@ -907,9 +923,9 @@ static LineScan scan_rest_of_line(TSLexer *lexer) {
         r.has_case_arrow = true;
       }
       r.ends_conditional = false;
-    } else if (is_alpha(c) || c == '_' || c == '$') {
+    } else if (is_word_start(c)) {
       char word[sizeof "then"];
-      int len = read_word(lexer, word, (int)sizeof word);
+      int len = read_word(lexer, word, (int)sizeof word, NULL);
       r.ends_conditional = depth == 0 && len > 0 &&
                            (strcmp(word, "then") == 0 || strcmp(word, "do") == 0);
     } else {
@@ -1246,7 +1262,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         static const char *const block_opening_stoppers[] = {
             "else", "catch", "finally", "yield", "do"};
         char word[sizeof "finally"];
-        int len = read_word(lexer, word, (int)sizeof word);
+        int len = read_word(lexer, word, (int)sizeof word, NULL);
         if (len > 0 &&
             word_in(word, block_opening_stoppers,
                     sizeof(block_opening_stoppers) /
@@ -1486,9 +1502,8 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       // the old flow.
     }
 
-    // Checked before the keyword scans so neither reads a position the
-    // other advanced past (`m|| x` after a failed `match` scan). A blank
-    // line still separates the statements.
+    // A blank line still separates the statements, here and in the word
+    // branch below.
     if (is_op_char(lexer->lookahead)) {
       char op[4] = {0};
       int len = read_op_chars(lexer, op);
@@ -1510,91 +1525,74 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     }
 
     // A keyword that continues the enclosing expression suppresses the
-    // semicolon, even when several are valid at once. The first-character
-    // dispatch keeps scan_word from consuming a shared prefix.
-    switch (lexer->lookahead) {
-      case 'e':
-        if (!valid_symbols[ELSE] && !valid_symbols[EXTENDS] &&
-            !valid_symbols[CONTROL_TAIL_GATE]) {
-          break;
+    // semicolon, even when several are valid at once. Names and keywords
+    // start alike, so the word is read once here and matched whole.
+    if (is_word_start(lexer->lookahead)) {
+      char word[sizeof "finally"];
+      bool underscore_tail = false;
+      int len = read_word(lexer, word, (int)sizeof word, &underscore_tail);
+      // A name whose last characters are operator ones is an operator too,
+      // so a line starting with it continues the line above. See isOperator
+      // in the reference scanner.
+      if (underscore_tail && is_op_char(lexer->lookahead)) {
+        while (is_op_char(lexer->lookahead)) {
+          advance(lexer);
         }
-        advance(lexer);
-        if ((valid_symbols[ELSE] || valid_symbols[CONTROL_TAIL_GATE]) &&
-            scan_word(lexer, "lse")) {
-          // The gate is zero width: mark_end ran before the word.
-          if (valid_symbols[CONTROL_TAIL_GATE]) {
-            lexer->result_symbol = CONTROL_TAIL_GATE;
-            return true;
-          }
+        if (newline_count == 1 && operand_follows(lexer)) {
           return false;
         }
-        if (valid_symbols[EXTENDS] && scan_word(lexer, "xtends")) {
-          return false;
-        }
-        break;
-      case 'c': {
-        // Read the word whole: `catch` and `case` share a prefix that
-        // chained scan_word calls cannot rewind.
-        char word[sizeof "catch"];
-        int len = read_word(lexer, word, (int)sizeof word);
-        if (len <= 0) {
-          break;
-        }
-        if ((valid_symbols[CATCH] || valid_symbols[CONTROL_TAIL_GATE]) &&
-            strcmp(word, "catch") == 0) {
-          if (valid_symbols[CONTROL_TAIL_GATE]) {
-            lexer->result_symbol = CONTROL_TAIL_GATE;
-            return true;
-          }
-          return false;
-        }
-        // A case clause line needs no separator, and suppressing it keeps
-        // a long else-if chain from forking one marker head per nested if
-        // right before it. A case definition keeps its separator, and so
-        // does a clause line that closes an enclosing bracket, whose
-        // separator belongs to the surrounding expression.
-        if (strcmp(word, "case") == 0 && !is_case_definition_word(lexer)) {
-          LineScan line = scan_rest_of_line(lexer);
-          if (line.has_case_arrow && !line.closes_bracket) {
-            return false;
-          }
-        }
-        break;
+        return true;
       }
-      case 'f':
-        if ((valid_symbols[FINALLY] || valid_symbols[CONTROL_TAIL_GATE]) &&
-            scan_word(lexer, "finally")) {
-          if (valid_symbols[CONTROL_TAIL_GATE]) {
-            lexer->result_symbol = CONTROL_TAIL_GATE;
-            return true;
-          }
+      if (len <= 0) {
+        return true;
+      }
+      // The first three also open a control tail, whose gate is zero width
+      // since mark_end ran above.
+      static const struct {
+        const char *word;
+        TSSymbol symbol;
+        bool gated;
+      } continuing_words[] = {
+        {"else", ELSE, true},
+        {"catch", CATCH, true},
+        {"finally", FINALLY, true},
+        {"extends", EXTENDS, false},
+        {"with", WITH, false},
+        {"derives", DERIVES, false},
+        {"uses", USES, false},
+      };
+      for (unsigned i = 0;
+           i < sizeof(continuing_words) / sizeof(continuing_words[0]); i++) {
+        bool gate =
+            continuing_words[i].gated && valid_symbols[CONTROL_TAIL_GATE];
+        // Validity first: it rules out most words without the comparison.
+        if ((!gate && !valid_symbols[continuing_words[i].symbol]) ||
+            strcmp(word, continuing_words[i].word) != 0) {
+          continue;
+        }
+        if (gate) {
+          lexer->result_symbol = CONTROL_TAIL_GATE;
+          return true;
+        }
+        return false;
+      }
+      // A case clause line needs no separator, and suppressing it keeps
+      // a long else-if chain from forking one marker head per nested if
+      // right before it. A case definition keeps its separator, and so
+      // does a clause line that closes an enclosing bracket, whose
+      // separator belongs to the surrounding expression.
+      if (strcmp(word, "case") == 0 && !is_case_definition_word(lexer)) {
+        LineScan line = scan_rest_of_line(lexer);
+        if (line.has_case_arrow && !line.closes_bracket) {
           return false;
         }
-        break;
-      case 'w':
-        if (valid_symbols[WITH] && scan_word(lexer, "with")) {
-          return false;
-        }
-        break;
-      case 'd':
-        if (valid_symbols[DERIVES] && scan_word(lexer, "derives")) {
-          return false;
-        }
-        break;
-      case 'u':
-        if (valid_symbols[USES] && scan_word(lexer, "uses")) {
-          return false;
-        }
-        break;
-      case 'm':
-        // `match` is a reserved word that never starts a statement, so it
-        // always continues the previous expression.
-        if (scan_word(lexer, "match")) {
-          return false;
-        }
-        break;
-      default:
-        break;
+        return true;
+      }
+      // `match` is a reserved word that never starts a statement, so it
+      // always continues the previous expression.
+      if (strcmp(word, "match") == 0) {
+        return false;
+      }
     }
 
     return true;
@@ -1659,7 +1657,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     }
     // Sized for the longest word above.
     char word[sizeof "transparent"];
-    int len = read_word(lexer, word, (int)sizeof word);
+    int len = read_word(lexer, word, (int)sizeof word, NULL);
     // read_word returns -1 when the word overflows the buffer, which would
     // otherwise leave a truncated prefix to compare against.
     if (len > 0) {
@@ -1879,7 +1877,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       // Sized for the longest word above. read_word reports a longer or
       // non-ASCII identifier as -1, which correctly skips the check.
       char word[sizeof "protected"];
-      int len = read_word(lexer, word, (int)sizeof word);
+      int len = read_word(lexer, word, (int)sizeof word, NULL);
       if (len > 0 &&
           word_in(word, definition_words,
                   sizeof(definition_words) / sizeof(definition_words[0]))) {
@@ -2018,7 +2016,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         static const char *const tail_words[] = {
             "catch", "else", "finally", "then", "yield"};
         char word[sizeof "finally"];
-        int len = read_word(lexer, word, (int)sizeof word);
+        int len = read_word(lexer, word, (int)sizeof word, NULL);
         if (len > 0 &&
             word_in(word, tail_words,
                     sizeof(tail_words) / sizeof(tail_words[0]))) {
