@@ -4434,6 +4434,37 @@ def f =
               (identifier))))))))
 
 ================================================================================
+A postfix operator can be the target of an assignment
+================================================================================
+
+def f =
+  v<1> = 10
+  x >= 1
+  y => y
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (assignment_expression
+        (postfix_expression
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (integer_literal))
+          (operator_identifier))
+        (integer_literal))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (integer_literal))
+      (lambda_expression
+        (identifier)
+        (identifier)))))
+
+================================================================================
 Postfix operator at end of line before a definition keyword
 ================================================================================
 

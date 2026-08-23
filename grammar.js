@@ -2386,7 +2386,14 @@ module.exports = grammar({
       prec.right(
         PREC.assign,
         seq(
-          field("left", choice($.prefix_expression, $._simple_expression)),
+          field(
+            "left",
+            choice(
+              $.prefix_expression,
+              alias($._symbolic_postfix_expression, $.postfix_expression),
+              $._simple_expression,
+            ),
+          ),
           "=",
           field("right", choice(statementExpression($), $.indented_block)),
         ),
@@ -2621,15 +2628,18 @@ module.exports = grammar({
       choice(
         // Bare word tokens for the same reason as the iname production.
         prec.right(PREC.iname, seq($._infix_operand, wordName($))),
-        prec.left(
-          PREC.postfix,
-          seq(
-            $._infix_operand,
-            alias(
-              choice($._postfix_op, $._postfix_star),
-              $.operator_identifier,
-            ),
-          ),
+        $._symbolic_postfix_expression,
+      ),
+
+    // Only this form can be an assignment target. Its operator is external,
+    // so it forks where the scanner offers one, while the word form above
+    // would fork every `a b = c`.
+    _symbolic_postfix_expression: $ =>
+      prec.left(
+        PREC.postfix,
+        seq(
+          $._infix_operand,
+          alias(choice($._postfix_op, $._postfix_star), $.operator_identifier),
         ),
       ),
 

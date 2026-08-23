@@ -1841,6 +1841,16 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         lexer->result_symbol = postfix_sym;
         return true;
       }
+      // The assignment `=` starts no expression either, so the operator is
+      // the postfix one an update calls (`v<1> = 10`). The end is marked,
+      // so reading past it to rule out `=>` and `==` is free.
+      if (lexer->lookahead == '=') {
+        advance(lexer);
+        if (!is_op_char(lexer->lookahead)) {
+          lexer->result_symbol = postfix_sym;
+          return true;
+        }
+      }
       return false;
     }
     // The right operand must be able to start an expression. Comments and line
