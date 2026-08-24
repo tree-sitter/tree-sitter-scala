@@ -1081,6 +1081,57 @@ class A[
         (type_identifier)))))
 
 ================================================================================
+Kind projector placeholder with a variance
+================================================================================
+
+type A = Foo[Either[Int, +_]]
+type B = Foo[Int => -_]
+type C = Foo[(Int, - _, Int)]
+type D = Foo[+[L, R]]
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier))))))
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (function_type
+          (parameter_types
+            (type_identifier))
+          (type_identifier)))))
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (tuple_type
+          (type_identifier)
+          (type_identifier)
+          (type_identifier)))))
+  (type_definition
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier)))))))
+
+================================================================================
 Wildcard bounded by a type lambda (Scala 3)
 ================================================================================
 
