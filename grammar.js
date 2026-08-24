@@ -878,7 +878,12 @@ module.exports = grammar({
     _class_constructor: $ =>
       seq(
         field("name", $._identifier),
-        field("type_parameters", optional($.type_parameters)),
+        optional(
+          seq(
+            optional($._automatic_semicolon),
+            field("type_parameters", $.type_parameters),
+          ),
+        ),
         repeat(alias($._constructor_annotation, $.annotation)),
         optional($.access_modifier),
         field(
