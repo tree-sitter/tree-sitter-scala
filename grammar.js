@@ -1923,7 +1923,16 @@ module.exports = grammar({
         field("type", $._param_value_type),
       ),
 
-    _type_identifier: $ => alias($._identifier, $.type_identifier),
+    _type_identifier: $ =>
+      choice(
+        alias($._identifier, $.type_identifier),
+        alias($._variance_placeholder, $.type_identifier),
+      ),
+
+    // The kind-projector placeholder of underscore mode. The reference parser
+    // joins the variance and the underscore into one name, and lexing it whole
+    // keeps a type named `+` reading as itself.
+    _variance_placeholder: $ => token(/[+-][ \t]*_/),
 
     type_lambda: $ =>
       seq(
