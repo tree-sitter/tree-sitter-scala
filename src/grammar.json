@@ -8988,6 +8988,15 @@
                   "name": "prefix_expression"
                 },
                 {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_symbolic_postfix_expression"
+                  },
+                  "named": true,
+                  "value": "postfix_expression"
+                },
+                {
                   "type": "SYMBOL",
                   "name": "_simple_expression"
                 }
@@ -10562,37 +10571,41 @@
           }
         },
         {
-          "type": "PREC_LEFT",
-          "value": 5,
-          "content": {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "_infix_operand"
-              },
-              {
-                "type": "ALIAS",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "_postfix_op"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "_postfix_star"
-                    }
-                  ]
-                },
-                "named": true,
-                "value": "operator_identifier"
-              }
-            ]
-          }
+          "type": "SYMBOL",
+          "name": "_symbolic_postfix_expression"
         }
       ]
+    },
+    "_symbolic_postfix_expression": {
+      "type": "PREC_LEFT",
+      "value": 5,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_infix_operand"
+          },
+          {
+            "type": "ALIAS",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_postfix_op"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "_postfix_star"
+                }
+              ]
+            },
+            "named": true,
+            "value": "operator_identifier"
+          }
+        ]
+      }
     },
     "_postfix_expression_choice": {
       "type": "PREC_LEFT",
