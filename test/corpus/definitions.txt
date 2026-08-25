@@ -236,6 +236,39 @@ class Bar @publicInBinary(@publicInBinary private[Bar] val x: Int)
         (type_identifier)))))
 
 ================================================================================
+Type parameter list on the line below the class name
+================================================================================
+
+trait Builder
+  [S, T]
+    extends Base[S]
+
+class Wrapper
+  [A](a: A)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (trait_definition
+    (identifier)
+    (type_parameters
+      (identifier)
+      (identifier))
+    (extends_clause
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier)))))
+  (class_definition
+    (identifier)
+    (type_parameters
+      (identifier))
+    (class_parameters
+      (class_parameter
+        (identifier)
+        (type_identifier)))))
+
+================================================================================
 Package
 ================================================================================
 
