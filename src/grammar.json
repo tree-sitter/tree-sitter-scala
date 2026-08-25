@@ -1431,20 +1431,37 @@
           }
         },
         {
-          "type": "FIELD",
-          "name": "type_parameters",
-          "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "type_parameters"
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
-          }
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_automatic_semicolon"
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
+                },
+                {
+                  "type": "FIELD",
+                  "name": "type_parameters",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "type_parameters"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         },
         {
           "type": "REPEAT",
@@ -6757,13 +6774,34 @@
       ]
     },
     "_type_identifier": {
-      "type": "ALIAS",
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_identifier"
+          },
+          "named": true,
+          "value": "type_identifier"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_variance_placeholder"
+          },
+          "named": true,
+          "value": "type_identifier"
+        }
+      ]
+    },
+    "_variance_placeholder": {
+      "type": "TOKEN",
       "content": {
-        "type": "SYMBOL",
-        "name": "_identifier"
-      },
-      "named": true,
-      "value": "type_identifier"
+        "type": "PATTERN",
+        "value": "[+-][ \\t]*_"
+      }
     },
     "type_lambda": {
       "type": "SEQ",
