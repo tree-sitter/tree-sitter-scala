@@ -1,0 +1,151 @@
+// Scala XML literals (SLS §10). Mirrors the XML section of grammar.js.
+
+// Scanner externals registered by the root grammar.
+expect _xml_tag_start
+expect _suppress_block_comment
+
+// Expression and pattern rules owned by the root module.
+expect block
+expect _identifier
+expect stable_identifier
+expect interpolated_string_expression
+expect capture_pattern
+expect tuple_pattern
+expect named_tuple_pattern
+expect case_class_pattern
+expect quote_expression
+expect literal
+expect wildcard
+expect repeat_pattern
+expect _asterisk
+
+let XML_NAME: rule_t = regexp(r"[_\p{L}][-.:_\p{L}\p{Nd}]*")
+// Keep in sync with root PREC.comment + 1; imported modules cannot currently
+// refer back to a value declared by their importer.
+let XML_TEXT_PREC: int_t = 2
+
+macro comma_sep1(item: rule_t) rule_t {
+    seq(item, repeat(seq(",", item)))
+}
+
+// Plain text and escaped literal braces, shared by elements and patterns.
+let XML_TEXT_ALTERNATIVES: rule_t = choice(
+    xml_text,
+    alias("{{", xml_text),
+    alias("}}", xml_text),
+)
+
+macro xml_element_shape(content: rule_t) rule_t {
+    seq(
+        _xml_open_tag,
+        choice("/>", seq(">", repeat(content), _xml_end_tag)),
+    )
+}
+
+rule xml_expression { repeat1(_xml_node) }
+
+rule _xml_node {
+    choice(xml_element, xml_comment, xml_cdata, xml_processing_instruction)
+}
+
+rule xml_element { xml_element_shape(_xml_content) }
+
+rule _xml_open_tag {
+    seq(
+        alias(_xml_tag_start, "<"),
+        field(name, alias(token_immediate(XML_NAME), xml_name)),
+        repeat(xml_attribute),
+    )
+}
+
+rule _xml_end_tag {
+    seq("</", alias(token_immediate(XML_NAME), xml_name), ">")
+}
+
+rule xml_attribute {
+    seq(
+        field(key, alias(token(XML_NAME), xml_name)),
+        "=",
+        field(value, choice(
+            alias(token(choice(
+                regexp(r#""[^<"]*""#),
+                regexp(r"'[^<']*'"),
+            )), xml_string),
+            block,
+        )),
+    )
+}
+
+rule _xml_content {
+    choice(
+        XML_TEXT_ALTERNATIVES,
+        block,
+        _xml_node,
+        _suppress_block_comment,
+    )
+}
+
+// XML text must outrank comment and whitespace extras.
+rule xml_text { token(prec(XML_TEXT_PREC, regexp(r"[^<{}]+"))) }
+
+rule xml_comment {
+    token(seq(
+        "<!--",
+        repeat(choice(regexp(r"[^-]"), seq(repeat1("-"), regexp(r"[^->]")))),
+        repeat("-"),
+        "-->",
+    ))
+}
+
+rule xml_cdata {
+    token(seq(
+        "<![CDATA[",
+        repeat(choice(regexp(r"[^\]]"), seq(repeat1("]"), regexp(r"[^\]>]")))),
+        repeat("]"),
+        "]]>",
+    ))
+}
+
+rule xml_processing_instruction {
+    token(seq(
+        "<?",
+        repeat(choice(regexp(r"[^?]"), seq(repeat1("?"), regexp(r"[^?>]")))),
+        repeat("?"),
+        "?>",
+    ))
+}
+
+rule xml_pattern { xml_element_shape(_xml_pattern_content) }
+
+rule _xml_pattern_content {
+    choice(
+        XML_TEXT_ALTERNATIVES,
+        seq("{", comma_sep1(_xml_embedded_pattern), "}"),
+        xml_pattern,
+        xml_comment,
+        xml_cdata,
+        xml_processing_instruction,
+        _suppress_block_comment,
+    )
+}
+
+rule _xml_embedded_pattern {
+    choice(
+        _identifier,
+        stable_identifier,
+        interpolated_string_expression,
+        capture_pattern,
+        tuple_pattern,
+        named_tuple_pattern,
+        case_class_pattern,
+        quote_expression,
+        literal,
+        wildcard,
+        alias(_xml_repeat_pattern, repeat_pattern),
+        xml_pattern,
+    )
+}
+
+rule _xml_repeat_pattern {
+    seq(field(pattern, choice(wildcard, _identifier)), _asterisk)
+}

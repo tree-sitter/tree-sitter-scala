@@ -1,0 +1,164 @@
+// Scala operator tokens (SLS 1.1 and 6.12.3).
+
+expect _asterisk
+
+// Mirrors grammar.js's two-stage construction: its first string preserves
+// regex escapes, while its second string decodes JavaScript \u{...} escapes.
+let SM_NONASCII: str_t = concat(
+    r"\u00ac\u00b1\u00d7\u00f7\u03f6\u0606-\u0608\u2044\u2052\u207a-\u207c\u208a-\u208c\u2118\u2140-\u2144\u214b\u2190-\u2194\u219a-\u219b\u21a0\u21a3\u21a6\u21ae\u21ce-\u21cf\u21d2\u21d4\u21f4-\u22ff\u2320-\u2321\u237c\u239b-\u23b3\u23dc-\u23e1\u25b7\u25c1\u25f8-\u25ff\u266f\u27c0-\u27c4\u27c7-\u27e5\u27f0-\u27ff\u2900-\u2982\u2999-\u29d7\u29dc-\u29fb\u29fe-\u2aff\u2b30-\u2b44\u2b47-\u2b4c\ufb29\ufe62\ufe64-\ufe66\uff0b\uff1c-\uff1e\uff5c\uff5e\uffe2\uffe9-\uffec",
+    "\u{10d8e}-\u{10d8f}\u{1cef0}\u{1d6c1}\u{1d6db}\u{1d6fb}\u{1d715}\u{1d735}\u{1d74f}\u{1d76f}\u{1d789}\u{1d7a9}\u{1d7c3}\u{1eef0}-\u{1eef1}\u{1f8d0}-\u{1f8d8}",
+)
+
+// Canonical SLS opchar class bodies. Native strings have no replace(), so the
+// derived classes below are spelled once by hand; retaining these three makes
+// the subtraction relationship reviewable against grammar.js.
+let OP: str_t = r"\-!#%&*+/\\:<=>?@\u005e\u007c~\p{Sm}\p{So}"
+let OP_END_LEFT: str_t = concat(
+    r"\-!#%&*+/\\<>?@\u005e\u007c~", SM_NONASCII, r"\p{So}"
+)
+let OP_NO_COLON: str_t = r"\-!#%&*+/\\<=>?@\u005e\u007c~\p{Sm}\p{So}"
+
+// Native strings do not have JS's replace(), so name each derived class body
+// once. These are OP/OP_END_LEFT/OP_NO_COLON with slash, then star, removed.
+let OP_NO_SLASH: str_t = r"\-!#%&*+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}"
+let OP_NSS: str_t = r"\-!#%&+\\:<=>?@\u005e\u007c~\p{Sm}\p{So}"
+let OP_END_LEFT_NO_SLASH: str_t = concat(
+    r"\-!#%&*+\\<>?@\u005e\u007c~", SM_NONASCII, r"\p{So}"
+)
+let OP_NSS_END_LEFT: str_t = concat(
+    r"\-!#%&+\\<>?@\u005e\u007c~", SM_NONASCII, r"\p{So}"
+)
+let OP_NO_COLON_NO_SLASH: str_t = r"\-!#%&*+\\<=>?@\u005e\u007c~\p{Sm}\p{So}"
+let OP_NSS_NO_COLON: str_t = r"\-!#%&+\\<=>?@\u005e\u007c~\p{Sm}\p{So}"
+
+let OP_STEP: str_t = concat("(?:[", OP_NO_SLASH, "]|/[", OP_NSS, "])")
+let OP_RUN: str_t = concat(OP_STEP, "*")
+let OP_RUN_SLASH: str_t = concat(OP_RUN, "/?")
+let OP_RUN1_SLASH: str_t = concat("(?:", OP_STEP, "+/?|/)")
+let OP_TAIL_LEFT: str_t = concat(
+    "(?:[", OP_END_LEFT_NO_SLASH, "]|/[", OP_NSS_END_LEFT, "])"
+)
+let OP_TAIL_NO_COLON: str_t = concat(
+    "(?:[", OP_NO_COLON_NO_SLASH, "]|/[", OP_NSS_NO_COLON, "])"
+)
+let OP_SINGLE_UNICODE: str_t = r"\u00ac\u00b1\u00d7\u00f7\u2190-\u2194\u2200-\u22ff\p{So}"
+let OP_OTHER_FIRST: str_t = concat(r"#?@\\~", SM_NONASCII, r"\p{So}")
+
+macro op_regex(body: str_t) rule_t { regexp(body, "u") }
+
+// One token per infix precedence class, split by its final character. A `:`
+// ending makes the operator right-associative; most `=` endings demote it to
+// assignment precedence. The alternatives collectively reproduce the old
+// operator_identifier token without allowing `/` to open a comment mid-token.
+let OP_TOKEN: obj_t<rule_t> = {
+    assign: token(choice(
+        op_regex(concat(r"[&:+\-*%\u005e\u007c", OP_OTHER_FIRST, "]", OP_RUN_SLASH, "=")),
+        op_regex(concat("[<>!]", OP_RUN1_SLASH, "=")),
+        op_regex("/="),
+        op_regex(concat("/[", OP_NSS, "]", OP_RUN_SLASH, "=")),
+    )),
+    orLeft: token(choice(
+        op_regex(r"\u007c"),
+        op_regex(concat(r"\u007c", OP_RUN, OP_TAIL_LEFT)),
+    )),
+    orRight: token(op_regex(concat(r"\u007c", OP_RUN_SLASH, ":"))),
+    xorLeft: token(choice(
+        op_regex(r"\u005e"),
+        op_regex(concat(r"\u005e", OP_RUN, OP_TAIL_LEFT)),
+    )),
+    xorRight: token(op_regex(concat(r"\u005e", OP_RUN_SLASH, ":"))),
+    andLeft: token(choice(
+        op_regex("&"),
+        op_regex(concat("&", OP_RUN, OP_TAIL_LEFT)),
+    )),
+    andRight: token(op_regex(concat("&", OP_RUN_SLASH, ":"))),
+    eqLeft: token(choice(
+        op_regex("!"),
+        "!=",
+        op_regex(concat("!", OP_RUN, OP_TAIL_LEFT)),
+        op_regex(concat("=", OP_RUN, OP_TAIL_NO_COLON)),
+    )),
+    eqRight: token(op_regex(concat("[=!]", OP_RUN_SLASH, ":"))),
+    relLeft: token(choice(
+        op_regex("[<>]"),
+        "<=",
+        ">=",
+        op_regex(concat("[<>]", OP_RUN, OP_TAIL_LEFT)),
+    )),
+    relRight: token(op_regex(concat("[<>]", OP_RUN_SLASH, ":"))),
+    colonLeft: token(op_regex(concat(":", OP_RUN, OP_TAIL_LEFT))),
+    colonRight: token(op_regex(concat(":", OP_RUN_SLASH, ":"))),
+    addLeft: token(choice(
+        op_regex(r"[+\-]"),
+        op_regex(concat(r"[+\-]", OP_RUN, OP_TAIL_LEFT)),
+    )),
+    addRight: token(op_regex(concat(r"[+\-]", OP_RUN_SLASH, ":"))),
+    mulLeft: token(choice(
+        op_regex("[/%]"),
+        op_regex(concat("[*%]", OP_RUN, OP_TAIL_LEFT)),
+        op_regex(concat("/[", OP_NSS_END_LEFT, "]")),
+        op_regex(concat("/[", OP_NSS, "]", OP_RUN, OP_TAIL_LEFT)),
+    )),
+    mulRight: token(choice(
+        op_regex(concat("[*%]", OP_RUN_SLASH, ":")),
+        op_regex("/:"),
+        op_regex(concat("/[", OP_NSS, "]", OP_RUN_SLASH, ":")),
+    )),
+    otherLeft: token(choice(
+        op_regex(concat(r"[#?\\~", OP_SINGLE_UNICODE, "]")),
+        op_regex(concat("[", OP_OTHER_FIRST, "]", OP_RUN, OP_TAIL_LEFT)),
+    )),
+    otherRight: token(op_regex(concat("[", OP_OTHER_FIRST, "]", OP_RUN_SLASH, ":"))),
+}
+
+let OP_ID_UNION: rule_t = token(choice(
+    op_regex(concat("[", OP_SINGLE_UNICODE, r"\-!#%&*+/\\<>?\u005e\u007c~]")),
+    op_regex(concat("[", OP_NO_SLASH, "]", OP_STEP, "+")),
+    op_regex(concat("/[", OP_NSS, "]", OP_RUN)),
+))
+
+// Pure name contexts use OP_ID_UNION. Expression states use this partitioned
+// union because their infix continuations must retain per-class precedence.
+rule operator_identifier {
+    choice(
+        _asterisk,
+        _op_left_or,
+        _op_left_xor,
+        _op_left_and,
+        _op_left_eq,
+        _op_left_rel,
+        _op_left_colon,
+        _op_left_add,
+        _op_left_mul,
+        _op_left_other,
+        OP_TOKEN.assign,
+        OP_TOKEN.orRight,
+        OP_TOKEN.xorRight,
+        OP_TOKEN.andRight,
+        OP_TOKEN.eqRight,
+        OP_TOKEN.relRight,
+        OP_TOKEN.colonRight,
+        OP_TOKEN.addRight,
+        OP_TOKEN.mulRight,
+        OP_TOKEN.otherRight,
+    )
+}
+
+// Left-associative classes are externals too: the scanner claims only the
+// slash-ending form that a regular expression cannot distinguish from a
+// comment opener, and otherwise falls back to OP_TOKEN.
+rules left_operator(name: str_t, body: rule_t) {
+    rule @concat("_op_left_", name) { body }
+}
+
+@left_operator("or", OP_TOKEN.orLeft)
+@left_operator("xor", OP_TOKEN.xorLeft)
+@left_operator("and", OP_TOKEN.andLeft)
+@left_operator("eq", OP_TOKEN.eqLeft)
+@left_operator("rel", OP_TOKEN.relLeft)
+@left_operator("colon", OP_TOKEN.colonLeft)
+@left_operator("add", OP_TOKEN.addLeft)
+@left_operator("mul", OP_TOKEN.mulLeft)
+@left_operator("other", OP_TOKEN.otherLeft)
+
+rule _op_name { OP_ID_UNION }

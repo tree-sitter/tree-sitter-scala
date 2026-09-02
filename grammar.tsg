@@ -1,9 +1,11 @@
 // Scala grammar for tree-sitter (native DSL).
 // Translated from grammar.js.
 
+let op = import("grammar/operators.tsg")
+let xml = import("grammar/xml.tsg")
+
 let PREC = {
     comment: 1,
-    using_directive: 2,
     control: 1,
     stable_type_id: 2,
     type: 2,
@@ -14,13 +16,24 @@ let PREC = {
     unit: 4,
     postfix: 5,
     colon_call: 5,
-    infix: 6,
-    prefix: 7,
-    compound: 7,
-    call: 8,
-    field: 8,
-    macro: 10,
-    binding: 10,
+    iassign: 6,
+    iname: 7,
+    ior: 8,
+    ixor: 9,
+    iand: 10,
+    ieq: 11,
+    irel: 12,
+    icolon: 13,
+    iadd: 14,
+    imul: 15,
+    iother: 16,
+    infix: 12,
+    prefix: 17,
+    compound: 17,
+    call: 18,
+    field: 18,
+    macro: 20,
+    binding: 20,
 }
 
 // Helpers (mirror the functions defined at the bottom of grammar.js).
@@ -47,6 +60,74 @@ macro trailing_comma_sep1(item: rule_t) rule_t {
 
 macro trailing_comma_sep(item: rule_t) rule_t {
     optional(trailing_comma_sep1(item))
+}
+
+// End markers stay outside the construct's precedence wrapper. The leading
+// semicolon keeps `end` out of expression follow sets; the dynamic weight
+// selects the marker reading over an ordinary statement on that line.
+macro end_marker_tail(marker: rule_t, weight: int_t) rule_t {
+    prec_dynamic(weight, seq(_automatic_semicolon, alias(marker, end_marker)))
+}
+
+// Fixed grammar fragments are lets rather than zero-argument macros. The
+// Unicode fat arrow is Scala 2's verbatim alternate spelling of `=>`.
+let FAT_ARROW: rule_t = choice("=>", alias("⇒", "=>"))
+let ANY_ARROW: rule_t = choice(FAT_ARROW, "?=>")
+let PURE_ARROW: rule_t = choice("->", "?->")
+let TYPE_ARROW: rule_t = choice(FAT_ARROW, "?=>", PURE_ARROW)
+
+// do_while is deliberately outside expression: admitting it uniformly only
+// in statement/RHS positions avoids duplicating the parenthesized-for states.
+let STATEMENT_EXPRESSION: rule_t = choice(expression, do_while_expression)
+let COLON_EOL: rule_t = choice(":", alias(_colon_eol, ":"))
+let CASE_KEYWORD: rule_t = choice("case", alias(_case_definition_keyword, "case"))
+
+// Use bare word tokens when possible so soft-keyword, `this`, and `super`
+// columns do not spread through every state. Operand positions instead need
+// the per-class operator tokens: a lexer state cannot hold those and the
+// union `_op_name` token for the same strings at once.
+let NAME_CHOICE: rule_t = choice(
+    alias(_alpha_identifier, identifier),
+    alias(_backquoted_id, identifier),
+    alias(_soft_identifier, identifier),
+    alias("this", identifier),
+    alias("super", identifier),
+)
+let WORD_NAME: rule_t = alias(choice(_alpha_identifier, _backquoted_id), identifier)
+let OP_NAME: rule_t = alias(_op_name, operator_identifier)
+let WORD_OR_OP_NAME: rule_t = choice(WORD_NAME, OP_NAME)
+let OPERAND_NAME: rule_t = choice(NAME_CHOICE, operator_identifier)
+
+// These modifiers are scanner tokens aliased back to their public keyword
+// node names. Keeping them as lets makes each use expand without a unit rule.
+let ERASED_MOD: rule_t = alias(_erased_modifier, erased_modifier)
+let OPEN_MOD: rule_t = alias(_open_modifier, open_modifier)
+let OPAQUE_MOD: rule_t = alias(_opaque_modifier, opaque_modifier)
+let INFIX_MOD: rule_t = alias(_infix_modifier, infix_modifier)
+let TRACKED_MOD: rule_t = alias(_tracked_modifier, tracked_modifier)
+let TRANSPARENT_MOD: rule_t = alias(_transparent_modifier, transparent_modifier)
+let INTO_MOD: rule_t = alias(_into_modifier, into_modifier)
+let INLINE_MOD: rule_t = alias(_inline_modifier, inline_modifier)
+let UPDATE_MOD: rule_t = alias(_update_modifier, update_modifier)
+let CONSUME_MOD: rule_t = alias(_consume_modifier, consume_modifier)
+let ASCRIPTION_ARROW_TAIL: rule_t = seq(ANY_ARROW, field(return_type, _param_type))
+
+// Each SLS 6.12.3 precedence class expands through one of these two shapes.
+// The operator token itself determines both the class and associativity.
+macro infix_left(level: int_t, operator: rule_t) rule_t {
+    prec_left(level, seq(
+        field(left, _infix_operand),
+        field(operator, operator),
+        field(right, _infix_operand),
+    ))
+}
+
+macro infix_right(level: int_t, operator: rule_t) rule_t {
+    prec_right(level, seq(
+        field(left, _infix_operand),
+        field(operator, operator),
+        field(right, _infix_operand),
+    ))
 }
 
 grammar {
@@ -77,10 +158,45 @@ grammar {
         "extends",
         "derives",
         "with",
+        block_comment,
+        _suppress_block_comment,
         error_sentinel,
+        _colon_eol,
+        _postfix_op,
+        _postfix_star,
+        _floating_point_with_separators,
+        _end_keyword,
+        _control_tail_gate,
+        _xml_tag_start,
+        _erased_modifier,
+        _open_modifier,
+        _opaque_modifier,
+        _infix_modifier,
+        _tracked_modifier,
+        _transparent_modifier,
+        _inline_modifier,
+        _into_modifier,
+        _update_modifier,
+        _consume_modifier,
+        "uses",
+        _op_left_or,
+        _op_left_xor,
+        _op_left_and,
+        _op_left_eq,
+        _op_left_rel,
+        _op_left_colon,
+        _op_left_add,
+        _op_left_mul,
+        _op_left_other,
+        _op_name,
+        _using_directive_start,
+        _case_definition_keyword,
+        _def_semicolon,
+        _wildcard_bound_start,
     ],
 
     inline: [
+        _definition_pattern,
         _pattern,
         _semicolon,
         _definition,
@@ -91,12 +207,24 @@ grammar {
         _param_value_type,
         _simple_type,
         literal,
+        _exprs_in_parens,
+        _argument_list,
+        _asterisk,
+        _prefix_operator,
+        _super_identifier,
+        _this_identifier,
+        _non_null_literal,
+        _braced_template_body,
+        _indented_template_body,
+        _xml_node,
+        _xml_content,
+        _xml_pattern_content,
+        _structural_type,
+        _refinement,
     ],
 
     precedences: [
         ["mod", "soft_id"],
-        ["end", "soft_id"],
-        ["end", "this_id"],
         ["new", "structural_type"],
         ["self_type", "lambda"],
         ["annotation", "applied_constructor_type"],
@@ -116,16 +244,46 @@ grammar {
     },
 
     conflicts: [
+        [_if_rest],
+        [repeat_pattern, _simple_expression],
+        [tuple_pattern, _simple_expression],
+        [tuple_pattern, _simple_expression, binding],
+        [xml_element, xml_pattern],
+        [_simple_expression, _xml_embedded_pattern],
+        [_simple_expression, _xml_repeat_pattern],
+        [_infix_operand, vararg],
         [tuple_type, parameter_types],
+        [_structural_body, template_body],
+        [capture_ref, _simple_expression],
+        [extension_definition, _soft_identifier],
         [binding, _simple_expression],
         [binding, _type_identifier],
+        [_type, parameter_types],
+        [parameter_types, _colon_bindings],
+        [parameter_types, bindings],
         [while_expression, _simple_expression],
         [if_expression],
         [match_expression],
+        [_type_identifier, ascription_expression],
         [_given_constructor, _type_identifier],
         [instance_expression],
+        [try_expression],
+        [_if_body],
+        [function_definition],
+        [val_definition],
+        [_dot_match_expression],
+        [var_definition],
+        [package_clause],
+        [_object_definition],
+        [given_definition],
+        [extension_definition],
+        [while_expression],
+        [for_expression],
+        [enum_definition],
         [_simple_expression, lambda_expression],
         [_simple_expression, _single_lambda_param],
+        [_single_lambda_param, self_type, _type_identifier],
+        [_single_lambda_param, _type_identifier],
         [_class_definition],
         [_class_constructor],
         [_full_enum_def],
@@ -136,27 +294,24 @@ grammar {
         [_type, match_type],
         [_variant_type_parameter, type_lambda],
         [name_and_type, parameter],
-        [_simple_expression, binding, tuple_pattern],
-        [_simple_expression, tuple_pattern],
         [_simple_expression, _type_identifier],
-        [_if_condition, _simple_expression],
+        [_if_condition_paren, _simple_expression],
         [block, _braced_template_body1],
-        [_simple_expression, _type_identifier],
-        [_single_lambda_param, self_type, _type_identifier],
-        [_single_lambda_param, _type_identifier],
-        [_simple_expression, _single_lambda_param, binding],
-        [_simple_expression, _single_lambda_param, self_type],
-        [_simple_expression, _single_lambda_param, self_type, _type_identifier],
-        [_single_lambda_param, _self_type_ascription],
+        [_constructor_annotation],
+        [_constructor_annotation_arguments, arguments],
+        [_constructor_annotation, applied_constructor_type],
+        [block, capture_set],
+        [_simple_expression, _braced_typed_lambda],
+        [self_type, _simple_expression, _braced_typed_lambda],
+        [_self_type_ascription, _braced_typed_lambda],
         [binding, _simple_expression, _type_identifier],
         [class_parameter, _type_identifier],
-        [_block, _indentable_expression],
+        [_block_statements, _indentable_expression],
         [match_expression, _simple_expression],
         [self_type, _simple_expression],
-        [repeat_pattern, operator_identifier],
-        [vararg, operator_identifier],
-        [_exprs_in_parens],
+        [named_tuple_type, _colon_bindings],
         [_annotated_type, binding],
+        [self_type, _type_identifier, _simple_expression],
         [self_type, _annotated_type, _simple_expression],
         [binding, _annotated_type, _simple_expression],
         [_annotated_type, _simple_expression],
@@ -174,7 +329,7 @@ rule compilation_unit {
     seq(optional(_shebang), optional(trailing_sep1(_semicolon, _top_level_definition)))
 }
 
-rule _top_level_definition { choice(_definition, _end_marker, expression) }
+rule _top_level_definition { choice(_definition, STATEMENT_EXPRESSION) }
 
 rule _definition {
     choice(
@@ -205,8 +360,9 @@ rule enum_definition {
         "enum",
         _class_constructor,
         field(extend, optional(extends_clause)),
-        field(derive, optional(derives_clause)),
+        field(derive, optional(choice(derives_clause, uses_clause))),
         field(body, enum_body),
+        optional(_end_marker_named_tail),
     )
 }
 
@@ -219,14 +375,27 @@ rule _enum_block {
 
 rule enum_body {
     choice(
-        prec_left(PREC.control, seq(":", _indent, _enum_block, _outdent)),
-        seq("{", optional(_enum_block), "}"),
+        prec_left(PREC.control, seq(
+            COLON_EOL,
+            _indent,
+            optional(self_type),
+            _enum_block,
+            _outdent,
+        )),
+        seq(
+            optional(_automatic_semicolon),
+            "{",
+            optional(self_type),
+            optional(_enum_block),
+            "}",
+        ),
     )
 }
 
 rule enum_case_definitions {
     seq(
         repeat(annotation),
+        optional(modifiers),
         "case",
         choice(comma_sep1(simple_enum_case), full_enum_case),
     )
@@ -250,11 +419,14 @@ rule _full_enum_def {
 }
 
 rule package_clause {
-    prec_right(0, seq(
-        "package",
-        field(name, package_identifier),
-        field(body, optional(template_body)),
-    ))
+    seq(
+        prec_right(0, seq(
+            "package",
+            field(name, package_identifier),
+            field(body, optional(template_body)),
+        )),
+        optional(_end_marker_named_tail),
+    )
 }
 
 rule package_identifier { prec_right(0, sep1(".", _identifier)) }
@@ -272,14 +444,23 @@ rule export_declaration {
 rule _namespace_expression {
     prec_left(0, choice(
         seq(
-            field(path, sep1(".", _identifier)),
+            field(path, sep1(".", _namespace_path_segment)),
             optional(seq(
                 ".",
-                choice(namespace_wildcard, namespace_selectors, as_renamed_identifier),
+                choice(
+                    _namespace_given_by_type,
+                    namespace_wildcard,
+                    namespace_selectors,
+                    as_renamed_identifier,
+                ),
             )),
         ),
         as_renamed_identifier,
     ))
+}
+
+rule _namespace_path_segment {
+    choice(_identifier, alias(choice("enum", "export"), identifier))
 }
 
 rule namespace_wildcard { prec_left(1, choice("*", "_", "given")) }
@@ -305,7 +486,7 @@ rule _import_selectors { alias(namespace_selectors, import_selectors) }
 rule arrow_renamed_identifier {
     seq(
         field(name, _identifier),
-        "=>",
+        FAT_ARROW,
         field(alias, choice(_identifier, wildcard)),
     )
 }
@@ -322,26 +503,29 @@ rule object_definition {
     seq(
         repeat(annotation),
         optional(modifiers),
-        optional("case"),
+        optional(CASE_KEYWORD),
         "object",
         _object_definition,
     )
 }
 
 rule _object_definition {
-    prec_left(0, seq(
-        field(name, _identifier),
-        field(extend, optional(extends_clause)),
-        field(derive, optional(derives_clause)),
-        field(body, optional(_definition_body)),
-    ))
+    seq(
+        prec_left(0, seq(
+            field(name, _identifier),
+            field(extend, optional(extends_clause)),
+            field(derive, optional(choice(derives_clause, uses_clause))),
+            field(body, optional(_definition_body)),
+        )),
+        optional(_end_marker_named_tail),
+    )
 }
 
 rule class_definition {
     seq(
         repeat(annotation),
         optional(modifiers),
-        optional("case"),
+        optional(CASE_KEYWORD),
         "class",
         _class_definition,
     )
@@ -351,20 +535,24 @@ rule _class_definition {
     seq(
         _class_constructor,
         field(extend, optional(extends_clause)),
-        field(derive, optional(derives_clause)),
+        field(derive, optional(choice(derives_clause, uses_clause))),
         field(body, optional(_definition_body)),
+        optional(_end_marker_named_tail),
     )
 }
 
 rule _definition_body {
-    seq(optional(_automatic_semicolon), field(body, template_body))
+    prec_dynamic(1, seq(optional(_automatic_semicolon), field(body, template_body)))
 }
 
 rule _class_constructor {
     seq(
         field(name, _identifier),
-        field(type_parameters, optional(type_parameters)),
-        optional(alias(_constructor_annotation, annotation)),
+        optional(seq(
+            optional(_automatic_semicolon),
+            field(type_parameters, type_parameters),
+        )),
+        repeat(alias(_constructor_annotation, annotation)),
         optional(access_modifier),
         field(class_parameters, repeat(seq(optional(_automatic_semicolon), class_parameters))),
     )
@@ -401,6 +589,7 @@ rule contravariant_type_parameter { seq("-", _type_parameter) }
 rule _type_parameter {
     seq(
         field(name, choice(wildcard, _identifier)),
+        optional(alias("^", capture_variable)),
         field(type_parameters, optional(type_parameters)),
         field(bound, optional(lower_bound)),
         field(bound, optional(upper_bound)),
@@ -409,8 +598,8 @@ rule _type_parameter {
     )
 }
 
-rule upper_bound { seq("<:", field(type, _type)) }
-rule lower_bound { seq(">:", field(type, _type)) }
+rule upper_bound { seq("<:", field(type, choice(_type, capture_set))) }
+rule lower_bound { seq(">:", field(type, choice(_type, capture_set))) }
 rule view_bound { seq("<%", field(type, _type)) }
 
 rule _context_bounds {
@@ -432,7 +621,12 @@ rule template_body {
 }
 
 rule _indented_template_body {
-    prec_left(PREC.control, seq(":", _indent, optional(self_type), _block, _outdent))
+    prec_left(PREC.control, seq(
+        COLON_EOL,
+        _indent,
+        choice(seq(optional(self_type), _block), self_type),
+        choice(_outdent, _comma_outdent),
+    ))
 }
 
 rule _braced_template_body {
@@ -443,7 +637,9 @@ rule _braced_template_body {
     ))
 }
 
-rule _braced_template_body1 { seq(optional(self_type), _block) }
+rule _braced_template_body1 {
+    choice(seq(optional(self_type), _block), self_type)
+}
 
 rule _braced_template_body2 {
     seq(
@@ -453,13 +649,14 @@ rule _braced_template_body2 {
         ),
         optional(_block),
         _outdent,
+        optional(_block),
     )
 }
 
 rule with_template_body {
     choice(
         prec_left(PREC.control, seq(_indent, optional(self_type), _block, _outdent)),
-        seq("{", optional(_block), "}"),
+        seq("{", optional(_braced_template_body1), "}"),
     )
 }
 
@@ -470,22 +667,32 @@ rule _extension_template_body {
     )
 }
 
-rule _end_marker {
-    prec_left("end", seq(
-        "end",
+rule _end_marker_named {
+    seq(
+        _end_keyword,
         choice(
-            "if", "while", "for", "match", "try", "new", "this",
-            "given", "extension", "val",
-            alias(_identifier, "_end_ident"),
+            "val", "given", "this",
+            alias(choice(_alpha_identifier, _backquoted_id), "_end_ident"),
         ),
-    ))
+    )
+}
+
+rule _end_marker_named_tail { end_marker_tail(_end_marker_named, 1) }
+
+rule _end_marker_kw_tail { end_marker_tail(_end_marker_kw, 2) }
+
+rule _end_marker_kw {
+    seq(
+        _end_keyword,
+        choice("extension", "if", "while", "for", "match", "try", "new"),
+    )
 }
 
 rule self_type {
-    prec_dynamic(1, prec("self_type", seq(
-        choice(_identifier, wildcard),
+    prec_dynamic(2, prec("self_type", seq(
+        choice(OPERAND_NAME, wildcard),
         optional(_self_type_ascription),
-        "=>",
+        FAT_ARROW,
     )))
 }
 
@@ -500,27 +707,33 @@ rule annotation {
 }
 
 rule _constructor_annotation {
-    prec("annotation", seq(
+    seq(
         "@",
-        field(name, _simple_type),
-        optional(alias(
-            seq(
-                token_immediate("("),
-                optional(_exprs_in_parens),
-                ")",
-            ),
-            arguments,
+        field(name, choice(
+            generic_type,
+            projected_type,
+            stable_type_identifier,
+            _type_identifier,
         )),
-    ))
+        field(arguments, repeat(alias(_constructor_annotation_arguments, arguments))),
+    )
+}
+
+rule _constructor_annotation_arguments {
+    choice(
+        prec_dynamic(1, seq("(", ")")),
+        prec_dynamic(-1, seq("(", _exprs_in_parens, ")")),
+    )
 }
 
 rule val_definition {
     seq(
         _start_val,
-        field(pattern, choice(_pattern, identifiers)),
+        field(pattern, choice(_definition_pattern, identifiers)),
         optional(seq(":", field(type, _type))),
         "=",
         field(value, _indentable_expression),
+        optional(_end_marker_named_tail),
     )
 }
 
@@ -547,10 +760,11 @@ rule var_declaration {
 rule var_definition {
     seq(
         _start_var,
-        field(pattern, choice(_pattern, identifiers)),
+        field(pattern, choice(_definition_pattern, identifiers)),
         optional(seq(":", field(type, _type))),
         "=",
         field(value, _indentable_expression),
+        optional(_end_marker_named_tail),
     )
 }
 
@@ -560,16 +774,17 @@ rule type_definition {
     prec_left(0, seq(
         repeat(annotation),
         optional(modifiers),
-        optional(opaque_modifier),
+        optional(OPAQUE_MOD),
         "type",
         _type_constructor,
-        optional(seq("=", field(type, _type))),
+        optional(seq("=", field(type, choice(_type, capture_set)))),
     ))
 }
 
 rule _type_constructor {
     prec_left(0, seq(
         field(name, _type_identifier),
+        optional(alias("^", capture_variable)),
         field(type_parameters, optional(type_parameters)),
         field(bound, optional(lower_bound)),
         field(bound, optional(upper_bound)),
@@ -584,6 +799,7 @@ rule function_definition {
             seq("=", field(body, _indentable_expression)),
             field(body, block),
         ),
+        optional(_end_marker_named_tail),
     )
 }
 
@@ -595,7 +811,6 @@ rule _function_declaration {
         optional(modifiers),
         "def",
         _function_constructor,
-        optional(seq(":", field(return_type, _type))),
     ))
 }
 
@@ -603,46 +818,71 @@ rule _function_constructor {
     prec_right(0, seq(
         field(name, _identifier),
         field(parameters, repeat(seq(
-            optional(_automatic_semicolon),
+            optional(_def_semicolon),
             choice(parameters, type_parameters),
         ))),
-        optional(_automatic_semicolon),
-    ))
-}
-
-rule opaque_modifier { prec("mod", "opaque") }
-
-rule extension_definition {
-    prec_left(0, seq(
-        "extension",
-        field(type_parameters, optional(type_parameters)),
-        field(parameters, repeat(parameters)),
-        field(body, choice(
-            _extension_template_body,
-            function_definition,
-            function_declaration,
+        optional(seq(
+            optional(_def_semicolon),
+            ":",
+            field(return_type, _type),
         )),
     ))
 }
 
-rule given_definition {
-    prec_left(0, seq(
-        repeat(annotation),
-        optional(modifiers),
-        "given",
-        optional(_given_constructor),
-        repeat(_given_sig),
-        choice(
-            field(return_type, _structural_instance),
-            seq(
-                field(return_type, _annotated_type),
-                optional(seq("=", field(body, _indentable_expression))),
-            ),
-        ),
+rule extension_definition {
+    prec_dynamic(1, seq(
+        prec_left(0, seq(
+            "extension",
+            field(type_parameters, optional(type_parameters)),
+            field(parameters, repeat(parameters)),
+            field(body, choice(
+                _extension_template_body,
+                function_definition,
+                function_declaration,
+            )),
+        )),
+        optional(_end_marker_kw_tail),
     ))
 }
 
-rule _given_sig { seq(_given_conditional, "=>") }
+rule given_definition {
+    seq(
+        prec_left(0, seq(
+            repeat(annotation),
+            optional(modifiers),
+            "given",
+            _given_tail,
+        )),
+        optional(_end_marker_named_tail),
+    )
+}
+
+rule _given_type_and_body {
+    choice(
+        field(return_type, _structural_instance),
+        seq(
+            field(return_type, choice(
+                _annotated_type,
+                prec_dynamic(-1, literal_type),
+                prec_dynamic(-1, infix_type),
+            )),
+            optional(_given_body),
+        ),
+    )
+}
+
+rule _given_tail {
+    seq(optional(_given_constructor), repeat(_given_sig), _given_type_and_body)
+}
+
+rule _given_body {
+    choice(
+        seq("=", field(body, _indentable_expression)),
+        prec_dynamic(-1, field(body, template_body)),
+    )
+}
+
+rule _given_sig { seq(_given_conditional, FAT_ARROW) }
 
 rule _given_conditional {
     choice(alias(parameters, given_conditional), type_parameters)
@@ -659,10 +899,31 @@ rule _given_constructor {
 }
 
 rule _structural_instance {
-    prec_left(PREC.compound, seq(
-        _constructor_application,
-        choice(":", "with"),
-        field(body, with_template_body),
+    prec_left(PREC.compound, choice(
+        seq(
+            _constructor_application,
+            choice(COLON_EOL, "with"),
+            field(body, with_template_body),
+        ),
+        seq(
+            _constructor_application,
+            repeat1(seq(
+                choice("with", ","),
+                field(extra, _constructor_application_extra),
+            )),
+            optional(seq("with", field(body, with_template_body))),
+        ),
+    ))
+}
+
+rule _constructor_application_extra {
+    prec_left("constructor_application", choice(
+        _annotated_type,
+        compound_type,
+        seq(
+            _simple_type,
+            field(arguments, repeat1(prec("constructor_application", arguments))),
+        ),
     ))
 }
 
@@ -671,8 +932,10 @@ rule _constructor_application {
         _annotated_type,
         compound_type,
         _structural_type,
-        seq(_simple_type, field(arguments, arguments)),
-        seq(_annotated_type, field(arguments, arguments)),
+        seq(
+            _simple_type,
+            field(arguments, repeat1(prec("constructor_application", arguments))),
+        ),
     ))
 }
 
@@ -687,12 +950,15 @@ rule modifiers {
     prec_left(0, repeat1(prec_left(0, choice(
         "abstract", "final", "sealed", "implicit", "lazy", "override",
         access_modifier,
-        inline_modifier,
-        infix_modifier,
-        into_modifier,
-        open_modifier,
-        tracked_modifier,
-        transparent_modifier,
+        INLINE_MOD,
+        ERASED_MOD,
+        INFIX_MOD,
+        INTO_MOD,
+        OPEN_MOD,
+        TRACKED_MOD,
+        TRANSPARENT_MOD,
+        UPDATE_MOD,
+        CONSUME_MOD,
     ))))
 }
 
@@ -702,26 +968,18 @@ rule access_modifier {
 
 rule access_qualifier { seq("[", _identifier, "]") }
 
-rule inline_modifier { prec("mod", "inline") }
-rule infix_modifier { prec("mod", "infix") }
-rule into_modifier { prec("mod", "into") }
-rule open_modifier { prec("mod", "open") }
-rule tracked_modifier { prec("mod", "tracked") }
-rule transparent_modifier { prec("mod", "transparent") }
-
 rule extends_clause {
-    prec_left(0, seq(
-        "extends",
-        field(type, _constructor_applications),
-        repeat(arguments),
-    ))
+    prec_left(0, seq("extends", field(type, _constructor_applications)))
 }
 
 rule derives_clause {
-    prec_left(0, seq(
-        "derives",
-        comma_sep1(field(type, choice(_type_identifier, stable_type_identifier))),
-    ))
+    prec_left(0, seq("derives", _derived_names))
+}
+
+rule uses_clause { prec_left(0, seq("uses", _derived_names)) }
+
+rule _derived_names {
+    comma_sep1(field(type, choice(_type_identifier, stable_type_identifier)))
 }
 
 rule class_parameters {
@@ -733,7 +991,7 @@ rule class_parameters {
                 "using",
                 choice(
                     trailing_comma_sep1(class_parameter),
-                    trailing_comma_sep1(_param_type),
+                    seq(optional(ERASED_MOD), trailing_comma_sep1(_param_type)),
                 ),
             ),
             seq(optional("implicit"), trailing_comma_sep(class_parameter)),
@@ -742,9 +1000,11 @@ rule class_parameters {
     ))
 }
 
+rule _parameters_tail { seq(trailing_comma_sep(parameter), ")") }
+
 rule parameters {
     choice(
-        seq("(", optional("implicit"), trailing_comma_sep(parameter), ")"),
+        seq("(", optional("implicit"), _parameters_tail),
         _using_parameters_clause,
     )
 }
@@ -755,7 +1015,7 @@ rule _using_parameters_clause {
         "using",
         choice(
             trailing_comma_sep1(parameter),
-            trailing_comma_sep1(_param_type),
+            seq(optional(ERASED_MOD), trailing_comma_sep1(_param_type)),
         ),
         ")",
     )
@@ -775,7 +1035,10 @@ rule class_parameter {
 rule parameter {
     prec_left(PREC.control, seq(
         repeat(annotation),
-        optional(inline_modifier),
+        optional(INLINE_MOD),
+        optional(choice(ERASED_MOD, CONSUME_MOD)),
+        optional(TRACKED_MOD),
+        optional(choice("val", "var")),
         field(name, _identifier),
         ":",
         field(type, _param_type),
@@ -785,21 +1048,31 @@ rule parameter {
 
 rule name_and_type {
     prec_left(PREC.control, seq(
+        optional(ERASED_MOD),
         field(name, _identifier),
-        ":",
+        COLON_EOL,
         field(type, _param_type),
     ))
 }
 
 rule _block {
+    prec_left(0, choice(
+        seq(repeat1(";"), optional(_block_statements)),
+        _block_statements,
+    ))
+}
+
+rule _semis { seq(_semicolon, repeat(";")) }
+
+rule _block_statements {
     prec_left(0, seq(
-        sep1(_semicolon, choice(expression, _definition, _end_marker, ";")),
-        optional(_semicolon),
+        sep1(_semis, choice(STATEMENT_EXPRESSION, _definition)),
+        optional(_semis),
     ))
 }
 
 rule _indentable_expression {
-    prec_right(0, choice(indented_block, indented_cases, expression))
+    prec_right(0, choice(indented_block, indented_cases, STATEMENT_EXPRESSION))
 }
 
 rule block {
@@ -813,9 +1086,8 @@ rule block {
 rule indented_block {
     prec_left(PREC.control, seq(
         _indent,
-        _block,
+        choice(_block, alias(_indented_block_lambda, lambda_expression)),
         choice(_outdent, _comma_outdent),
-        optional(_end_marker),
     ))
 }
 
@@ -835,19 +1107,34 @@ rule _type {
     choice(
         function_type,
         compound_type,
+        capturing_type,
         infix_type,
         match_type,
         _annotated_type,
         literal_type,
         _structural_type,
         type_lambda,
+        existential_type,
+        alias(_wildcard_bounded_type, infix_type),
     )
+}
+
+rule _wildcard_bounded_type {
+    seq(
+        field(left, alias(_wildcard_bound_start, type_identifier)),
+        field(operator, WORD_OR_OP_NAME),
+        field(right, type_lambda),
+    )
+}
+
+rule existential_type {
+    prec_left(0, seq(field(type, _infix_type_choice), "forSome", _refinement))
 }
 
 rule _annotated_type { prec_right(0, choice(annotated_type, _simple_type)) }
 
 rule annotated_type {
-    prec_right(0, seq(_simple_type, repeat1(annotation)))
+    prec_right(0, seq(choice(_simple_type, literal_type), repeat1(annotation)))
 }
 
 rule _simple_type {
@@ -877,7 +1164,10 @@ rule compound_type {
             field(base, _annotated_type),
             repeat1(seq("with", field(extra, _annotated_type))),
         )),
-        prec_left(0, seq(field(base, _annotated_type), _refinement)),
+        prec_left(0, seq(
+            field(base, choice(_annotated_type, compound_type)),
+            _refinement,
+        )),
         prec_left(-1, seq(
             prec_left(PREC.compound, seq(
                 field(base, _annotated_type),
@@ -888,21 +1178,46 @@ rule compound_type {
     )
 }
 
-rule _structural_type {
-    prec("structural_type", alias(template_body, structural_type))
+rule capturing_type {
+    choice(
+        prec_left(2, seq(
+            field(base, choice(_annotated_type, compound_type)),
+            "^",
+            field(capture_set, capture_set),
+        )),
+        prec_left(1, seq(
+            field(base, choice(_annotated_type, compound_type)),
+            "^",
+        )),
+    )
 }
+
+rule _structural_type {
+    prec("structural_type", alias(_structural_body, structural_type))
+}
+
+rule _structural_body { prec_dynamic(-1, _braced_template_body) }
 
 rule _refinement { alias(template_body, refinement) }
 
 rule _infix_type_choice {
-    prec_left(0, choice(compound_type, infix_type, _annotated_type, literal_type))
+    prec_left(0, choice(
+        compound_type,
+        capturing_type,
+        infix_type,
+        _annotated_type,
+        literal_type,
+    ))
 }
 
 rule infix_type {
     prec_left(0, seq(
-        field(left, _infix_type_choice),
-        field(operator, _identifier),
-        field(right, _infix_type_choice),
+        field(left, choice(_infix_type_choice, _structural_type)),
+        field(operator, choice(
+            WORD_OR_OP_NAME,
+            alias(_asterisk, operator_identifier),
+        )),
+        field(right, choice(_infix_type_choice, _structural_type)),
     ))
 }
 
@@ -958,27 +1273,54 @@ rule type_case_clause {
         "case",
         _infix_type_choice,
         field(body, _arrow_then_type),
+        optional(";"),
     ))
 }
 
 rule function_type {
-    prec_left(0, choice(
+    prec_dynamic(-1, prec_left(0, choice(
         seq(field(type_parameters, type_parameters), _arrow_then_type),
         seq(field(parameter_types, parameter_types), _arrow_then_type),
-    ))
+    )))
 }
 
 rule _arrow_then_type {
-    prec_right(0, seq(choice("=>", "?=>"), field(return_type, _type)))
+    prec_right(0, seq(
+        TYPE_ARROW,
+        optional(field(capture_set, capture_set)),
+        field(return_type, _type),
+    ))
+}
+
+rule capture_set { seq("{", optional(sep1(",", capture_ref)), "}") }
+
+rule capture_ref {
+    seq(
+        choice(_identifier, stable_identifier, "cap"),
+        optional(choice(_asterisk, _postfix_star)),
+        repeat(seq(
+            ".",
+            choice(
+                seq(choice("only", "except"), field(type_arguments, type_arguments)),
+                "rd",
+            ),
+        )),
+    )
 }
 
 rule parameter_types {
-    prec(-1, choice(
+    choice(
         _annotated_type,
-        prec_dynamic(1, seq("(", trailing_comma_sep(_param_type), ")")),
+        capturing_type,
+        prec_dynamic(1, seq(
+            "(",
+            optional(ERASED_MOD),
+            trailing_comma_sep(_param_type),
+            ")",
+        )),
         compound_type,
         infix_type,
-    ))
+    )
 }
 
 rule _param_type { choice(lazy_parameter_type, _param_value_type) }
@@ -987,9 +1329,22 @@ rule _param_value_type { choice(field(type, _type), repeated_parameter_type) }
 
 rule repeated_parameter_type { seq(field(type, _type), _asterisk) }
 
-rule lazy_parameter_type { seq("=>", field(type, _param_value_type)) }
+rule lazy_parameter_type {
+    seq(
+        choice(FAT_ARROW, PURE_ARROW),
+        optional(field(capture_set, capture_set)),
+        field(type, _param_value_type),
+    )
+}
 
-rule _type_identifier { alias(_identifier, type_identifier) }
+rule _type_identifier {
+    choice(
+        alias(_identifier, type_identifier),
+        alias(_variance_placeholder, type_identifier),
+    )
+}
+
+rule _variance_placeholder { token(regexp(r"[+-][ \t]*_")) }
 
 rule type_lambda {
     seq(
@@ -1007,6 +1362,15 @@ rule type_lambda {
 
 rule _pattern {
     choice(
+        _definition_pattern,
+        alternative_pattern,
+        typed_pattern,
+        repeat_pattern,
+    )
+}
+
+rule _definition_pattern {
+    choice(
         _identifier,
         stable_identifier,
         interpolated_string_expression,
@@ -1015,19 +1379,19 @@ rule _pattern {
         named_tuple_pattern,
         case_class_pattern,
         infix_pattern,
-        alternative_pattern,
-        typed_pattern,
         given_pattern,
         quote_expression,
         literal,
+        unit,
         wildcard,
-        repeat_pattern,
+        xml_pattern,
     )
 }
 
 rule case_class_pattern {
     seq(
         field(type, choice(_type_identifier, stable_type_identifier)),
+        optional(field(type_arguments, type_arguments)),
         "(",
         choice(
             field(pattern, trailing_comma_sep(_pattern)),
@@ -1039,9 +1403,9 @@ rule case_class_pattern {
 
 rule infix_pattern {
     prec_left(PREC.infix, seq(
-        field(left, _pattern),
-        field(operator, _identifier),
-        field(right, _pattern),
+        field(left, _definition_pattern),
+        field(operator, WORD_OR_OP_NAME),
+        field(right, _definition_pattern),
     ))
 }
 
@@ -1084,22 +1448,24 @@ rule expression {
         lambda_expression,
         postfix_expression,
         ascription_expression,
-        infix_expression,
-        prefix_expression,
+        _infix_operand,
         return_expression,
         throw_expression,
         while_expression,
-        do_while_expression,
         for_expression,
         macro_body,
-        _simple_expression,
     )
+}
+
+rule _infix_operand {
+    choice(infix_expression, prefix_expression, _simple_expression)
 }
 
 rule _simple_expression {
     choice(
-        identifier,
+        NAME_CHOICE,
         operator_identifier,
+        alias(_prefix_operator, operator_identifier),
         literal,
         interpolated_string_expression,
         unit,
@@ -1114,59 +1480,126 @@ rule _simple_expression {
         field_expression,
         generic_function,
         call_expression,
+        xml_expression,
+        method_value,
         alias(_dot_match_expression, match_expression),
     )
 }
 
+rule method_value {
+    prec_left(PREC.call, seq(_simple_expression, wildcard))
+}
+
 rule _single_lambda_param {
-    prec_right(0, seq(optional("implicit"), _identifier, optional(seq(":", _type))))
+    prec_right(0, seq(optional("implicit"), choice(OPERAND_NAME, bindings)))
 }
 
 rule lambda_expression {
-    prec_right("lambda", seq(
-        optional(seq(field(type_parameters, type_parameters), "=>")),
-        field(parameters, choice(bindings, wildcard, _single_lambda_param)),
-        choice("=>", "?=>"),
-        _indentable_expression,
-    ))
+    prec_dynamic(1, prec_right("lambda", choice(
+        seq(
+            optional(seq(field(type_parameters, type_parameters), FAT_ARROW)),
+            field(parameters, choice(wildcard, _single_lambda_param)),
+            ANY_ARROW,
+            _indentable_expression,
+        ),
+        seq(
+            field(type_parameters, type_parameters),
+            FAT_ARROW,
+            choice(parenthesized_expression, block),
+        ),
+    )))
 }
 
 rule _block_lambda_expression {
-    prec_right("lambda", seq(
-        field(parameters, choice(bindings, wildcard, _single_lambda_param)),
-        choice("=>", "?=>"),
-        _block,
+    prec_right("lambda", choice(
+        seq(
+            field(parameters, choice(wildcard, _single_lambda_param)),
+            ANY_ARROW,
+            optional(choice(
+                _block,
+                alias(_braced_typed_lambda, lambda_expression),
+            )),
+        ),
+        _braced_typed_lambda,
     ))
 }
 
+rule _indented_block_lambda {
+    prec_right("lambda", seq(
+        field(parameters, choice(wildcard, _single_lambda_param)),
+        ANY_ARROW,
+        optional(_block),
+    ))
+}
+
+rule _braced_typed_lambda {
+    prec_dynamic(1, prec_right("lambda", seq(
+        field(parameters, prec_right(0, seq(
+            optional("implicit"),
+            OPERAND_NAME,
+            ":",
+            _type,
+        ))),
+        ANY_ARROW,
+        _indentable_expression,
+    )))
+}
+
 rule if_expression {
+    seq(optional(INLINE_MOD), _if_rest)
+}
+
+rule _if_rest {
     seq(
-        optional(inline_modifier),
         "if",
-        field(condition, _if_condition),
-        field(consequence, _indentable_expression),
-        optional(seq(
-            optional(";"),
-            "else",
-            field(alternative, _indentable_expression),
-        )),
+        choice(
+            seq(
+                field(condition, _if_condition_paren),
+                optional(_automatic_semicolon),
+                _if_body,
+            ),
+            seq(
+                field(condition, _if_condition_then),
+                _if_body,
+                optional(_end_marker_kw_tail),
+            ),
+        ),
     )
 }
 
-rule _if_condition {
-    prec_dynamic(4, choice(
-        parenthesized_expression,
-        seq(_indentable_expression, "then"),
+rule _if_body {
+    seq(
+        field(consequence, _indentable_expression),
+        optional(prec_dynamic(1, seq(
+            optional(";"),
+            _control_tail_gate,
+            "else",
+            field(alternative, _indentable_expression),
+        ))),
+    )
+}
+
+rule _if_condition_paren { prec_dynamic(4, parenthesized_expression) }
+
+rule _if_condition_then {
+    prec_dynamic(5, seq(
+        _indentable_expression,
+        optional(_automatic_semicolon),
+        _control_tail_gate,
+        "then",
     ))
 }
 
 rule match_expression {
     choice(
         seq(
-            optional(inline_modifier),
+            optional(INLINE_MOD),
             field(value, expression),
             "match",
-            field(body, choice(case_block, indented_cases)),
+            choice(
+                field(body, case_block),
+                seq(field(body, indented_cases), optional(_end_marker_kw_tail)),
+            ),
         ),
         _dot_match_expression,
     )
@@ -1178,38 +1611,53 @@ rule _dot_match_expression {
         ".",
         token_immediate("match"),
         field(body, choice(case_block, indented_cases)),
+        optional(_end_marker_kw_tail),
     )
 }
 
 rule try_expression {
-    prec_right(PREC.control, seq(
-        "try",
-        field(body, _indentable_expression),
-        optional(catch_clause),
-        optional(finally_clause),
-    ))
+    seq(
+        prec_right(PREC.control, seq(
+            "try",
+            field(body, _indentable_expression),
+            optional(catch_clause),
+            optional(finally_clause),
+        )),
+        optional(_end_marker_kw_tail),
+    )
 }
 
 rule catch_clause {
-    prec_right(0, seq("catch", choice(_indentable_expression, _expr_case_clause)))
+    prec_right(0, seq(
+        _control_tail_gate,
+        "catch",
+        choice(_indentable_expression, _expr_case_clause),
+    ))
 }
 
 rule _expr_case_clause {
-    prec_left(0, seq("case", _case_pattern, field(body, expression)))
+    prec_left(0, seq(
+        "case",
+        _case_pattern,
+        field(body, choice(expression, indented_block)),
+    ))
 }
 
 rule finally_clause {
-    prec_right(0, seq("finally", _indentable_expression))
+    prec_right(0, seq(_control_tail_gate, "finally", _indentable_expression))
 }
 
 rule binding {
     seq(
-        choice(field(name, _identifier), wildcard),
-        optional(seq(":", field(type, _param_type))),
+        optional(ERASED_MOD),
+        choice(field(name, OPERAND_NAME), wildcard),
+        optional(seq(COLON_EOL, field(type, _param_type))),
     )
 }
 
-rule bindings { seq("(", trailing_comma_sep(binding), ")") }
+rule bindings {
+    prec_dynamic(2, seq("(", trailing_comma_sep(binding), ")"))
+}
 
 rule case_block {
     choice(prec(-1, seq("{", "}")), seq("{", repeat1(case_clause), "}"))
@@ -1220,7 +1668,7 @@ rule case_clause {
 }
 
 rule _case_pattern {
-    prec_dynamic(1, seq(field(pattern, _pattern), optional(guard), "=>"))
+    prec_dynamic(1, seq(field(pattern, _pattern), optional(guard), FAT_ARROW))
 }
 
 rule guard {
@@ -1229,9 +1677,13 @@ rule guard {
 
 rule assignment_expression {
     prec_right(PREC.assign, seq(
-        field(left, choice(prefix_expression, _simple_expression)),
+        field(left, choice(
+            prefix_expression,
+            alias(_symbolic_postfix_expression, postfix_expression),
+            _simple_expression,
+        )),
         "=",
-        field(right, choice(expression, indented_block)),
+        field(right, choice(STATEMENT_EXPRESSION, indented_block)),
     ))
 }
 
@@ -1250,7 +1702,7 @@ rule call_expression {
         )),
         prec_right(PREC.colon_call, seq(
             field(function, _postfix_expression_choice),
-            ":",
+            COLON_EOL,
             field(arguments, colon_argument),
         )),
     )
@@ -1259,10 +1711,18 @@ rule call_expression {
 rule colon_argument {
     prec_left(PREC.colon_call, seq(
         optional(field(lambda_start, seq(
-            choice(bindings, _identifier, wildcard),
-            "=>",
+            choice(alias(_colon_bindings, bindings), _identifier, wildcard),
+            ANY_ARROW,
         ))),
         choice(indented_block, indented_cases),
+    ))
+}
+
+rule _colon_bindings {
+    prec_dynamic(3, seq(
+        "(",
+        trailing_comma_sep(choice(binding, alias(name_and_type, binding))),
+        ")",
     ))
 }
 
@@ -1276,61 +1736,109 @@ rule field_expression {
 
 rule instance_expression {
     choice(
-        prec_dynamic(0, seq("new", _constructor_application, template_body)),
-        prec("new", seq("new", template_body)),
-        prec("new", seq("new", field(early_defs, _early_defs), "with", _constructor_application)),
+        prec_dynamic(1, seq(
+            "new",
+            _constructor_application,
+            template_body,
+            optional(_end_marker_kw_tail),
+        )),
+        prec("new", seq("new", template_body, optional(_end_marker_kw_tail))),
+        prec("new", seq("new", field(early_defs, early_defs), "with", _constructor_application)),
         seq("new", _constructor_application),
     )
 }
 
-rule _early_defs { alias(_braced_template_body, early_defs) }
+rule early_defs {
+    prec_left(PREC.control, seq(
+        "{",
+        optional(choice(_braced_template_body1, _braced_template_body2)),
+        "}",
+    ))
+}
 
+// The arrow tail lives here rather than through function_type: after `:`, the
+// function-type reading loses to self-type/lambda readings. The dynamic
+// penalties preserve typed lambdas while still admitting chained arrow types.
 rule ascription_expression {
     prec_left(0, seq(
-        _postfix_expression_choice,
+        choice(_postfix_expression_choice, match_expression),
         ":",
-        choice(_param_type, annotation),
+        choice(
+            seq(
+                field(type, _param_type),
+                repeat(prec(1, prec_dynamic(-1, ASCRIPTION_ARROW_TAIL))),
+            ),
+            prec_dynamic(-1, seq(
+                field(type, alias(_identifier, type_identifier)),
+                repeat1(ASCRIPTION_ARROW_TAIL),
+            )),
+            repeat1(annotation),
+        ),
     ))
 }
 
+// SLS 6.12.3 assigns precedence from the operator's first character and
+// associativity from its final `:`. Keeping one production per class lets the
+// lexer partition in operators.tsg encode those decisions without a flat GLR
+// infix rule. A lone `*` uses the shared token and joins the multiplication arm.
 rule infix_expression {
-    prec_left(PREC.infix, seq(
-        field(left, choice(infix_expression, prefix_expression, _simple_expression)),
-        field(operator, _identifier),
-        field(right, choice(
-            prefix_expression,
-            _simple_expression,
-            seq(":", colon_argument),
+    choice(
+        infix_left(PREC.iname, WORD_NAME),
+        infix_left(PREC.iassign, alias(op::OP_TOKEN.assign, operator_identifier)),
+        infix_left(PREC.ior, alias(_op_left_or, operator_identifier)),
+        infix_right(PREC.ior, alias(op::OP_TOKEN.orRight, operator_identifier)),
+        infix_left(PREC.ixor, alias(_op_left_xor, operator_identifier)),
+        infix_right(PREC.ixor, alias(op::OP_TOKEN.xorRight, operator_identifier)),
+        infix_left(PREC.iand, alias(_op_left_and, operator_identifier)),
+        infix_right(PREC.iand, alias(op::OP_TOKEN.andRight, operator_identifier)),
+        infix_left(PREC.ieq, alias(_op_left_eq, operator_identifier)),
+        infix_right(PREC.ieq, alias(op::OP_TOKEN.eqRight, operator_identifier)),
+        infix_left(PREC.irel, alias(_op_left_rel, operator_identifier)),
+        infix_right(PREC.irel, alias(op::OP_TOKEN.relRight, operator_identifier)),
+        infix_left(PREC.icolon, alias(_op_left_colon, operator_identifier)),
+        infix_right(PREC.icolon, alias(op::OP_TOKEN.colonRight, operator_identifier)),
+        infix_left(PREC.iadd, alias(_op_left_add, operator_identifier)),
+        infix_right(PREC.iadd, alias(op::OP_TOKEN.addRight, operator_identifier)),
+        infix_left(PREC.imul, choice(
+            alias(_asterisk, operator_identifier),
+            alias(_op_left_mul, operator_identifier),
         )),
-    ))
+        infix_right(PREC.imul, alias(op::OP_TOKEN.mulRight, operator_identifier)),
+        infix_left(PREC.iother, alias(_op_left_other, operator_identifier)),
+        infix_right(PREC.iother, alias(op::OP_TOKEN.otherRight, operator_identifier)),
+    )
 }
 
+// Symbolic postfix operators are external so the lower-precedence infix chain
+// reduces before they attach. Word postfix operators share the iname level and
+// shift only where the competing infix continuation cannot complete.
 rule postfix_expression {
+    choice(
+        prec_right(PREC.iname, seq(_infix_operand, WORD_NAME)),
+        _symbolic_postfix_expression,
+    )
+}
+
+rule _symbolic_postfix_expression {
     prec_left(PREC.postfix, seq(
-        choice(infix_expression, prefix_expression, _simple_expression),
-        _identifier,
+        _infix_operand,
+        alias(choice(_postfix_op, _postfix_star), operator_identifier),
     ))
 }
 
 rule _postfix_expression_choice {
-    prec_left(PREC.postfix, choice(
-        postfix_expression,
-        infix_expression,
-        prefix_expression,
-        _simple_expression,
-    ))
+    prec_left(PREC.postfix, choice(postfix_expression, _infix_operand))
 }
 
 rule macro_body {
-    prec_left(PREC.macro, seq(
-        "macro",
-        choice(infix_expression, prefix_expression, _simple_expression),
-    ))
+    prec_left(PREC.macro, seq("macro", _infix_operand))
 }
 
 rule prefix_expression {
-    prec(PREC.prefix, seq(choice("+", "-", "!", "~"), _simple_expression))
+    prec(PREC.prefix, seq(_prefix_operator, _simple_expression))
 }
+
+rule _prefix_operator { choice("+", "-", "!", "~") }
 
 rule tuple_expression {
     seq(
@@ -1342,50 +1850,73 @@ rule tuple_expression {
     )
 }
 
-rule parenthesized_expression { seq("(", expression, ")") }
+rule parenthesized_expression { seq("(", expression, optional(","), ")") }
 
-rule type_arguments { seq("[", trailing_comma_sep1(_type), "]") }
+rule type_arguments {
+    seq(
+        "[",
+        trailing_comma_sep1(choice(_type, capture_set, named_type_argument)),
+        "]",
+    )
+}
+
+rule named_type_argument {
+    seq(field(name, _identifier), "=", field(type, _type))
+}
 
 rule arguments {
     seq(
         "(",
         choice(
-            _vararg_arguments,
-            optional(_exprs_in_parens),
+            optional(_argument_list),
             seq("using", _exprs_in_parens),
         ),
         ")",
     )
 }
 
-rule _vararg_arguments {
-    seq(optional(seq(_exprs_in_parens, ",")), vararg)
+rule _argument_list {
+    seq(
+        sep1(",", choice(expression, vararg, capture_pattern)),
+        optional(","),
+    )
 }
 
 rule vararg {
     choice(
-        seq(_simple_expression, _asterisk),
-        seq(_simple_expression, ":", token(seq("_", token_immediate("*")))),
+        prec(PREC.imul, seq(_simple_expression, _postfix_star)),
+        prec_dynamic(1, seq(
+            _simple_expression,
+            ":",
+            token(seq("_", token_immediate("*"))),
+        )),
     )
 }
 
 rule _exprs_in_parens { trailing_comma_sep1(expression) }
 
 rule splice_expression {
-    prec_left(PREC.macro, seq(
-        "$",
-        choice(
-            seq("{", _block, "}"),
-            seq("[", _type, "]"),
-            identifier,
-        ),
+    prec_left(PREC.macro, choice(
+        seq("${", choice(_block, capture_pattern), "}"),
+        seq("$[", _type, "]"),
     ))
 }
 
 rule quote_expression {
     prec_left(PREC.macro, seq(
         "'",
-        choice(seq("{", _block, "}"), seq("[", _type, "]"), identifier),
+        choice(
+            seq("{", optional(_block), "}"),
+            seq(
+                "[",
+                repeat(seq(type_definition, _semicolon)),
+                _type,
+                "]",
+            ),
+            identifier,
+            null_literal,
+            boolean_literal,
+        ),
     ))
 }
 
@@ -1397,55 +1928,39 @@ rule identifier {
     choice(_alpha_identifier, _backquoted_id, _soft_identifier, _this_identifier, _super_identifier)
 }
 
-rule _this_identifier { prec("this_id", "this") }
+rule _this_identifier { "this" }
 rule _super_identifier { "super" }
 
 rule _soft_identifier {
-    prec("soft_id", choice(
-        "infix", "inline", "opaque", "open", "tracked", "transparent", "end",
-    ))
+    prec("soft_id", "extension")
 }
 
 rule _alpha_identifier {
-    regexp(r"[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_ª»ʰ-ʸˀ-ˁˠ-ˤͺᵸᶛ-ᶿⁱⁿₐ-ₜⱼ-ⱽꚜ-ꚝꝰꟸ-ꟹꭜ-ꭟ\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_ª»ʰ-ʸˀ-ˁˠ-ˤͺᵸᶛ-ᶿⁱⁿₐ-ₜⱼ-ⱽꚜ-ꚝꝰꟸ-ꟹꭜ-ꭟ0-9\$_\p{Ll}]*(_[\-!#%&*+\/\\:<=>?@^|~\p{Sm}\p{So}]+)?")
+    token(seq(
+        regexp(r"[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9\$_\p{Ll}]*"),
+        optional(regexp(concat("_(?:", op::OP_STEP, "+|/)"), "u")),
+    ))
 }
 
 rule _interpolation_identifier {
-    regexp(r"[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\p{Ll}_ª»ʰ-ʸˀ-ˁˠ-ˤͺᵸᶛ-ᶿⁱⁿₐ-ₜⱼ-ⱽꚜ-ꚝꝰꟸ-ꟹꭜ-ꭟ][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\p{Ll}_ª»ʰ-ʸˀ-ˁˠ-ˤͺᵸᶛ-ᶿⁱⁿₐ-ₜⱼ-ⱽꚜ-ꚝꝰꟸ-ꟹꭜ-ꭟ0-9_\p{Ll}]*")
+    regexp(r"[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9_\p{Ll}]*")
 }
 
 rule _backquoted_id { regexp(r"`[^\n`]+`") }
 
-rule _identifier { choice(identifier, operator_identifier) }
+rule _identifier { choice(NAME_CHOICE, OP_NAME) }
 
-rule identifiers { seq(identifier, ",", comma_sep1(identifier)) }
+rule identifiers { seq(NAME_CHOICE, ",", comma_sep1(NAME_CHOICE)) }
 
 rule wildcard { "_" }
 
 rule _asterisk { "*" }
 
-rule operator_identifier {
-    choice(
-        _asterisk,
-        token(choice(
-            regexp(r"[\-!#%&*+\/\\<>?^|~¬±×÷←-↔\p{So}]"),
-            seq(
-                regexp(r"[\-!#%&*+\\:<=>?@^|~\p{Sm}\p{So}]"),
-                repeat1(regexp(r"[\-!#%&*+\/\\:<=>?@^|~\p{Sm}\p{So}]")),
-            ),
-            seq(
-                regexp(r"[\-!#%&*+\/\\:<=>?@^|~\p{Sm}\p{So}]"),
-                regexp(r"[\-!#%&+\\:<=>?@^|~\p{Sm}\p{So}]"),
-                repeat(regexp(r"[\-!#%&*+\/\\:<=>?@^|~\p{Sm}\p{So}]")),
-            ),
-        )),
-    )
-}
-
 rule _non_null_literal {
     choice(
         integer_literal,
         floating_point_literal,
+        alias(_floating_point_with_separators, floating_point_literal),
         boolean_literal,
         character_literal,
         string,
@@ -1459,7 +1974,11 @@ rule literal { choice(_non_null_literal, null_literal) }
 rule integer_literal {
     token(seq(
         optional(regexp(r"[-]")),
-        choice(regexp(r"[\d](_?\d)*"), regexp(r"0[xX][\da-fA-F](_?[\da-fA-F])*")),
+        choice(
+            regexp(r"[\d](_?\d)*"),
+            regexp(r"0[xX][\da-fA-F](_?[\da-fA-F])*"),
+            regexp(r"0[bB][01](_*[01])*"),
+        ),
         optional(regexp(r"[lL]")),
     ))
 }
@@ -1468,10 +1987,26 @@ rule floating_point_literal {
     token(seq(
         optional(regexp(r"[-]")),
         choice(
-            seq(regexp(r"[\d]+\.[\d]+"), optional(regexp(r"[eE][+-]?[\d]+")), optional(regexp(r"[dfDF]"))),
-            seq(regexp(r"\.[\d]+"), optional(regexp(r"[eE][+-]?[\d]+")), optional(regexp(r"[dfDF]"))),
-            seq(regexp(r"[\d]+"), regexp(r"[eE][+-]?[\d]+"), optional(regexp(r"[dfDF]"))),
-            seq(regexp(r"[\d]+"), optional(regexp(r"[eE][+-]?[\d]+")), regexp(r"[dfDF]")),
+            seq(
+                regexp(r"[\d]+\.[\d](_?\d)*"),
+                optional(regexp(r"[eE][+-]?[\d](_?\d)*")),
+                optional(regexp(r"[dfDF]")),
+            ),
+            seq(
+                regexp(r"\.[\d](_?\d)*"),
+                optional(regexp(r"[eE][+-]?[\d](_?\d)*")),
+                optional(regexp(r"[dfDF]")),
+            ),
+            seq(
+                regexp(r"[\d]+"),
+                regexp(r"[eE][+-]?[\d](_?\d)*"),
+                optional(regexp(r"[dfDF]")),
+            ),
+            seq(
+                regexp(r"[\d]+"),
+                optional(regexp(r"[eE][+-]?[\d](_?\d)*")),
+                regexp(r"[dfDF]"),
+            ),
         ),
     ))
 }
@@ -1495,7 +2030,7 @@ rule interpolated_string_expression {
             field(interpolator, alias(_raw_string_start, identifier)),
             alias(_raw_string, interpolated_string),
         ),
-        seq(field(interpolator, identifier), interpolated_string),
+        seq(field(interpolator, NAME_CHOICE), interpolated_string),
     )
 }
 
@@ -1508,7 +2043,11 @@ rule _aliased_interpolation_identifier {
 }
 
 rule interpolation {
-    seq("$", choice(_aliased_interpolation_identifier, block))
+    seq("$", choice(
+        _aliased_interpolation_identifier,
+        block,
+        prec_dynamic(-1, seq("{", capture_pattern, "}")),
+    ))
 }
 
 rule interpolated_string {
@@ -1562,6 +2101,7 @@ rule escape_sequence {
             regexp(r#"[tbnrf"'\\]"#),
             regexp(r"[uU]+[0-9a-fA-F]{4}"),
             regexp(r"[0-3]?[0-7]{1,2}"),
+            regexp(r"[^\r\n]"),
         ),
     ))
 }
@@ -1584,23 +2124,31 @@ rule null_literal { "null" }
 rule unit { prec(PREC.unit, seq("(", ")")) }
 
 rule return_expression {
-    prec_left(0, seq("return", optional(expression)))
+    prec_left(0, seq("return", optional(STATEMENT_EXPRESSION)))
 }
 
-rule throw_expression { prec_left(0, seq("throw", expression)) }
+rule throw_expression { prec_left(0, seq("throw", _indentable_expression)) }
 
 rule while_expression {
     prec(PREC.while, choice(
         prec_right(0, seq(
             "while",
             field(condition, parenthesized_expression),
-            field(body, expression),
-        )),
-        prec_right(0, seq(
-            "while",
-            field(condition, seq(_indentable_expression, "do")),
+            optional(_automatic_semicolon),
             field(body, _indentable_expression),
         )),
+        seq(
+            prec_right(0, seq(
+                "while",
+                field(condition, seq(
+                    _indentable_expression,
+                    optional(_automatic_semicolon),
+                    "do",
+                )),
+                field(body, _indentable_expression),
+            )),
+            optional(_end_marker_kw_tail),
+        ),
     ))
 }
 
@@ -1609,7 +2157,7 @@ rule do_while_expression {
         "do",
         field(body, expression),
         "while",
-        field(condition, parenthesized_expression),
+        field(condition, choice(parenthesized_expression, block)),
     ))
 }
 
@@ -1622,18 +2170,30 @@ rule for_expression {
                 seq("{", enumerators, "}"),
             )),
             choice(
-                seq(field(body, expression)),
-                seq("yield", field(body, _indentable_expression)),
-            ),
-        )),
-        prec_right(PREC.control, seq(
-            "for",
-            field(enumerators, enumerators),
-            choice(
+                field(body, choice(indented_block, expression)),
                 seq("do", field(body, _indentable_expression)),
-                seq("yield", field(body, _indentable_expression)),
+                seq(
+                    _control_tail_gate,
+                    "yield",
+                    field(body, _indentable_expression),
+                ),
             ),
         )),
+        seq(
+            prec_right(PREC.control, seq(
+                "for",
+                field(enumerators, enumerators),
+                choice(
+                    seq("do", field(body, _indentable_expression)),
+                    seq(
+                        _control_tail_gate,
+                        "yield",
+                        field(body, _indentable_expression),
+                    ),
+                ),
+            )),
+            optional(_end_marker_kw_tail),
+        ),
     )
 }
 
@@ -1654,25 +2214,31 @@ rule enumerator {
         seq(
             optional("case"),
             _pattern,
-            choice("<-", "="),
-            expression,
+            choice("<-", "←", "="),
+            choice(expression, indented_block),
             optional(guard),
         ),
         repeat1(guard),
     )
 }
 
-rule _shebang { alias(token(seq("#!", regexp(r".*"))), comment) }
+rule _shebang {
+    alias(token(seq(
+        "#!",
+        regexp(r"[^\n]*"),
+        optional(seq(repeat(seq("\n", regexp(r"[^\n]*"))), "\n!#")),
+    )), comment)
+}
 
 rule comment {
-    seq(token("//"), choice(using_directive, _comment_text))
+    seq(token("//"), choice(using_directive, _comment_text, _suppress_block_comment))
 }
 
 rule _comment_text { token(prec(PREC.comment, regexp(r".*"))) }
 
 rule using_directive {
     seq(
-        token_immediate(prec(PREC.using_directive, ">")),
+        alias(_using_directive_start, ">"),
         token("using"),
         using_directive_key,
         using_directive_value,
@@ -1681,7 +2247,3 @@ rule using_directive {
 
 rule using_directive_key { token(regexp(r"[^\s]+")) }
 rule using_directive_value { token(regexp(r".*")) }
-
-rule block_comment {
-    seq(token("/*"), repeat(choice(token(regexp(r".")), token("//"))), token("*/"))
-}
