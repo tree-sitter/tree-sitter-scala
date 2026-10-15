@@ -657,7 +657,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_identifier"
+            "name": "_namespace_path_segment"
           },
           {
             "type": "REPEAT",
@@ -670,7 +670,7 @@
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_identifier"
+                  "name": "_namespace_path_segment"
                 }
               ]
             }
@@ -2511,6 +2511,15 @@
                       "content": {
                         "type": "STRING",
                         "value": "super"
+                      },
+                      "named": true,
+                      "value": "identifier"
+                    },
+                    {
+                      "type": "ALIAS",
+                      "content": {
+                        "type": "STRING",
+                        "value": "export"
                       },
                       "named": true,
                       "value": "identifier"
@@ -7553,6 +7562,15 @@
               },
               "named": true,
               "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "export"
+              },
+              "named": true,
+              "value": "identifier"
             }
           ]
         },
@@ -7729,6 +7747,15 @@
                         "content": {
                           "type": "STRING",
                           "value": "super"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "export"
                         },
                         "named": true,
                         "value": "identifier"
@@ -8129,6 +8156,15 @@
                               "content": {
                                 "type": "STRING",
                                 "value": "super"
+                              },
+                              "named": true,
+                              "value": "identifier"
+                            },
+                            {
+                              "type": "ALIAS",
+                              "content": {
+                                "type": "STRING",
+                                "value": "export"
                               },
                               "named": true,
                               "value": "identifier"
@@ -8739,6 +8775,15 @@
                         "content": {
                           "type": "STRING",
                           "value": "super"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "export"
                         },
                         "named": true,
                         "value": "identifier"
@@ -11351,6 +11396,15 @@
               },
               "named": true,
               "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "export"
+              },
+              "named": true,
+              "value": "identifier"
             }
           ]
         },
@@ -11415,6 +11469,15 @@
               },
               "named": true,
               "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "export"
+              },
+              "named": true,
+              "value": "identifier"
             }
           ]
         },
@@ -11469,6 +11532,15 @@
                   "content": {
                     "type": "STRING",
                     "value": "super"
+                  },
+                  "named": true,
+                  "value": "identifier"
+                },
+                {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "STRING",
+                    "value": "export"
                   },
                   "named": true,
                   "value": "identifier"
@@ -11528,6 +11600,15 @@
                         "content": {
                           "type": "STRING",
                           "value": "super"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "export"
                         },
                         "named": true,
                         "value": "identifier"
@@ -12929,6 +13010,15 @@
                     },
                     "named": true,
                     "value": "identifier"
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "export"
+                    },
+                    "named": true,
+                    "value": "identifier"
                   }
                 ]
               }
@@ -14167,6 +14257,19 @@
     [
       "_simple_expression",
       "_single_lambda_param"
+    ],
+    [
+      "export_declaration",
+      "_simple_expression"
+    ],
+    [
+      "export_declaration",
+      "_type_identifier",
+      "_simple_expression"
+    ],
+    [
+      "export_declaration",
+      "_type_identifier"
     ],
     [
       "_single_lambda_param",
