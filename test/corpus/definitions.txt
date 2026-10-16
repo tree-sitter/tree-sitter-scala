@@ -2893,6 +2893,96 @@ import sttp.tapir.generated.reuse.enum.TapirGeneratedEndpoints.Status
     (identifier)))
 
 ================================================================================
+Scala 3 keywords as package path segments
+================================================================================
+
+package com.example.export
+package export.foo
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (package_clause
+    (package_identifier
+      (identifier)
+      (identifier)
+      (identifier)))
+  (package_clause
+    (package_identifier
+      (identifier)
+      (identifier))))
+
+================================================================================
+export as an identifier (Scala 2)
+================================================================================
+
+object A {
+  val export = 1
+  val viaField = y.export
+  val viaCall = export.f(1)
+  def g(export: String): Unit = ()
+  def export(): Unit = ()
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (integer_literal))
+      (val_definition
+        (identifier)
+        (field_expression
+          (identifier)
+          (identifier)))
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (integer_literal))))
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier)
+        (unit))
+      (function_definition
+        (identifier)
+        (parameters)
+        (type_identifier)
+        (unit)))))
+
+================================================================================
+export clause and export identifier in one body
+================================================================================
+
+object A {
+  export B.foo
+  val export = 1
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (export_declaration
+        (identifier)
+        (identifier))
+      (val_definition
+        (identifier)
+        (integer_literal)))))
+
+================================================================================
 Parenthesized typed lambda parameter wrapped across the newline
 ================================================================================
 

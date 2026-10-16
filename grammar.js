@@ -247,6 +247,12 @@ const nameChoice = $ =>
     alias($._soft_identifier, $.identifier),
     alias("this", $.identifier),
     alias("super", $.identifier),
+    // `export` is a hard keyword in Scala 3 but an ordinary identifier in
+    // Scala 2 sources (`val export = 1`, `def export()`, `x.export`). Same
+    // treatment as "this"/"super": the keyword token aliases to identifier
+    // wherever a name is read; `export_declaration` still leads with the
+    // literal token, so clause position is unaffected.
+    alias("export", $.identifier),
   );
 
 // The scanner-lexed soft modifiers, each keeping its keyword token's node name.
@@ -487,6 +493,13 @@ module.exports = grammar({
     // we treat `operator_identifier` as `simple_expression`
     [$._simple_expression, $.lambda_expression],
     [$._simple_expression, $._single_lambda_param],
+    // 'export'  identifier  •  … — a Scala 3 export clause, or the Scala 2
+    // identifier `export` beginning an expression statement. Each reading
+    // dies on the next token ('.' vs a name), so forking settles it. The
+    // three-rule set covers the same fork under a context bound's brace.
+    [$.export_declaration, $._simple_expression],
+    [$.export_declaration, $._type_identifier, $._simple_expression],
+    [$.export_declaration, $._type_identifier],
     // '['  identifier  ':'  '{'  identifier. A braced context bound reuses
     // the template machinery, so self type and statement readings coexist.
     [$._single_lambda_param, $.self_type, $._type_identifier],
@@ -737,7 +750,10 @@ module.exports = grammar({
         optional($._end_marker_named_tail),
       ),
 
-    package_identifier: $ => prec.right(sep1(".", $._identifier)),
+    // `_namespace_path_segment` (not bare `_identifier`) so that `enum`/`export`,
+    // ordinary identifiers in Scala 2 sources, can end or join the package path
+    // (`package com.example.export`) exactly as they already do in import paths.
+    package_identifier: $ => prec.right(sep1(".", $._namespace_path_segment)),
 
     package_object: $ => seq("package", "object", $._object_definition),
 
