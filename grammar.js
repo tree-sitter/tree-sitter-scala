@@ -3289,8 +3289,8 @@ module.exports = grammar({
             field(
               "enumerators",
               choice(
-                seq("(", $.enumerators, ")"),
-                seq("{", $.enumerators, "}"),
+                seq("(", alias($._plain_enumerators, $.enumerators), ")"),
+                seq("{", alias($._plain_enumerators, $.enumerators), "}"),
               ),
             ),
             choice(
@@ -3329,14 +3329,19 @@ module.exports = grammar({
 
     enumerators: $ =>
       choice(
-        seq(sep1($._semicolon, $.enumerator), optional($._automatic_semicolon)),
-        seq(
-          $._indent,
-          sep1($._semicolon, $.enumerator),
-          optional($._automatic_semicolon),
-          $._outdent,
-        ),
+        $._plain_enumerators,
+        seq($._indent, $._plain_enumerators, $._outdent),
       ),
+
+    // Enumerators with no indentation tracking: the only variant admitted
+    // inside `for (...)`/`for { ... }`. Offering the indented variant there
+    // makes `_indent` valid right after the opening bracket, so the scanner
+    // pushes an indent region at the first enumerator's column; a later
+    // enumerator on a smaller column then reads as an `_outdent` that closes
+    // the list early, and the list's own `_automatic_semicolon` never
+    // materializes. Inside brackets, whitespace is layout, not structure.
+    _plain_enumerators: $ =>
+      seq(sep1($._semicolon, $.enumerator), optional($._automatic_semicolon)),
 
     /**
      *   Enumerator        ::=  Generator

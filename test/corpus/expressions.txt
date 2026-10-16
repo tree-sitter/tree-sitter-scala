@@ -2082,6 +2082,38 @@ def f =
         (identifier)))))
 
 ================================================================================
+For comprehension with a dedented enumerator in braces
+================================================================================
+
+def f =
+  for {
+    _ <- foo(xs)
+  _ <- bar(c)
+  } yield Void
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (for_expression
+        (enumerators
+          (enumerator
+            (wildcard)
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier))))
+          (enumerator
+            (wildcard)
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier)))))
+        (identifier)))))
+
+================================================================================
 For comprehensions (Scala 3 syntax)
 ================================================================================
 
