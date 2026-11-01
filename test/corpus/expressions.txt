@@ -4529,6 +4529,161 @@ trait RunnerSpec {
           (operator_identifier))))))
 
 ================================================================================
+Alphanumeric operator at the end of a line continues the expression
+================================================================================
+
+object O:
+  def a =
+    x getOrElse
+      y
+  def b = {
+    x orElse
+    y
+  }
+  def c =
+    x `op`
+      y
+  def d =
+    x op // comment
+      y
+  def e =
+    x op_!
+      y
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (identifier)
+            (identifier)
+            (identifier))))
+      (function_definition
+        (identifier)
+        (block
+          (infix_expression
+            (identifier)
+            (identifier)
+            (identifier))))
+      (function_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (identifier)
+            (identifier)
+            (identifier))))
+      (function_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (identifier)
+            (identifier)
+            (comment)
+            (identifier))))
+      (function_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (identifier)
+            (identifier)
+            (identifier)))))))
+
+================================================================================
+Alphanumeric operator at the end of a line before a line that ends it
+================================================================================
+
+object O:
+  def a = {
+    x size
+
+    y
+  }
+  def b = {
+    x size
+    val y = 1
+  }
+  def c =
+    if x isEmpty
+    then 1
+    else 2
+  def d =
+    x size
+  y
+  def e =
+    if (c) foo
+    1
+  def f = (
+    g[T] _
+      compose g[T])
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (block
+          (postfix_expression
+            (identifier)
+            (identifier))
+          (identifier)))
+      (function_definition
+        (identifier)
+        (block
+          (postfix_expression
+            (identifier)
+            (identifier))
+          (val_definition
+            (identifier)
+            (integer_literal))))
+      (function_definition
+        (identifier)
+        (indented_block
+          (if_expression
+            (postfix_expression
+              (identifier)
+              (identifier))
+            (integer_literal)
+            (integer_literal))))
+      (function_definition
+        (identifier)
+        (indented_block
+          (postfix_expression
+            (identifier)
+            (identifier))))
+      (identifier)
+      (function_definition
+        (identifier)
+        (indented_block
+          (if_expression
+            (parenthesized_expression
+              (identifier))
+            (identifier))
+          (integer_literal)))
+      (function_definition
+        (identifier)
+        (parenthesized_expression
+          (generic_function
+            (infix_expression
+              (method_value
+                (generic_function
+                  (identifier)
+                  (type_arguments
+                    (type_identifier)))
+                (wildcard))
+              (identifier)
+              (identifier))
+            (type_arguments
+              (type_identifier))))))))
+
+================================================================================
 Top-level match with cases at width zero and a following statement
 ================================================================================
 
@@ -4922,6 +5077,7 @@ object O:
     case _ => 3
 
 --------------------------------------------------------------------------------
+
 (compilation_unit
   (object_definition
     (identifier)
