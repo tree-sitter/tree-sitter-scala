@@ -2810,6 +2810,131 @@ end p
     (end_marker)))
 
 ================================================================================
+End marker on a match inside braces in an indented region (Scala 3 syntax)
+================================================================================
+
+object O:
+  def f = g {
+    v match
+    case r =>
+      if a then
+        b
+      else
+        c
+    end match
+  }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (call_expression
+          (identifier)
+          (block
+            (match_expression
+              (identifier)
+              (indented_cases
+                (case_clause
+                  (identifier)
+                  (if_expression
+                    (identifier)
+                    (indented_block
+                      (identifier))
+                    (indented_block
+                      (identifier)))))
+              (end_marker))))))))
+
+================================================================================
+Comment between case clauses after a nested match (Scala 3 syntax)
+================================================================================
+
+object O:
+  def f(p: P) =
+    p match
+    case a =>
+      q match
+      case t => 1
+    case b =>
+      2
+    // c
+    case c => 3
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (indented_block
+          (match_expression
+            (identifier)
+            (indented_cases
+              (case_clause
+                (identifier)
+                (match_expression
+                  (identifier)
+                  (indented_cases
+                    (case_clause
+                      (identifier)
+                      (integer_literal)))))
+              (case_clause
+                (identifier)
+                (integer_literal))
+              (comment)
+              (case_clause
+                (identifier)
+                (integer_literal)))))))))
+
+================================================================================
+A line at the case width that is not a case ends the clauses (Scala 3 syntax)
+================================================================================
+
+object O:
+  def f =
+    v.match
+      case a =>
+        g(a)
+      case b => b
+      .showing(c)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (indented_block
+          (call_expression
+            (field_expression
+              (match_expression
+                (identifier)
+                (indented_cases
+                  (case_clause
+                    (identifier)
+                    (call_expression
+                      (identifier)
+                      (arguments
+                        (identifier))))
+                  (case_clause
+                    (identifier)
+                    (identifier))))
+              (identifier))
+            (arguments
+              (identifier))))))))
+
+================================================================================
 Braced typed lambda and a colon-argument lambda
 ================================================================================
 
