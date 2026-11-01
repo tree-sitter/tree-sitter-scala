@@ -1286,11 +1286,16 @@ static bool scan_impl(void *payload, TSLexer *lexer,
           }
           return false;
         }
-        // At top level the stack is empty, so the same-width `case` close at
-        // the bottom of scan() never sees a width-0 `match`/`case`. Flag the
-        // region here instead. The arrow rules out an enum `case Foo`, which
+        // The same-width `case` close at the bottom of scan() compares the
+        // line with the enclosing region, but the `match` may not sit at that
+        // region's width: at top level the stack is empty, and braces push no
+        // region, so in `object O:` + `def f = {` + `v match` + `case ...`
+        // the `match` and its cases share a column the stack never saw. Flag
+        // the region here instead. In a case region every line at its width
+        // is another clause, so the flag only matters where the clauses end,
+        // as at `end match`. The arrow rules out an enum `case Foo`, which
         // has none and must not open a case region.
-        if (scanner->indents.size == 0 && len == 4 &&
+        if (len == 4 &&
             strcmp(word, "case") == 0 && !is_case_definition_word(lexer) &&
             scan_rest_of_line(lexer).has_case_arrow) {
           entry |= CASE_INDENT_FLAG;
