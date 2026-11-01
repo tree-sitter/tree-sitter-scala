@@ -2742,12 +2742,18 @@ module.exports = grammar({
         // Scala 3: `args*`. The star in front of a closing delimiter arrives
         // as the external _postfix_star, which the postfix reading also
         // accepts, so the higher level settles the tie in vararg's favor.
-        prec(PREC.imul, seq($._infix_operand, $._postfix_star)),
-        // Scala 2: `args: _*`. The weight beats the ascription reading of the
-        // same text, which the parser also completes.
+        prec(PREC.imul, seq($._infix_operand, alias($._postfix_star, "*"))),
+        // Scala 2: `args: _*`, three tokens as in scalac, so `args: _ *` reads
+        // the same. The weight beats the ascription reading of the same text,
+        // `args: (_*)` with a repeated type, which the parser also completes.
         prec.dynamic(
           1,
-          seq($._infix_operand, ":", token(seq("_", token.immediate("*")))),
+          seq(
+            $._infix_operand,
+            ":",
+            $.wildcard,
+            choice($._asterisk, alias($._postfix_star, "*")),
+          ),
         ),
       ),
 

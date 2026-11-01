@@ -2509,7 +2509,8 @@ bar(a, xs: _*)
     function: (identifier)
     arguments: (arguments
       (vararg
-        (identifier))))
+        (identifier)
+        (wildcard))))
   (call_expression
     function: (identifier)
     arguments: (arguments
@@ -2521,7 +2522,8 @@ bar(a, xs: _*)
     arguments: (arguments
       (identifier)
       (vararg
-        (identifier)))))
+        (identifier)
+        (wildcard)))))
 
 ================================================================================
 Vararg of an infix or prefix expression
@@ -2550,7 +2552,8 @@ baz(a ++ b: Seq[Int])
         (infix_expression
           (identifier)
           (operator_identifier)
-          (identifier)))))
+          (identifier))
+        (wildcard))))
   (call_expression
     (identifier)
     (arguments
@@ -2570,6 +2573,22 @@ baz(a ++ b: Seq[Int])
           (type_identifier)
           (type_arguments
             (type_identifier)))))))
+
+================================================================================
+Scala 2 vararg with a space before the star
+================================================================================
+
+foo(xs: _ *)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    (identifier)
+    (arguments
+      (vararg
+        (identifier)
+        (wildcard)))))
 
 ================================================================================
 Catch case with a multi-statement indented body
