@@ -820,19 +820,59 @@ static bool operand_follows(TSLexer *lexer) {
   return operand_word_allowed(lexer);
 }
 
+// The right operand of a leading infix operator alone on its line, at column
+// `op_column`. As in scalac's isLeadingInfixOperator, the next line must not
+// be blank, must be at least as deep as the operator, and must start an
+// operand.
+static bool operand_on_next_line(TSLexer *lexer, uint32_t op_column) {
+  if (lexer->lookahead == '\r') {
+    advance(lexer);
+  }
+  if (lexer->lookahead == '\n') {
+    advance(lexer);
+  }
+  uint32_t width = 0;
+  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+    advance(lexer);
+    width++;
+  }
+  if (lexer->eof(lexer) || lexer->lookahead == '\n' ||
+      lexer->lookahead == '\r' || width < op_column || !has_operand(lexer)) {
+    return false;
+  }
+  if (is_op_char(lexer->lookahead)) {
+    char op[4] = {0};
+    int len = read_op_chars(lexer, op);
+    return is_unary_op(op, len);
+  }
+  return operand_word_allowed(lexer);
+}
+
 // Returns true if the lookahead starts a leading infix operator — a symbolic
 // operator or back-ticked identifier followed by whitespace and then an
 // operand. Such a line is a continuation of the previous expression, so
 // neither AUTOMATIC_SEMICOLON nor OUTDENT should fire ahead of it. Advances
 // the lexer; the caller must not rely on position. A name ending in operator
 // characters is one too, but it is left out here because the OUTDENT caller
-// reads a word of its own right after this call.
-static bool is_leading_infix_continuation(TSLexer *lexer) {
+// reads a word of its own right after this call. `alone`, when asked for,
+// reports an operator alone on its line, whose operand is on the next one.
+static bool is_leading_infix_continuation(TSLexer *lexer, bool *alone) {
+  if (alone != NULL) {
+    *alone = false;
+  }
   if (is_op_char(lexer->lookahead)) {
+    uint32_t column = lexer->get_column(lexer);
     char op[4] = {0};
     int len = read_op_chars(lexer, op);
     if (is_symbolic_keyword(op, len)) {
       return false;
+    }
+    // An operator alone on its line takes its operand from the next one.
+    if (lexer->lookahead == '\n' || lexer->lookahead == '\r') {
+      if (alone != NULL) {
+        *alone = true;
+      }
+      return operand_on_next_line(lexer, column);
     }
     return operand_follows(lexer);
   }
@@ -1300,7 +1340,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         // Nor with a leading `|`/`&` infix operator, which continues the
         // previous expression. Only these two run here, and not after a colon,
         // where the line can only be the body.
-        if (!scanner->after_colon_eol && is_leading_infix_continuation(lexer)) {
+        if (!scanner->after_colon_eol && is_leading_infix_continuation(lexer, NULL)) {
           return false;
         }
         break;
@@ -1364,7 +1404,16 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // Keep the indented block open when the next line starts with a leading
     // infix operator, which continues the previous expression. But a line
     // ending in depth-0 `then`/`do` closes the regions up to its conditional.
-    if (lexer->lookahead != 0 && is_leading_infix_continuation(lexer) &&
+    // An operator alone on its line follows scalac's isLeadingInfixOperator
+    // fully: the line must be deeper than the enclosing region, or this block
+    // closes and the operator continues the expression there.
+    int16_t outer_width =
+        scanner->indents.size >= 2
+            ? indent_width(scanner->indents.contents[scanner->indents.size - 2])
+            : -1;
+    bool alone = false;
+    if (lexer->lookahead != 0 && is_leading_infix_continuation(lexer, &alone) &&
+        (!alone || indentation_size > outer_width) &&
         !scan_rest_of_line(lexer).ends_conditional) {
       return false;
     }
@@ -1514,13 +1563,16 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       if (is_symbolic_keyword(op, len)) {
         return len == 1 && op[0] == '@';
       }
-      if (newline_count == 1 && operand_follows(lexer)) {
+      if (newline_count == 1 &&
+          (lexer->lookahead == '\n' || lexer->lookahead == '\r'
+               ? operand_on_next_line(lexer, (uint32_t)indentation_size)
+               : operand_follows(lexer))) {
         return false;
       }
       return true;
     }
     if (lexer->lookahead == '`') {
-      if (newline_count == 1 && is_leading_infix_continuation(lexer)) {
+      if (newline_count == 1 && is_leading_infix_continuation(lexer, NULL)) {
         return false;
       }
       return true;
