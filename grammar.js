@@ -389,6 +389,10 @@ module.exports = grammar({
     // The `?` of a bounded wildcard. Only the bound tells it from the plain
     // one, and the parser cannot see that far.
     $._wildcard_bound_start,
+    // An alphanumeric operator that ends its line, when the next line starts
+    // its right operand. Only the infix production takes it, so the line
+    // break cannot end the statement after `left op`.
+    $._word_operator_eol,
   ],
 
   inline: $ => [
@@ -2616,7 +2620,11 @@ module.exports = grammar({
       // (`x open y`) still lexes here through keyword extraction, because
       // no soft-keyword token is valid before the statement boundary.
       return choice(
-        production(PREC.iname, "left", wordName($)),
+        production(
+          PREC.iname,
+          "left",
+          choice(wordName($), alias($._word_operator_eol, $.identifier)),
+        ),
         production(PREC.iassign, "left", op(OP_TOKEN.assign)),
         production(PREC.ior, "left", op($._op_left_or)),
         production(PREC.ior, "right", op(OP_TOKEN.orRight)),
