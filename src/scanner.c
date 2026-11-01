@@ -732,6 +732,69 @@ static bool rest_of_line_is_blank_or_comments(TSLexer *lexer) {
   }
 }
 
+// scalac's followingIsLambdaAfterColon. A type parameter clause is left out,
+// since colon_argument does not take one.
+static bool colon_lambda_follows(TSLexer *lexer, int16_t region_width) {
+  if (lexer->lookahead == '(') {
+    int depth = 0;
+    do {
+      if (lexer->lookahead == '(') {
+        depth++;
+      } else if (lexer->lookahead == ')') {
+        depth--;
+      }
+      advance(lexer);
+    } while (depth > 0 && !lexer->eof(lexer));
+  } else if (is_alpha(lexer->lookahead) || lexer->lookahead == '_' ||
+             lexer->lookahead == '$') {
+    char word[2];
+    read_word(lexer, word, (int)sizeof word, NULL);
+  } else {
+    return false;
+  }
+  advance_past_blanks(lexer);
+  if (lexer->lookahead == '?') {
+    advance(lexer);
+  }
+  if (lexer->lookahead == 0x21D2) {
+    advance(lexer);
+  } else {
+    if (lexer->lookahead != '=') {
+      return false;
+    }
+    advance(lexer);
+    if (lexer->lookahead != '>') {
+      return false;
+    }
+    advance(lexer);
+  }
+  if (is_op_char(lexer->lookahead) ||
+      !rest_of_line_is_blank_or_comments(lexer)) {
+    return false;
+  }
+  for (;;) {
+    if (lexer->eof(lexer)) {
+      return true;
+    }
+    if (lexer->lookahead == '\r') {
+      advance(lexer);
+    }
+    if (lexer->lookahead != '\n') {
+      return false;
+    }
+    advance(lexer);
+    int16_t width = 0;
+    while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+      advance(lexer);
+      width++;
+    }
+    if (!lexer->eof(lexer) && lexer->lookahead != '\n' &&
+        lexer->lookahead != '\r') {
+      return width > region_width;
+    }
+  }
+}
+
 // Whether a real operand follows the operator. Comments and line breaks are
 // transparent, so scalac reads the next real token across them. A comment-only
 // tail to EOF, a closing delimiter and a list separator are all no operand.
@@ -1819,10 +1882,12 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // A `/` next carries the operator on, so the colon is not a lone one.
     if (op_len == 1 && op[0] == ':' && lexer->lookahead != '/') {
       // A lone `:` ending its line is the fewer-braces colon (scalac's
-      // COLONeol). Deciding it at the token level kills the cross-newline
+      // COLONeol), as is one before a lambda head that ends its line.
+      // Deciding it at the token level kills the cross-newline
       // ascription fork that GLR would otherwise keep alive across the region.
       if (valid_symbols[COLON_EOL] &&
-          rest_of_line_is_blank_or_comments(lexer)) {
+          (rest_of_line_is_blank_or_comments(lexer) ||
+           colon_lambda_follows(lexer, prev_width))) {
         lexer->result_symbol = COLON_EOL;
         return true;
       }
