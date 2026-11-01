@@ -2571,7 +2571,8 @@ bar(a, xs: _*)
     function: (identifier)
     arguments: (arguments
       (vararg
-        (identifier))))
+        (identifier)
+        (wildcard))))
   (call_expression
     function: (identifier)
     arguments: (arguments
@@ -2583,7 +2584,73 @@ bar(a, xs: _*)
     arguments: (arguments
       (identifier)
       (vararg
-        (identifier)))))
+        (identifier)
+        (wildcard)))))
+
+================================================================================
+Vararg of an infix or prefix expression
+================================================================================
+
+foo(a ++ b*)
+bar(a ++ b: _*)
+foo(x, -a*)
+baz(a ++ b: Seq[Int])
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    (identifier)
+    (arguments
+      (vararg
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier)))))
+  (call_expression
+    (identifier)
+    (arguments
+      (vararg
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))
+        (wildcard))))
+  (call_expression
+    (identifier)
+    (arguments
+      (identifier)
+      (vararg
+        (prefix_expression
+          (identifier)))))
+  (call_expression
+    (identifier)
+    (arguments
+      (ascription_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))))
+
+================================================================================
+Scala 2 vararg with a space before the star
+================================================================================
+
+foo(xs: _ *)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    (identifier)
+    (arguments
+      (vararg
+        (identifier)
+        (wildcard)))))
 
 ================================================================================
 Catch case with a multi-statement indented body

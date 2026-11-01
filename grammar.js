@@ -451,9 +451,6 @@ module.exports = grammar({
     [$.xml_element, $.xml_pattern],
     [$._simple_expression, $._xml_embedded_pattern],
     [$._simple_expression, $._xml_repeat_pattern],
-    // _simple_expression  '('  _simple_expression  •  ':'  — reduce toward an
-    // ascribed argument or shift the colon of a Scala 2 vararg `x: _*`.
-    [$._infix_operand, $.vararg],
     [$.tuple_type, $.parameter_types],
     // Both spell a braced body, so the reduce after `}` is ambiguous.
     [$._structural_body, $.template_body],
@@ -2750,17 +2747,25 @@ module.exports = grammar({
         optional(","),
       ),
 
+    // The spliced argument is a PostfixExpr in both dialects, so an infix or
+    // prefix expression can precede the star: `f(a ++ b*)`, `f(a ++ b: _*)`.
     vararg: $ =>
       choice(
         // Scala 3: `args*`. The star in front of a closing delimiter arrives
         // as the external _postfix_star, which the postfix reading also
         // accepts, so the higher level settles the tie in vararg's favor.
-        prec(PREC.imul, seq($._simple_expression, $._postfix_star)),
-        // Scala 2: `args: _*`. The weight beats the ascription reading of the
-        // same text, which the parser also completes.
+        prec(PREC.imul, seq($._infix_operand, alias($._postfix_star, "*"))),
+        // Scala 2: `args: _*`, three tokens as in scalac, so `args: _ *` reads
+        // the same. The weight beats the ascription reading of the same text,
+        // `args: (_*)` with a repeated type, which the parser also completes.
         prec.dynamic(
           1,
-          seq($._simple_expression, ":", token(seq("_", token.immediate("*")))),
+          seq(
+            $._infix_operand,
+            ":",
+            $.wildcard,
+            choice($._asterisk, alias($._postfix_star, "*")),
+          ),
         ),
       ),
 
