@@ -953,6 +953,17 @@ static bool is_leading_infix_continuation(TSLexer *lexer, bool *alone) {
   return false;
 }
 
+// The region test of scalac's isLeadingInfixOperator, for the region at
+// `index`. It is only applied to an operator alone on its line or to case
+// clauses, since a definition body cannot take the operator once it closes.
+static bool region_keeps_operator(Scanner *scanner, uint32_t index,
+                                  int16_t width, bool alone) {
+  int16_t entry = scanner->indents.contents[index];
+  int16_t outer =
+      index >= 1 ? indent_width(scanner->indents.contents[index - 1]) : -1;
+  return !(alone || (entry & CASE_INDENT_FLAG)) || width > outer;
+}
+
 // Walks the rest of the line, tracking bracket depth and skipping strings,
 // characters, back-ticks and comments. Reports whether the line ends in a
 // depth-0 `then`/`do` and whether it carries a depth-0 `=>` (Scala 2 `⇒`).
@@ -1474,22 +1485,23 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // Keep the indented block open when the next line starts with a leading
     // infix operator, which continues the previous expression. But a line
     // ending in depth-0 `then`/`do` closes the regions up to its conditional.
-    // An operator alone on its line follows scalac's isLeadingInfixOperator
-    // fully: the line must be deeper than the enclosing region, or this block
-    // closes and the operator continues the expression there.
-    int16_t outer_width =
-        scanner->indents.size >= 2
-            ? indent_width(scanner->indents.contents[scanner->indents.size - 2])
-            : -1;
     bool alone = false;
-    if (lexer->lookahead != 0 && is_leading_infix_continuation(lexer, &alone) &&
-        (!alone || indentation_size > outer_width) &&
-        !scan_rest_of_line(lexer).ends_conditional) {
+    bool infix = lexer->lookahead != 0 &&
+                 is_leading_infix_continuation(lexer, &alone) &&
+                 !scan_rest_of_line(lexer).ends_conditional;
+    uint32_t top = scanner->indents.size - 1;
+    if (infix && region_keeps_operator(scanner, top, indentation_size, alone)) {
       return false;
     }
     // A same-width `case` line continues the case region instead.
     if (case_region_close && is_case_clause_intro(lexer)) {
       return false;
+    }
+    // The cascade of outdents stops at the region that keeps the operator.
+    if (infix && top >= 1 &&
+        indentation_size < indent_width(scanner->indents.contents[top - 1]) &&
+        region_keeps_operator(scanner, top - 1, indentation_size, alone)) {
+      scanner->last_indentation_size = -1;
     }
     if (scanner->indents.size > 0) {
       array_pop(&scanner->indents);

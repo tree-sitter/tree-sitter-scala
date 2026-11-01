@@ -3658,27 +3658,27 @@ def allowed =
     (identifier)
     (indented_block
       (infix_expression
-        (field_expression
-          (identifier)
-          (identifier))
-        (operator_identifier)
-        (match_expression
-          (field_expression
+        (infix_expression
+          (infix_expression
             (field_expression
               (identifier)
               (identifier))
-            (identifier))
-          (comment)
-          (indented_cases
-            (case_clause
-              (stable_identifier
-                (identifier)
+            (operator_identifier)
+            (match_expression
+              (field_expression
+                (field_expression
+                  (identifier)
+                  (identifier))
                 (identifier))
-              (boolean_literal))
-            (case_clause
-              (identifier)
-              (infix_expression
-                (infix_expression
+              (comment)
+              (indented_cases
+                (case_clause
+                  (stable_identifier
+                    (identifier)
+                    (identifier))
+                  (boolean_literal))
+                (case_clause
+                  (identifier)
                   (infix_expression
                     (field_expression
                       (identifier)
@@ -3691,21 +3691,76 @@ def allowed =
                         (identifier)
                         (identifier))
                       (arguments
-                        (identifier))))
-                  (operator_identifier)
-                  (field_expression
-                    (field_expression
-                      (identifier)
-                      (identifier))
-                    (identifier)))
-                (comment)
-                (operator_identifier)
-                (field_expression
-                  (field_expression
-                    (identifier)
-                    (identifier))
-                  (identifier))))
-            (comment)))))))
+                        (identifier))))))))
+          (operator_identifier)
+          (field_expression
+            (field_expression
+              (identifier)
+              (identifier))
+            (identifier)))
+        (comment)
+        (operator_identifier)
+        (field_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (identifier)))
+      (comment))))
+
+================================================================================
+Leading infix operator after case clauses
+================================================================================
+
+def a =
+  x
+  || y.match
+      case 1 => false
+      case _ => true
+  || !x
+
+def b =
+      p
+   || q.match
+      case _ => false
+   || r
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (match_expression
+            (identifier)
+            (indented_cases
+              (case_clause
+                (integer_literal)
+                (boolean_literal))
+              (case_clause
+                (wildcard)
+                (boolean_literal)))))
+        (operator_identifier)
+        (prefix_expression
+          (identifier)))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (match_expression
+            (identifier)
+            (indented_cases
+              (case_clause
+                (wildcard)
+                (boolean_literal)))))
+        (operator_identifier)
+        (identifier)))))
 
 ================================================================================
 Block comment closed by same-line code inside a braced body
