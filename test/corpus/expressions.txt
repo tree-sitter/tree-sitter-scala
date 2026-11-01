@@ -478,6 +478,68 @@ xs.filter(x =>
             right: (identifier)))))))
 
 ================================================================================
+Colon argument on the operand of an operator
+================================================================================
+
+def f =
+  !a || xs.forall: x =>
+    g(x)
+
+def g =
+  !susp:
+    "s"
+
+def h =
+  xs ++ ys.filter:
+    case y => true
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (prefix_expression
+          (identifier))
+        (operator_identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (colon_argument
+            (identifier)
+            (indented_block
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)))))))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (prefix_expression
+        (call_expression
+          (identifier)
+          (colon_argument
+            (indented_block
+              (string)))))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (colon_argument
+            (indented_cases
+              (case_clause
+                (identifier)
+                (boolean_literal)))))))))
+
+================================================================================
 Colon argument followed by comma
 ================================================================================
 
@@ -4334,38 +4396,38 @@ def f: Boolean =
               (identifier)
               (colon_argument
                 (indented_block
-                  (call_expression
+                  (infix_expression
+                    (call_expression
+                      (field_expression
+                        (identifier)
+                        (identifier))
+                      (arguments
+                        (identifier)))
+                    (operator_identifier)
                     (infix_expression
-                      (call_expression
+                      (prefix_expression
                         (field_expression
                           (identifier)
-                          (identifier))
-                        (arguments
                           (identifier)))
                       (operator_identifier)
-                      (infix_expression
-                        (prefix_expression
-                          (field_expression
-                            (identifier)
-                            (identifier)))
-                        (operator_identifier)
+                      (call_expression
                         (call_expression
                           (identifier)
                           (arguments
-                            (identifier)))))
-                    (colon_argument
-                      (indented_block
-                        (val_definition
-                          (identifier)
-                          (field_expression
-                            (identifier)
                             (identifier)))
-                        (call_expression
-                          (field_expression
-                            (identifier)
-                            (identifier))
-                          (arguments
-                            (identifier)))))))))))))))
+                        (colon_argument
+                          (indented_block
+                            (val_definition
+                              (identifier)
+                              (field_expression
+                                (identifier)
+                                (identifier)))
+                            (call_expression
+                              (field_expression
+                                (identifier)
+                                (identifier))
+                              (arguments
+                                (identifier)))))))))))))))))
 
 ================================================================================
 Leading operator statements with trailing comments keep their block

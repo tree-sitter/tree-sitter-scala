@@ -1091,7 +1091,7 @@ module.exports = grammar({
         ),
       ),
 
-    _self_type_ascription: $ => seq(":", $._type),
+    _self_type_ascription: $ => seq(colonEol($), $._type),
 
     annotation: $ =>
       prec.right(
@@ -2226,7 +2226,7 @@ module.exports = grammar({
             field(
               "parameters",
               prec.right(
-                seq(optional("implicit"), operandName($), ":", $._type),
+                seq(optional("implicit"), operandName($), colonEol($), $._type),
               ),
             ),
             anyArrow(),
@@ -2455,7 +2455,19 @@ module.exports = grammar({
           PREC.colon_call,
           seq(
             field("function", $._postfix_expression_choice),
-            colonEol($),
+            ":",
+            field("arguments", $.colon_argument),
+          ),
+        ),
+        // Never an ascription colon, so it binds to the operand like a call.
+        prec.right(
+          PREC.call,
+          seq(
+            field(
+              "function",
+              choice($.postfix_expression, $._simple_expression),
+            ),
+            alias($._colon_eol, ":"),
             field("arguments", $.colon_argument),
           ),
         ),
