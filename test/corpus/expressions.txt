@@ -2524,6 +2524,54 @@ bar(a, xs: _*)
         (identifier)))))
 
 ================================================================================
+Vararg of an infix or prefix expression
+================================================================================
+
+foo(a ++ b*)
+bar(a ++ b: _*)
+foo(x, -a*)
+baz(a ++ b: Seq[Int])
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (call_expression
+    (identifier)
+    (arguments
+      (vararg
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier)))))
+  (call_expression
+    (identifier)
+    (arguments
+      (vararg
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier)))))
+  (call_expression
+    (identifier)
+    (arguments
+      (identifier)
+      (vararg
+        (prefix_expression
+          (identifier)))))
+  (call_expression
+    (identifier)
+    (arguments
+      (ascription_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (identifier))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))))
+
+================================================================================
 Catch case with a multi-statement indented body
 ================================================================================
 
