@@ -4170,6 +4170,137 @@ def m =
         (identifier)))))
 
 ================================================================================
+Operator alone on its line continues the expression
+================================================================================
+
+object O:
+  def a =
+    x == 0
+    ||
+      y
+  def b =
+    x
+    &&
+      !y
+  def c =
+    x
+    || // comment
+    y
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (infix_expression
+              (identifier)
+              (operator_identifier)
+              (integer_literal))
+            (operator_identifier)
+            (identifier))))
+      (function_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (prefix_expression
+              (identifier)))))
+      (function_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (comment)
+            (identifier)))))))
+
+================================================================================
+Operator alone on its line before a line that ends the expression
+================================================================================
+
+object O:
+  def a =
+    x
+    ||
+
+    y
+  def b =
+    x
+    ||
+  y
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (indented_block
+          (identifier)
+          (operator_identifier)
+          (identifier)))
+      (function_definition
+        (identifier)
+        (indented_block
+          (identifier)
+          (operator_identifier)))
+      (identifier))))
+
+================================================================================
+Operator alone on its line after a deeper block continues the enclosing expression
+================================================================================
+
+object O:
+  def f =
+    val targets =
+      files.map: f =>
+        g(f)
+      ++
+      dirs.map(h)
+    targets
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (indented_block
+          (val_definition
+            (identifier)
+            (indented_block
+              (infix_expression
+                (call_expression
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (colon_argument
+                    (identifier)
+                    (indented_block
+                      (call_expression
+                        (identifier)
+                        (arguments
+                          (identifier))))))
+                (operator_identifier)
+                (call_expression
+                  (field_expression
+                    (identifier)
+                    (identifier))
+                  (arguments
+                    (identifier))))))
+          (identifier))))))
+
+================================================================================
 Leading infix operator continuing inside colon-argument regions
 ================================================================================
 
