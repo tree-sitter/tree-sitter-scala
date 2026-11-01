@@ -10063,7 +10063,7 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
         {
@@ -10103,6 +10103,10 @@
           "named": true
         },
         {
+          "type": "infix_expression",
+          "named": true
+        },
+        {
           "type": "instance_expression",
           "named": true
         },
@@ -10132,6 +10136,10 @@
         },
         {
           "type": "parenthesized_expression",
+          "named": true
+        },
+        {
+          "type": "prefix_expression",
           "named": true
         },
         {
