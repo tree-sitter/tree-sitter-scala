@@ -2681,6 +2681,53 @@ end p
     (end_marker)))
 
 ================================================================================
+Comment between case clauses after a nested match (Scala 3 syntax)
+================================================================================
+
+object O:
+  def f(p: P) =
+    p match
+    case a =>
+      q match
+      case t => 1
+    case b =>
+      2
+    // c
+    case c => 3
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (indented_block
+          (match_expression
+            (identifier)
+            (indented_cases
+              (case_clause
+                (identifier)
+                (match_expression
+                  (identifier)
+                  (indented_cases
+                    (case_clause
+                      (identifier)
+                      (integer_literal)))))
+              (case_clause
+                (identifier)
+                (integer_literal))
+              (comment)
+              (case_clause
+                (identifier)
+                (integer_literal)))))))))
+
+================================================================================
 Braced typed lambda and a colon-argument lambda
 ================================================================================
 

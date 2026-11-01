@@ -1165,9 +1165,11 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   // the line sits at this region's width. It stays open only for another `case`
   // clause, and returning false is safe because `case` is the only token that can
   // follow. The column check guards against a stale last_indentation_size when
-  // intervening states emit no external token.
+  // intervening states emit no external token. Mid-cascade the scan starts at
+  // the line's first token, so a scan that crossed a line break is on a later
+  // line, which can share the column by chance.
   if (valid_symbols[OUTDENT] && !valid_symbols[ERROR_SENTINEL] &&
-      scanner->last_indentation_size != -1 &&
+      newline_count == 0 && scanner->last_indentation_size != -1 &&
       at_case_region_width(prev, scanner->last_indentation_size) &&
       (lexer->eof(lexer)
            ? scanner->last_column == -1
