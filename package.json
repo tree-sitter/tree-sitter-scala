@@ -49,5 +49,9 @@
     "start": "tree-sitter playground",
     "test": "node --test bindings/node/*_test.js",
     "prebuildify": "prebuildify --napi --strip"
+  },
+  "allowScripts": {
+    "tree-sitter-cli@0.26.8": true,
+    "tree-sitter": false
   }
 }
