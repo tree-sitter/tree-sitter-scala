@@ -2227,7 +2227,12 @@ module.exports = grammar({
               ),
             ),
             anyArrow(),
-            $._indentable_expression,
+            optional(
+              choice(
+                $._block,
+                alias($._braced_typed_lambda, $.lambda_expression),
+              ),
+            ),
           ),
         ),
       ),

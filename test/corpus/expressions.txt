@@ -2956,10 +2956,9 @@ val b = OWrites: c =>
         (lambda_expression
           (identifier)
           (type_identifier)
-          (indented_block
-            (field_expression
-              (identifier)
-              (identifier)))))))
+          (field_expression
+            (identifier)
+            (identifier))))))
   (val_definition
     (identifier)
     (call_expression
@@ -5338,13 +5337,13 @@ val h = { x: Int => y: Int => x + y }
       (lambda_expression
         (identifier)
         (type_identifier)
-        (ascription_expression
+        (lambda_expression
           (identifier)
           (type_identifier)
-          (infix_type
-            (type_identifier)
+          (infix_expression
+            (identifier)
             (operator_identifier)
-            (type_identifier)))))))
+            (identifier)))))))
 
 ================================================================================
 Lambda takes the rest of an indented block (Scala 3 syntax)
@@ -6041,3 +6040,34 @@ object O:
               (identifier)
               (operator_identifier)
               (operator_identifier))))))))
+
+================================================================================
+Braced typed lambda with multiple statements and varied indentation
+================================================================================
+
+val f = _.next { x: M.N =>
+    val a = 1
+  val b = 2
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (call_expression
+      (field_expression
+        (wildcard)
+        (identifier))
+      (block
+        (lambda_expression
+          (identifier)
+          (stable_type_identifier
+            (identifier)
+            (type_identifier))
+          (val_definition
+            (identifier)
+            (integer_literal))
+          (val_definition
+            (identifier)
+            (integer_literal)))))))
