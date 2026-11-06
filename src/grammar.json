@@ -8130,64 +8130,73 @@
                           "type": "CHOICE",
                           "members": [
                             {
-                              "type": "ALIAS",
-                              "content": {
-                                "type": "SYMBOL",
-                                "name": "_alpha_identifier"
-                              },
-                              "named": true,
-                              "value": "identifier"
+                              "type": "CHOICE",
+                              "members": [
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "SYMBOL",
+                                    "name": "_alpha_identifier"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                },
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "SYMBOL",
+                                    "name": "_backquoted_id"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                },
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "SYMBOL",
+                                    "name": "_soft_identifier"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                },
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "STRING",
+                                    "value": "this"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                },
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "STRING",
+                                    "value": "super"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                },
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "STRING",
+                                    "value": "export"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                }
+                              ]
                             },
                             {
-                              "type": "ALIAS",
-                              "content": {
-                                "type": "SYMBOL",
-                                "name": "_backquoted_id"
-                              },
-                              "named": true,
-                              "value": "identifier"
-                            },
-                            {
-                              "type": "ALIAS",
-                              "content": {
-                                "type": "SYMBOL",
-                                "name": "_soft_identifier"
-                              },
-                              "named": true,
-                              "value": "identifier"
-                            },
-                            {
-                              "type": "ALIAS",
-                              "content": {
-                                "type": "STRING",
-                                "value": "this"
-                              },
-                              "named": true,
-                              "value": "identifier"
-                            },
-                            {
-                              "type": "ALIAS",
-                              "content": {
-                                "type": "STRING",
-                                "value": "super"
-                              },
-                              "named": true,
-                              "value": "identifier"
-                            },
-                            {
-                              "type": "ALIAS",
-                              "content": {
-                                "type": "STRING",
-                                "value": "export"
-                              },
-                              "named": true,
-                              "value": "identifier"
+                              "type": "SYMBOL",
+                              "name": "operator_identifier"
                             }
                           ]
                         },
                         {
                           "type": "SYMBOL",
-                          "name": "operator_identifier"
+                          "name": "wildcard"
                         }
                       ]
                     },
