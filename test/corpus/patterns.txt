@@ -388,6 +388,44 @@ yield ()
     (unit)))
 
 ================================================================================
+Given pattern bound by a capture (Scala 3 syntax)
+================================================================================
+
+def f = x match {
+  case ord @ given Ordering[T] => 1
+  case (y @ given Ordering[T], _) => 2
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (case_block
+        (case_clause
+          (capture_pattern
+            (identifier)
+            (given_pattern
+              (generic_type
+                (type_identifier)
+                (type_arguments
+                  (type_identifier)))))
+          (integer_literal))
+        (case_clause
+          (tuple_pattern
+            (capture_pattern
+              (identifier)
+              (given_pattern
+                (generic_type
+                  (type_identifier)
+                  (type_arguments
+                    (type_identifier)))))
+            (wildcard))
+          (integer_literal))))))
+
+================================================================================
 Capture patterns inside string interpolation patterns
 ================================================================================
 

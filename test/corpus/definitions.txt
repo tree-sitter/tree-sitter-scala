@@ -3072,6 +3072,131 @@ object A {
         (integer_literal)))))
 
 ================================================================================
+given as an identifier (Scala 2)
+================================================================================
+
+def test(given: Int): Int = given
+val viaCall = given()
+
+object A {
+  val given = 1
+  val viaField = y.given
+  val viaMember = given.f(1)
+  val viaInfix = given + 1
+  def given(): Unit = ()
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (identifier))
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (arguments)))
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (integer_literal))
+      (val_definition
+        (identifier)
+        (field_expression
+          (identifier)
+          (identifier)))
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (integer_literal))))
+      (val_definition
+        (identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (integer_literal)))
+      (function_definition
+        (identifier)
+        (parameters)
+        (type_identifier)
+        (unit)))))
+
+================================================================================
+given definition and given identifier in one body
+================================================================================
+
+object A {
+  given intOrd: Ord[Int] = IntOrd
+  val given = 1
+  given.foo
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (given_definition
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))
+        (identifier))
+      (val_definition
+        (identifier)
+        (integer_literal))
+      (field_expression
+        (identifier)
+        (identifier)))))
+
+================================================================================
+Given with an extension whose method body is an if expression
+================================================================================
+
+given S: AnyRef with
+  extension (s: S)
+    def f: Int = if a then b else c
+    def g: Int = 1
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (given_definition
+    (identifier)
+    (type_identifier)
+    (with_template_body
+      (extension_definition
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (function_definition
+          (identifier)
+          (type_identifier)
+          (if_expression
+            (identifier)
+            (identifier)
+            (identifier)))
+        (function_definition
+          (identifier)
+          (type_identifier)
+          (integer_literal))))))
+
+================================================================================
 Parenthesized typed lambda parameter wrapped across the newline
 ================================================================================
 
