@@ -188,12 +188,33 @@
           ]
         },
         {
-          "type": "STRING",
-          "value": "enum"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "_class_constructor"
+          "type": "PREC",
+          "value": "enum_head",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "enum"
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_name_gate"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_class_constructor"
+              }
+            ]
+          }
         },
         {
           "type": "FIELD",
@@ -2473,6 +2494,15 @@
                     {
                       "type": "ALIAS",
                       "content": {
+                        "type": "STRING",
+                        "value": "enum"
+                      },
+                      "named": true,
+                      "value": "identifier"
+                    },
+                    {
+                      "type": "ALIAS",
+                      "content": {
                         "type": "SYMBOL",
                         "name": "_alpha_identifier"
                       },
@@ -2520,6 +2550,15 @@
                       "content": {
                         "type": "STRING",
                         "value": "export"
+                      },
+                      "named": true,
+                      "value": "identifier"
+                    },
+                    {
+                      "type": "ALIAS",
+                      "content": {
+                        "type": "STRING",
+                        "value": "given"
                       },
                       "named": true,
                       "value": "identifier"
@@ -3518,12 +3557,21 @@
                 ]
               },
               {
-                "type": "STRING",
-                "value": "given"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_given_tail"
+                "type": "PREC",
+                "value": "given_head",
+                "content": {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "STRING",
+                      "value": "given"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "_given_tail"
+                    }
+                  ]
+                }
               }
             ]
           }
@@ -7284,21 +7332,25 @@
       }
     },
     "given_pattern": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "given"
-        },
-        {
-          "type": "FIELD",
-          "name": "type",
-          "content": {
-            "type": "SYMBOL",
-            "name": "_type"
+      "type": "PREC",
+      "value": "given_pattern",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "given"
+          },
+          {
+            "type": "FIELD",
+            "name": "type",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_type"
+            }
           }
-        }
-      ]
+        ]
+      }
     },
     "alternative_pattern": {
       "type": "PREC_LEFT",
@@ -7535,6 +7587,15 @@
             {
               "type": "ALIAS",
               "content": {
+                "type": "STRING",
+                "value": "enum"
+              },
+              "named": true,
+              "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
                 "type": "SYMBOL",
                 "name": "_alpha_identifier"
               },
@@ -7582,6 +7643,15 @@
               "content": {
                 "type": "STRING",
                 "value": "export"
+              },
+              "named": true,
+              "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "given"
               },
               "named": true,
               "value": "identifier"
@@ -7723,6 +7793,15 @@
                       {
                         "type": "ALIAS",
                         "content": {
+                          "type": "STRING",
+                          "value": "enum"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
                           "type": "SYMBOL",
                           "name": "_alpha_identifier"
                         },
@@ -7770,6 +7849,15 @@
                         "content": {
                           "type": "STRING",
                           "value": "export"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "given"
                         },
                         "named": true,
                         "value": "identifier"
@@ -8135,6 +8223,15 @@
                                 {
                                   "type": "ALIAS",
                                   "content": {
+                                    "type": "STRING",
+                                    "value": "enum"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                },
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
                                     "type": "SYMBOL",
                                     "name": "_alpha_identifier"
                                   },
@@ -8182,6 +8279,15 @@
                                   "content": {
                                     "type": "STRING",
                                     "value": "export"
+                                  },
+                                  "named": true,
+                                  "value": "identifier"
+                                },
+                                {
+                                  "type": "ALIAS",
+                                  "content": {
+                                    "type": "STRING",
+                                    "value": "given"
                                   },
                                   "named": true,
                                   "value": "identifier"
@@ -8796,6 +8902,15 @@
                       {
                         "type": "ALIAS",
                         "content": {
+                          "type": "STRING",
+                          "value": "enum"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
                           "type": "SYMBOL",
                           "name": "_alpha_identifier"
                         },
@@ -8843,6 +8958,15 @@
                         "content": {
                           "type": "STRING",
                           "value": "export"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "given"
                         },
                         "named": true,
                         "value": "identifier"
@@ -11465,6 +11589,15 @@
             {
               "type": "ALIAS",
               "content": {
+                "type": "STRING",
+                "value": "enum"
+              },
+              "named": true,
+              "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
                 "type": "SYMBOL",
                 "name": "_alpha_identifier"
               },
@@ -11512,6 +11645,15 @@
               "content": {
                 "type": "STRING",
                 "value": "export"
+              },
+              "named": true,
+              "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "given"
               },
               "named": true,
               "value": "identifier"
@@ -11538,6 +11680,15 @@
             {
               "type": "ALIAS",
               "content": {
+                "type": "STRING",
+                "value": "enum"
+              },
+              "named": true,
+              "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
                 "type": "SYMBOL",
                 "name": "_alpha_identifier"
               },
@@ -11588,6 +11739,15 @@
               },
               "named": true,
               "value": "identifier"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "STRING",
+                "value": "given"
+              },
+              "named": true,
+              "value": "identifier"
             }
           ]
         },
@@ -11601,6 +11761,15 @@
             {
               "type": "CHOICE",
               "members": [
+                {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "STRING",
+                    "value": "enum"
+                  },
+                  "named": true,
+                  "value": "identifier"
+                },
                 {
                   "type": "ALIAS",
                   "content": {
@@ -11654,6 +11823,15 @@
                   },
                   "named": true,
                   "value": "identifier"
+                },
+                {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "STRING",
+                    "value": "given"
+                  },
+                  "named": true,
+                  "value": "identifier"
                 }
               ]
             },
@@ -11669,6 +11847,15 @@
                   {
                     "type": "CHOICE",
                     "members": [
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "enum"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
                       {
                         "type": "ALIAS",
                         "content": {
@@ -11719,6 +11906,15 @@
                         "content": {
                           "type": "STRING",
                           "value": "export"
+                        },
+                        "named": true,
+                        "value": "identifier"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "given"
                         },
                         "named": true,
                         "value": "identifier"
@@ -13079,6 +13275,15 @@
                   {
                     "type": "ALIAS",
                     "content": {
+                      "type": "STRING",
+                      "value": "enum"
+                    },
+                    "named": true,
+                    "value": "identifier"
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
                       "type": "SYMBOL",
                       "name": "_alpha_identifier"
                     },
@@ -13126,6 +13331,15 @@
                     "content": {
                       "type": "STRING",
                       "value": "export"
+                    },
+                    "named": true,
+                    "value": "identifier"
+                  },
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "STRING",
+                      "value": "given"
                     },
                     "named": true,
                     "value": "identifier"
@@ -13729,7 +13943,7 @@
       "members": [
         {
           "type": "PREC_RIGHT",
-          "value": 1,
+          "value": 0,
           "content": {
             "type": "SEQ",
             "members": [
@@ -14233,6 +14447,10 @@
   ],
   "conflicts": [
     [
+      "enum_definition",
+      "_type_identifier"
+    ],
+    [
       "_if_rest"
     ],
     [
@@ -14378,6 +14596,28 @@
       "_type_identifier"
     ],
     [
+      "given_definition",
+      "_type_identifier"
+    ],
+    [
+      "given_pattern",
+      "_simple_expression"
+    ],
+    [
+      "_type_identifier",
+      "given_pattern",
+      "_simple_expression"
+    ],
+    [
+      "_type_identifier",
+      "given_pattern"
+    ],
+    [
+      "infix_pattern",
+      "capture_pattern",
+      "given_pattern"
+    ],
+    [
       "_single_lambda_param",
       "self_type",
       "_type_identifier"
@@ -14519,6 +14759,16 @@
     [
       {
         "type": "STRING",
+        "value": "enum_head"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "_simple_expression"
+      }
+    ],
+    [
+      {
+        "type": "STRING",
         "value": "mod"
       },
       {
@@ -14564,6 +14814,26 @@
       {
         "type": "STRING",
         "value": "applied_constructor_type"
+      }
+    ],
+    [
+      {
+        "type": "STRING",
+        "value": "given_pattern"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "capture_pattern"
+      }
+    ],
+    [
+      {
+        "type": "STRING",
+        "value": "given_head"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "_simple_expression"
       }
     ]
   ],
@@ -14791,6 +15061,10 @@
     {
       "type": "SYMBOL",
       "name": "_word_operator_eol"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_name_gate"
     }
   ],
   "inline": [
