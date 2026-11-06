@@ -242,6 +242,10 @@ const wordName = $ =>
 // production, so a plain name shifts straight in with no unit reduction.
 const nameChoice = $ =>
   choice(
+    // `enum` is a hard keyword in Scala 3 but an ordinary identifier in
+    // Scala 2 (`val enum = 1`, `x.enum`); `enum_definition` still leads with
+    // the literal token.
+    alias("enum", $.identifier),
     alias($._alpha_identifier, $.identifier),
     alias($._backquoted_id, $.identifier),
     alias($._soft_identifier, $.identifier),
@@ -393,6 +397,10 @@ module.exports = grammar({
     // its right operand. Only the infix production takes it, so the line
     // break cannot end the statement after `left op`.
     $._word_operator_eol,
+    // Never emitted. Valid only where a definition name follows a keyword
+    // that Scala 2 reads as an identifier (`enum`), so the scanner lexes the
+    // name rather than an infix operator.
+    $._name_gate,
   ],
 
   inline: $ => [
@@ -433,6 +441,8 @@ module.exports = grammar({
   // Doc: https://tree-sitter.github.io/tree-sitter/creating-parsers, search "precedences"
   // These names can be used in the prec functions to define precedence relative only to other names in the array, rather than globally.
   precedences: $ => [
+    // `enum Color` at a statement start is a definition (see enum_definition).
+    ["enum_head", $._simple_expression],
     ["mod", "soft_id"],
     ["new", "structural_type"],
     ["self_type", "lambda"],
@@ -441,6 +451,9 @@ module.exports = grammar({
   ],
 
   conflicts: $ => [
+    // '['  'enum'  ':'  '{'  'enum'  •  … — under a context bound's brace,
+    // `enum` opens a definition or reads as a type name until the next token.
+    [$.enum_definition, $._type_identifier],
     [$._if_rest],
     [$.repeat_pattern, $._simple_expression],
     [$.tuple_pattern, $._simple_expression],
@@ -663,12 +676,17 @@ module.exports = grammar({
         $.package_object,
       ),
 
+    // "enum_head" beats the Scala 2 reading of `enum` as an identifier at a
+    // statement start, so `enum Color` is a definition. The name gate stops
+    // the scanner from taking the name as an infix operator.
     enum_definition: $ =>
       seq(
         repeat($.annotation),
         optional($.modifiers),
-        "enum",
-        $._class_constructor,
+        prec(
+          "enum_head",
+          seq("enum", optional($._name_gate), $._class_constructor),
+        ),
         field("extend", optional($.extends_clause)),
         field("derive", optional(choice($.derives_clause, $.uses_clause))),
         field("body", $.enum_body),

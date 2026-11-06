@@ -2913,6 +2913,95 @@ package export.foo
       (identifier))))
 
 ================================================================================
+enum as an identifier (Scala 2)
+================================================================================
+
+def test(enum: Int): Int = enum
+val viaCall = enum()
+
+object A {
+  val enum = 1
+  val viaField = y.enum
+  def enum(): Unit = ()
+  enum.foo
+  enum = 2
+  enum + 1
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (identifier))
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (arguments)))
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (integer_literal))
+      (val_definition
+        (identifier)
+        (field_expression
+          (identifier)
+          (identifier)))
+      (function_definition
+        (identifier)
+        (parameters)
+        (type_identifier)
+        (unit))
+      (field_expression
+        (identifier)
+        (identifier))
+      (assignment_expression
+        (identifier)
+        (integer_literal))
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (integer_literal)))))
+
+================================================================================
+Enum with a symbolic name (Scala 3 syntax)
+================================================================================
+
+enum =:=[A, B] {
+  case Refl[C]() extends (C =:= C)
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (enum_definition
+    (operator_identifier)
+    (type_parameters
+      (identifier)
+      (identifier))
+    (enum_body
+      (enum_case_definitions
+        (full_enum_case
+          (identifier)
+          (type_parameters
+            (identifier))
+          (class_parameters)
+          (extends_clause
+            (tuple_type
+              (infix_type
+                (type_identifier)
+                (operator_identifier)
+                (type_identifier)))))))))
+
+================================================================================
 export as an identifier (Scala 2)
 ================================================================================
 
