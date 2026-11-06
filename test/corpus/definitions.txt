@@ -3440,3 +3440,46 @@ def f(update: U, consume: C) =
           (case_clause
             (wildcard)
             (identifier)))))))
+
+================================================================================
+Parents on lines of their own, each line but the last ending in a comma (Scala 3 syntax)
+================================================================================
+
+object O:
+  class C
+      extends A,
+      B,
+      C:
+    def f = 1
+  case class D(x: Int)
+      extends A,
+      B
+      derives Eq
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (class_definition
+        (identifier)
+        (extends_clause
+          (type_identifier)
+          (type_identifier)
+          (type_identifier))
+        (template_body
+          (function_definition
+            (identifier)
+            (integer_literal))))
+      (class_definition
+        (identifier)
+        (class_parameters
+          (class_parameter
+            (identifier)
+            (type_identifier)))
+        (extends_clause
+          (type_identifier)
+          (type_identifier))
+        (derives_clause
+          (type_identifier))))))
