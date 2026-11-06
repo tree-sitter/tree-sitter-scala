@@ -2223,7 +2223,12 @@ module.exports = grammar({
             field(
               "parameters",
               prec.right(
-                seq(optional("implicit"), operandName($), colonEol($), $._type),
+                seq(
+                  optional("implicit"),
+                  choice(operandName($), $.wildcard),
+                  colonEol($),
+                  $._type,
+                ),
               ),
             ),
             anyArrow(),
