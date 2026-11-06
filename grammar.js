@@ -253,6 +253,9 @@ const nameChoice = $ =>
     // wherever a name is read; `export_declaration` still leads with the
     // literal token, so clause position is unaffected.
     alias("export", $.identifier),
+    // `given` likewise (`def f(given: Int)`, `given()`); `given_definition`,
+    // `given_pattern` and import selectors still lead with the literal token.
+    alias("given", $.identifier),
   );
 
 // The scanner-lexed soft modifiers, each keeping its keyword token's node name.
@@ -438,6 +441,11 @@ module.exports = grammar({
     ["self_type", "lambda"],
     ["annotation", "applied_constructor_type"],
     ["constructor_application", "applied_constructor_type"],
+    // `x @ given T`: the given pattern takes the type rather than closing
+    // the capture on `given` as an identifier.
+    ["given_pattern", $.capture_pattern],
+    // `given x: T` at a statement start is a definition (see given_definition).
+    ["given_head", $._simple_expression],
   ],
 
   conflicts: $ => [
@@ -501,6 +509,17 @@ module.exports = grammar({
     [$.export_declaration, $._simple_expression],
     [$.export_declaration, $._type_identifier, $._simple_expression],
     [$.export_declaration, $._type_identifier],
+    // 'given'  •  … — a Scala 3 given definition, or the Scala 2 identifier
+    // `given` beginning an expression. The "given_head" precedence settles
+    // the statement start for the definition; the fork stays under a context
+    // bound's brace and in patterns, where the next token decides.
+    [$.given_definition, $._type_identifier],
+    [$.given_pattern, $._simple_expression],
+    [$._type_identifier, $.given_pattern, $._simple_expression],
+    [$._type_identifier, $.given_pattern],
+    // 'case'  identifier  '@'  'given'  •  identifier — a given pattern, or
+    // `given` as the bound pattern with an infix operator after it.
+    [$.infix_pattern, $.capture_pattern, $.given_pattern],
     // '['  identifier  ':'  '{'  identifier. A braced context bound reuses
     // the template machinery, so self type and statement readings coexist.
     [$._single_lambda_param, $.self_type, $._type_identifier],
@@ -1273,14 +1292,17 @@ module.exports = grammar({
      * GivenDef          ::=  [GivenSig] (AnnotType ['=' Expr] | StructuralInstance)
      * GivenSig          ::=  [id] [DefTypeParamClause] {UsingParamClause} ':'
      */
+    // "given_head" beats the Scala 2 reading of `given` as an identifier at
+    // a statement start, so `given x: T` is a definition, not an ascription.
+    // Resolving it statically also keeps the expression reading from forking
+    // through the whole given body.
     given_definition: $ =>
       seq(
         prec.left(
           seq(
             repeat($.annotation),
             optional($.modifiers),
-            "given",
-            $._given_tail,
+            prec("given_head", seq("given", $._given_tail)),
           ),
         ),
         optional($._end_marker_named_tail),
@@ -2044,7 +2066,8 @@ module.exports = grammar({
         seq(field("pattern", $._pattern), ":", field("type", $._type)),
       ),
 
-    given_pattern: $ => seq("given", field("type", $._type)),
+    given_pattern: $ =>
+      prec("given_pattern", seq("given", field("type", $._type))),
 
     // TODO: Flatten this.
     alternative_pattern: $ => prec.left(-2, seq($._pattern, "|", $._pattern)),
