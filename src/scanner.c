@@ -264,6 +264,25 @@ static inline int16_t indent_width(int16_t entry) {
   return entry == -1 ? -1 : (int16_t)(entry & 0x3FFF);
 }
 
+// From anywhere on a line, the column of the next line that isn't blank, or
+// -1 at the end of the input. Advances the lexer, so call it after mark_end.
+static int16_t next_line_column(TSLexer *lexer) {
+  while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
+    advance(lexer);
+  }
+  while (!lexer->eof(lexer)) {
+    advance(lexer);  // the '\n'
+    advance_past_blanks(lexer);
+    if (lexer->lookahead == '\r') {
+      advance(lexer);
+    }
+    if (lexer->lookahead != '\n' && !lexer->eof(lexer)) {
+      return (int16_t)lexer->get_column(lexer);
+    }
+  }
+  return -1;
+}
+
 // Does a line at `width` sit exactly at the width of a flagged same-width
 // case region `prev`? Shared by every close site of such regions.
 static inline bool at_case_region_width(int16_t prev, int16_t width) {
@@ -1265,6 +1284,15 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       // catches what is left, where no operand ended before the comma.
       if (!ends_line && !valid_symbols[POSTFIX_OP] &&
           !scan_rest_of_line(lexer).closes_bracket) {
+        return false;
+      }
+      // scalac closes an indentation region at a comma only inside brackets.
+      // A comma after a parent in an `extends` clause, where `with` or
+      // `derives` could come instead, separates parents: with the next
+      // parent on a deeper line, as `extends A,` + `B:` inside `object O:`,
+      // the region stays open.
+      if (ends_line && (valid_symbols[WITH] || valid_symbols[DERIVES]) &&
+          next_line_column(lexer) > prev_width) {
         return false;
       }
     }
