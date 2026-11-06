@@ -6071,3 +6071,20 @@ val f = _.next { x: M.N =>
           (val_definition
             (identifier)
             (integer_literal)))))))
+
+================================================================================
+Braced typed lambda with wildcard parameter
+================================================================================
+
+val f = { _: Foo => () }
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (block
+      (lambda_expression
+        (wildcard)
+        (type_identifier)
+        (unit)))))
