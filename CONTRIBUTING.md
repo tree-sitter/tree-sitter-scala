@@ -5,6 +5,43 @@ in Scala better! This document will hopefully help you get set up, understand
 how to work on the codebase, or link to places to help you understand
 tree-sitter.
 
+## Files to check in / files to leave out
+
+For security reasons, and to avoid merge conflicts between pull requests, we let a GitHub Action generate the Tree Sitter parser files like `src/parser.c`.
+So please check in only the files you edited by hand.
+
+Each night, CI regenerates the parser if anything changed and opens a "chore: generate and sync" pull request with the result.
+
+### ✅ DO CHECK IN
+
+Check these in if you edited them:
+
+- `grammar.js`
+- `src/scanner.c`
+- `test/corpus/*.txt`, including the `*-pending.txt` files
+- `test/highlight/*.scala` and `test/tags/*`
+- `queries/*.scm`
+- `script/smoke_test.sh`, when your change raises the expected percentages (see
+  [Smoke testing](#smoke-testing))
+
+### ❌ DO NOT CHECK IN
+
+`tree-sitter generate` rewrites these files. Leave them out of your commits,
+even though you need to regenerate locally to run the tests:
+
+- `src/parser.c`
+- `src/grammar.json`
+- `src/node-types.json`
+- `src/tree_sitter/alloc.h`, `src/tree_sitter/array.h` and
+  `src/tree_sitter/parser.h`
+- `bindings/c/tree-sitter-scala.h` and `bindings/c/tree-sitter-scala.pc.in`
+
+To undo the generated changes before you commit:
+
+```bash
+git restore src/parser.c src/grammar.json src/node-types.json src/tree_sitter bindings/c
+```
+
 ## Requirements
 
 - [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/tree/master/cli)
@@ -53,8 +90,8 @@ Right now the most common use-case for syntax highlight using tree-sitter is
 [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter), which
 means much of our testing is in relation to it. You can find the syntax
 highlighting tests in `test/highlight/*.scala`. You can read more about this
-type of testing 
-[here](https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#unit-testing). 
+type of testing
+[here](https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#unit-testing).
 These test will be run automatically with `tree-sitter test`.
 
 ### tree-sitter highlight
@@ -62,8 +99,8 @@ These test will be run automatically with `tree-sitter test`.
 Another way to test your syntax highlighting locally is to use the `tree-sitter
 highlight` command. Note that you'll need to have `tree-sitter` installed
 globally for this to work. Once you have it installed you'll want to follow the
-instructions [here](https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#overview) 
-to setup a local config that points towards this repo to be used as a parser. 
+instructions [here](https://tree-sitter.github.io/tree-sitter/3-syntax-highlighting.html#overview)
+to setup a local config that points towards this repo to be used as a parser.
 Once done you can then do the following:
 
 ```sh
@@ -72,13 +109,6 @@ tree-sitter highlight some/scala/file.scala
 
 And see the syntax highlighting spit out. This is also the format used for
 testing, so it provides an easy way to get the output we use for testing.
-
-## Generation
-
-In order to help not cause conflicts with multiple prs being open at the same
-time, we don't check in the parser on each pr. Instead, just check in the
-changes to the `grammar.js` and the CI will take care of the rest. Each night if
-changes are detected it will automatically be generated.
 
 ## Smoke testing
 
