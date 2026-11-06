@@ -8245,8 +8245,30 @@
               ]
             },
             {
-              "type": "SYMBOL",
-              "name": "_indentable_expression"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_block"
+                    },
+                    {
+                      "type": "ALIAS",
+                      "content": {
+                        "type": "SYMBOL",
+                        "name": "_braced_typed_lambda"
+                      },
+                      "named": true,
+                      "value": "lambda_expression"
+                    }
+                  ]
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
             }
           ]
         }
