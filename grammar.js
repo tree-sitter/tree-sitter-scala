@@ -3332,9 +3332,11 @@ module.exports = grammar({
     for_expression: $ =>
       choice(
         // No marker slot on the bracketed heads, for the same reason as the
-        // parenthesized while.
+        // parenthesized while. No precedence either, as with the
+        // parenthesized while and if: a `match` after the body then takes
+        // the body as its value, as scalac reads `for (x <- xs) x match`,
+        // where a `for` can't be matched on.
         prec.right(
-          PREC.control,
           seq(
             "for",
             field(
