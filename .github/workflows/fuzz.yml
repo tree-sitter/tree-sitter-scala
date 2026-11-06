@@ -15,5 +15,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+      # The checked-in parser.c is regenerated nightly, so it can lag behind
+      # grammar.js. A scanner that knows an external token the stale parser
+      # lacks reads past its valid_symbols array.
+      - name: Set up tree-sitter
+        uses: tree-sitter/setup-action/cli@v2
+        with:
+          # Change also on ci.yml and sync.yml
+          tree-sitter-ref: v0.26.8
+      - name: Generate parser
+        run: tree-sitter generate
       - name: Run fuzzer
         uses: tree-sitter/fuzz-action@v4
