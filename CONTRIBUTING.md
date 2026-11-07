@@ -147,9 +147,23 @@ Then the tree will be printed out for you to copy.
 
 ## Release
 
-1. Update `version` in `tree-sitte.json`
-2. Update `version` in `package.json`, then run `npm install`
-3. Update `VERSION` in `CMakeLists.txt`
-4. Update `VERSION` in `Makefile`
-5. Update `version` in `Cargo.toml`, then run `cargo build`
-6. Update `version` in `pyproject.toml`
+Releases are cut by pushing a tag for the version that is already in the
+repository, for example `v0.26.7`. Pushing the tag runs the publish workflow,
+which creates the GitHub release and publishes to npm, crates.io and PyPI.
+
+After a release, the version is bumped automatically. A nightly workflow
+(`.github/workflows/bump.yml`) checks whether the current version is already
+tagged, and if so opens a "chore: bump to x.y.z" PR that bumps the patch
+version. Merge that PR before tagging the next release.
+
+To bump the version by hand, for example to release a minor or major version,
+run:
+
+```
+script/bump_version.sh          # bump the patch version
+script/bump_version.sh 0.27.0   # set an explicit version
+```
+
+The script updates the version in `tree-sitter.json`, `package.json`,
+`package-lock.json`, `CMakeLists.txt`, `Makefile`, `Cargo.toml`, `Cargo.lock`
+and `pyproject.toml`.
