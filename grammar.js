@@ -2084,8 +2084,14 @@ module.exports = grammar({
         seq(field("pattern", $._pattern), ":", field("type", $._type)),
       ),
 
+    // In `case given (A, B)` both a given pattern and an extractor named
+    // `given` (the Scala 2 identifier) parse. The weight picks the given
+    // pattern, since a Scala 2 extractor of that name is unlikely.
     given_pattern: $ =>
-      prec("given_pattern", seq("given", field("type", $._type))),
+      prec.dynamic(
+        1,
+        prec("given_pattern", seq("given", field("type", $._type))),
+      ),
 
     // TODO: Flatten this.
     alternative_pattern: $ => prec.left(-2, seq($._pattern, "|", $._pattern)),

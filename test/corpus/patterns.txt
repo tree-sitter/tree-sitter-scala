@@ -426,6 +426,36 @@ def f = x match {
           (integer_literal))))))
 
 ================================================================================
+Given pattern of a parenthesized type (Scala 3 syntax)
+================================================================================
+
+x match {
+  case given (A & B) => 1
+  case given (A, B) => 2
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (match_expression
+    (identifier)
+    (case_block
+      (case_clause
+        (given_pattern
+          (tuple_type
+            (infix_type
+              (type_identifier)
+              (operator_identifier)
+              (type_identifier))))
+        (integer_literal))
+      (case_clause
+        (given_pattern
+          (tuple_type
+            (type_identifier)
+            (type_identifier)))
+        (integer_literal)))))
+
+================================================================================
 Capture patterns inside string interpolation patterns
 ================================================================================
 
