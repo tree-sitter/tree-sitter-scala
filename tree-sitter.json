@@ -15,7 +15,7 @@
     }
   ],
   "metadata": {
-    "version": "0.26.8",
+    "version": "0.26.9",
     "license": "MIT",
     "description": "Scala grammar for tree-sitter",
     "authors": [
