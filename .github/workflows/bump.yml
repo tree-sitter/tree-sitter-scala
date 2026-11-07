@@ -1,0 +1,48 @@
+name: "Bump version after release"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 6 * * *
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    if: github.repository == 'tree-sitter/tree-sitter-scala'
+    steps:
+      - name: checkout tree-sitter-scala
+        uses: actions/checkout@v6
+
+      - name: Check whether the current version is already tagged
+        id: check
+        run: |
+          VERSION=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            echo "v$VERSION is already tagged"
+            echo "tagged=true" >> $GITHUB_OUTPUT
+          else
+            echo "v$VERSION is not tagged yet"
+            echo "tagged=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump patch version
+        id: bump
+        if: steps.check.outputs.tagged == 'true'
+        run: |
+          script/bump_version.sh
+          NEXT=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.check.outputs.tagged == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          title: "chore: bump to ${{ steps.bump.outputs.next }}"
+          commit-message: "chore: bump to ${{ steps.bump.outputs.next }}"
+          body: "v${{ steps.check.outputs.version }} is already tagged, so this bumps the version to ${{ steps.bump.outputs.next }}."
+          branch: bump-version
+          delete-branch: true
