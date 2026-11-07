@@ -7332,24 +7332,28 @@
       }
     },
     "given_pattern": {
-      "type": "PREC",
-      "value": "given_pattern",
+      "type": "PREC_DYNAMIC",
+      "value": 1,
       "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "STRING",
-            "value": "given"
-          },
-          {
-            "type": "FIELD",
-            "name": "type",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_type"
+        "type": "PREC",
+        "value": "given_pattern",
+        "content": {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "given"
+            },
+            {
+              "type": "FIELD",
+              "name": "type",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_type"
+              }
             }
-          }
-        ]
+          ]
+        }
       }
     },
     "alternative_pattern": {

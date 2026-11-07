@@ -885262,8 +885262,8 @@ static const TSParseActionEntry ts_parse_actions[] = {
   [16833] = {.entry = {.count = 1, .reusable = true}}, REDUCE(aux_sym__function_constructor_repeat1, 1, 0, 0),
   [16835] = {.entry = {.count = 1, .reusable = false}}, SHIFT(3228),
   [16837] = {.entry = {.count = 1, .reusable = false}}, SHIFT(702),
-  [16839] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_given_pattern, 2, 0, 83),
-  [16841] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_given_pattern, 2, 0, 83),
+  [16839] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_given_pattern, 2, 1, 83),
+  [16841] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_given_pattern, 2, 1, 83),
   [16843] = {.entry = {.count = 1, .reusable = true}}, SHIFT(12127),
   [16845] = {.entry = {.count = 1, .reusable = true}}, SHIFT(2594),
   [16847] = {.entry = {.count = 1, .reusable = false}}, SHIFT(12698),
@@ -893912,7 +893912,7 @@ TS_PUBLIC const TSLanguage *tree_sitter_scala(void) {
     .metadata = {
       .major_version = 0,
       .minor_version = 26,
-      .patch_version = 7,
+      .patch_version = 8,
     },
   };
   return &language;
