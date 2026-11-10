@@ -2260,10 +2260,11 @@ module.exports = grammar({
       ),
 
     // `{ x: T => body }` is legal only as a block result. The weight beats
-    // the reading of `x: T` as a statement taking a colon argument.
+    // the reading of `x: T` as a statement taking a colon argument, even when
+    // `T` is a parenthesized tuple type that could match `_colon_bindings` (dynamic prec 3).
     _braced_typed_lambda: $ =>
       prec.dynamic(
-        1,
+        4,
         prec.right(
           "lambda",
           seq(

@@ -2969,6 +2969,10 @@ val a = forAll { int: Int =>
 val b = OWrites: c =>
   Json.obj(c)
 
+val c = xs.flatMap { a: (String, Json) =>
+  a._2
+}
+
 --------------------------------------------------------------------------------
 
 (compilation_unit
@@ -2995,7 +2999,22 @@ val b = OWrites: c =>
               (identifier)
               (identifier))
             (arguments
-              (identifier))))))))
+              (identifier)))))))
+  (val_definition
+    (identifier)
+    (call_expression
+      (field_expression
+        (identifier)
+        (identifier))
+      (block
+        (lambda_expression
+          (identifier)
+          (tuple_type
+            (type_identifier)
+            (type_identifier))
+          (field_expression
+            (identifier)
+            (identifier)))))))
 
 ================================================================================
 Standalone end is not a marker (Scala 3 syntax)
