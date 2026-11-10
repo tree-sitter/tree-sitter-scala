@@ -9317,7 +9317,7 @@
             "name": "function",
             "content": {
               "type": "SYMBOL",
-              "name": "expression"
+              "name": "_simple_expression"
             }
           },
           {
