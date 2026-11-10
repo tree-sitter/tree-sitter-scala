@@ -618,6 +618,30 @@ class C {
             (arguments)))))))
 
 ================================================================================
+Type arguments on the right operand of an infix expression
+================================================================================
+
+a && b.asInstanceOf[T].length == 0
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (infix_expression
+    (identifier)
+    (operator_identifier)
+    (infix_expression
+      (field_expression
+        (generic_function
+          (field_expression
+            (identifier)
+            (identifier))
+          (type_arguments
+            (type_identifier)))
+        (identifier))
+      (operator_identifier)
+      (integer_literal))))
+
+================================================================================
 Assignments
 ================================================================================
 
@@ -5109,18 +5133,18 @@ object O:
       (function_definition
         (identifier)
         (parenthesized_expression
-          (generic_function
-            (infix_expression
-              (method_value
-                (generic_function
-                  (identifier)
-                  (type_arguments
-                    (type_identifier)))
-                (wildcard))
+          (infix_expression
+            (method_value
+              (generic_function
+                (identifier)
+                (type_arguments
+                  (type_identifier)))
+              (wildcard))
+            (identifier)
+            (generic_function
               (identifier)
-              (identifier))
-            (type_arguments
-              (type_identifier))))))))
+              (type_arguments
+                (type_identifier)))))))))
 
 ================================================================================
 Top-level match with cases at width zero and a following statement
