@@ -8187,7 +8187,7 @@
     },
     "_braced_typed_lambda": {
       "type": "PREC_DYNAMIC",
-      "value": 1,
+      "value": 4,
       "content": {
         "type": "PREC_RIGHT",
         "value": "lambda",
