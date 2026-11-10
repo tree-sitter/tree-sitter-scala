@@ -2491,7 +2491,7 @@ module.exports = grammar({
       prec(
         PREC.call,
         seq(
-          field("function", $.expression),
+          field("function", $._simple_expression),
           field("type_arguments", $.type_arguments),
         ),
       ),
