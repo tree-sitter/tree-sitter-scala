@@ -90,6 +90,56 @@ class C {
                 (identifier)))))))))
 
 ================================================================================
+Block argument on the next line
+================================================================================
+
+object A {
+  val p = f(
+    { a => b })
+    { c => d }
+  g(x)
+  {
+    y
+  }
+  h(x)
+
+    { z }
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (call_expression
+          (call_expression
+            (identifier)
+            (arguments
+              (block
+                (lambda_expression
+                  (identifier)
+                  (identifier)))))
+          (block
+            (lambda_expression
+              (identifier)
+              (identifier)))))
+      (call_expression
+        (identifier)
+        (arguments
+          (identifier)))
+      (block
+        (identifier))
+      (call_expression
+        (identifier)
+        (arguments
+          (identifier)))
+      (block
+        (identifier)))))
+
+================================================================================
 Call expressions (Scala 3 syntax)
 ================================================================================
 
