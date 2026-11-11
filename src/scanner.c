@@ -148,6 +148,10 @@ typedef struct {
   // an unrelated position further down.
   int16_t last_char;
   int16_t after_colon_eol;
+  // The indentation of the line the current statement starts on, as of the
+  // last line break that ended a statement or opened a region. -1 when
+  // unknown.
+  int16_t statement_indent;
 } Scanner;
 
 void *tree_sitter_scala_external_scanner_create() {
@@ -155,6 +159,7 @@ void *tree_sitter_scala_external_scanner_create() {
   array_init(&scanner->indents);
   scanner->last_indentation_size = -1;
   scanner->last_column = -1;
+  scanner->statement_indent = -1;
   return scanner;
 }
 
@@ -167,7 +172,7 @@ void tree_sitter_scala_external_scanner_destroy(void *payload) {
 unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *scanner = (Scanner*)payload;
 
-  if ((scanner->indents.size + 5) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+  if ((scanner->indents.size + 6) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
 
@@ -181,6 +186,8 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
   memcpy(buffer + size, &scanner->last_char, sizeof(int16_t));
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->after_colon_eol, sizeof(int16_t));
+  size += sizeof(int16_t);
+  memcpy(buffer + size, &scanner->statement_indent, sizeof(int16_t));
   size += sizeof(int16_t);
 
   for (unsigned i = 0; i < scanner->indents.size; i++) {
@@ -200,6 +207,7 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   scanner->last_char = 0;
   scanner->last_newline_count = 0;
   scanner->after_colon_eol = 0;
+  scanner->statement_indent = -1;
 
   if (length == 0) {
     return;
@@ -216,6 +224,8 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   scanner->last_char = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
   scanner->after_colon_eol = *(int16_t *)&buffer[size];
+  size += sizeof(int16_t);
+  scanner->statement_indent = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
 
   unsigned count = (length - (unsigned)size) / sizeof(int16_t);
@@ -1459,6 +1469,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         break;
     }
     array_push(&scanner->indents, entry);
+    scanner->statement_indent = indentation_size;
     lexer->result_symbol = INDENT;
     LOG("    INDENT\n");
     return true;
@@ -1591,6 +1602,22 @@ static bool scan_impl(void *payload, TSLexer *lexer,
 
     lexer->mark_end(lexer);
     lexer->result_symbol = AUTOMATIC_SEMICOLON;
+    // The next statement starts on this line. Kept only if the semicolon
+    // is: tree-sitter restores the state when the scan returns false.
+    int16_t statement_indent = scanner->statement_indent;
+    scanner->statement_indent = indentation_size;
+
+    // A `{` on the next line, deeper than the statement, continues it as
+    // a block argument, as in `f(a)` + `  { b => c }`. scalac reads it so
+    // in Scala 3, which inserts no line break before a line deeper than
+    // the region, and in Scala 2, which accepts a `{` after one line break
+    // wherever it can continue the expression. POSTFIX_OP is offered only
+    // where an operand just ended, which an import or a declaration isn't.
+    if (lexer->lookahead == '{' && newline_count == 1 &&
+        indentation_size > statement_indent && valid_symbols[POSTFIX_OP] &&
+        !valid_symbols[ERROR_SENTINEL]) {
+      return false;
+    }
 
     // Probably, a multi-line field expression, e.g.
     // a
