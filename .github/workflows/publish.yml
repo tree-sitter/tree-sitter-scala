@@ -12,13 +12,6 @@ permissions:
 jobs:
   github:
     uses: tree-sitter/workflows/.github/workflows/release.yml@10c66d66e558b37df92e2a8ec5321218a6547b04
-  npm:
-    uses: tree-sitter/workflows/.github/workflows/package-npm.yml@10c66d66e558b37df92e2a8ec5321218a6547b04
-    with:
-      # Older npm bundles a node-gyp that cannot find Visual Studio 2026.
-      node-version: "26"
-    secrets:
-      NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
   crates:
     uses: tree-sitter/workflows/.github/workflows/package-crates.yml@10c66d66e558b37df92e2a8ec5321218a6547b04
     secrets:
