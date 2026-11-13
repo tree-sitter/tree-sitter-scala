@@ -939712,7 +939712,7 @@ TS_PUBLIC const TSLanguage *tree_sitter_scala(void) {
     .metadata = {
       .major_version = 0,
       .minor_version = 26,
-      .patch_version = 12,
+      .patch_version = 13,
     },
   };
   return &language;
