@@ -404,6 +404,9 @@ module.exports = grammar({
     // that Scala 2 reads as an identifier (`enum`), so the scanner lexes the
     // name rather than an infix operator.
     $._name_gate,
+    // An INDENT that opens the body of a case clause. Only the body takes
+    // it, so the scanner knows the region is a case body.
+    $._case_body_indent,
   ],
 
   inline: $ => [
@@ -2455,7 +2458,26 @@ module.exports = grammar({
 
     case_clause: $ =>
       prec.left(
-        seq("case", $._case_pattern, field("body", optional($._block))),
+        seq(
+          "case",
+          $._case_pattern,
+          field("body", optional(choice($._block, $._indented_case_body))),
+        ),
+      ),
+
+    // A case body that starts on a deeper line than `case` is an indentation
+    // region, as in scalac: its lines are measured against the body's width,
+    // so `if c then` + a line at the `if`'s width opens no nested region.
+    // As in scalac, statements may follow on lines that close the region but
+    // stay deeper than `case`.
+    _indented_case_body: $ =>
+      prec.left(
+        seq(
+          $._case_body_indent,
+          $._block,
+          choice($._outdent, $._comma_outdent),
+          optional(seq(optional($._semis), $._block_statements)),
+        ),
       ),
 
     // Dynamic precedence to win over lambda_expression in complex contexts

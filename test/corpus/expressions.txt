@@ -2970,6 +2970,166 @@ object O:
                 (integer_literal)))))))))
 
 ================================================================================
+Lines after `then` or `do` at the width of a case body end the branch (Scala 3 syntax)
+================================================================================
+
+object P:
+  def f(t: Any, c: Boolean): Int = t match
+    case _: String =>
+      if c then
+      println("then")
+      1
+    case _ =>
+      while c do
+      println("do")
+      2
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier))
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier)
+        (match_expression
+          (identifier)
+          (indented_cases
+            (case_clause
+              (typed_pattern
+                (wildcard)
+                (type_identifier))
+              (if_expression
+                (identifier)
+                (call_expression
+                  (identifier)
+                  (arguments
+                    (string))))
+              (integer_literal))
+            (case_clause
+              (wildcard)
+              (while_expression
+                (identifier)
+                (call_expression
+                  (identifier)
+                  (arguments
+                    (string))))
+              (integer_literal))))))))
+
+================================================================================
+A leading operator after a case body closes the nested match it is not deeper than (Scala 3 syntax)
+================================================================================
+
+def f =
+  a
+  || b.match
+    case B =>
+      c.match
+        case C => d
+      || e
+    case _ =>
+      g
+  || h
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (match_expression
+            (identifier)
+            (indented_cases
+              (case_clause
+                (identifier)
+                (infix_expression
+                  (match_expression
+                    (identifier)
+                    (indented_cases
+                      (case_clause
+                        (identifier)
+                        (identifier))))
+                  (operator_identifier)
+                  (identifier)))
+              (case_clause
+                (wildcard)
+                (identifier)))))
+        (operator_identifier)
+        (identifier)))))
+
+================================================================================
+A leading operator the case region keeps continues the case body (Scala 3 syntax)
+================================================================================
+
+def f =
+  a
+  || b.match
+      case B => c
+      case _ =>
+        d
+    || e
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (infix_expression
+        (identifier)
+        (operator_identifier)
+        (match_expression
+          (identifier)
+          (indented_cases
+            (case_clause
+              (identifier)
+              (identifier))
+            (case_clause
+              (wildcard)
+              (infix_expression
+                (identifier)
+                (operator_identifier)
+                (identifier)))))))))
+
+================================================================================
+A case body continues after a line that closes its region (Scala 3 syntax)
+================================================================================
+
+def f = x match
+  case a =>
+      b
+    c
+  case _ => d
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (match_expression
+      (identifier)
+      (indented_cases
+        (case_clause
+          (identifier)
+          (identifier)
+          (identifier))
+        (case_clause
+          (wildcard)
+          (identifier))))))
+
+================================================================================
 A line at the case width that is not a case ends the clauses (Scala 3 syntax)
 ================================================================================
 
