@@ -82,6 +82,12 @@ const OP_OTHER_FIRST = "#?@\\\\~" + SM_NONASCII + "\\p{So}";
 
 const opRegex = body => new RegExp(body, "u");
 
+// The letters of a name outside ASCII. Every one of them can start a name
+// and continue one. The name tokens spell their ASCII letters apart from
+// these, so the lexer tests the short ASCII ranges before this large set.
+const ID_NON_ASCII =
+  "[[\\p{Lu}\\p{Lt}\\p{Nl}\\p{Lo}\\p{Lm}\\p{Ll}\\u00AA\\u00BB\\u02B0-\\u02B8\\u02C0-\\u02C1\\u02E0-\\u02E4\\u037A\\u1D78\\u1D9B-\\u1DBF\\u2071\\u207F\\u2090-\\u209C\\u2C7C-\\u2C7D\\uA69C-\\uA69D\\uA770\\uA7F8-\\uA7F9\\uAB5C-\\uAB5F]&&[^\\x00-\\x7F]]";
+
 // One token per SLS 6.12.3 precedence class, split by the final character:
 // `:` makes an operator right-associative, `=` demotes it to assignment
 // precedence unless it is `<=`, `>=`, `!=` or starts with `=`. The
@@ -439,6 +445,20 @@ module.exports = grammar({
     $._xml_pattern_content,
     $._structural_type,
     $._refinement,
+    // Hidden wrappers on hot paths. Each one cost a tree node per use, and
+    // inlining these adds under 1MiB to parser.c. Error recovery is the only
+    // output that depends on them.
+    $._infix_operand,
+    $._semis,
+    $._top_level_definition,
+    $._namespace_path_segment,
+    $._function_declaration,
+    $._parameters_tail,
+    $._definition_body,
+    $._expr_case_clause,
+    $._constructor_applications,
+    $._start_val,
+    $._using_parameters_clause,
   ],
 
   // Doc: https://tree-sitter.github.io/tree-sitter/creating-parsers, search "precedences"
@@ -2902,7 +2922,9 @@ module.exports = grammar({
     _alpha_identifier: $ =>
       token(
         seq(
-          /[\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F\$][\p{Lu}\p{Lt}\p{Nl}\p{Lo}\p{Lm}\$\p{Ll}_\u00AA\u00BB\u02B0-\u02B8\u02C0-\u02C1\u02E0-\u02E4\u037A\u1D78\u1D9B-\u1DBF\u2071\u207F\u2090-\u209C\u2C7C-\u2C7D\uA69C-\uA69D\uA770\uA7F8-\uA7F9\uAB5C-\uAB5F0-9\$_\p{Ll}]*/,
+          new RustRegex(
+            `(?:[A-Za-z$_][A-Za-z0-9$_]*|${ID_NON_ASCII}[A-Za-z0-9$_]*)(?:${ID_NON_ASCII}[A-Za-z0-9$_]*)*`,
+          ),
           optional(opRegex(`_(?:${OP_STEP}+|/)`)),
         ),
       ),
