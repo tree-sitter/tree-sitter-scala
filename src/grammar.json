@@ -9161,14 +9161,82 @@
               "type": "CHOICE",
               "members": [
                 {
-                  "type": "SYMBOL",
-                  "name": "_block"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_block"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "_indented_case_body"
+                    }
+                  ]
                 },
                 {
                   "type": "BLANK"
                 }
               ]
             }
+          }
+        ]
+      }
+    },
+    "_indented_case_body": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_case_body_indent"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_block"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "_outdent"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_comma_outdent"
+              }
+            ]
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "_semis"
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "_block_statements"
+                  }
+                ]
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
           }
         ]
       }
@@ -15069,6 +15137,10 @@
     {
       "type": "SYMBOL",
       "name": "_name_gate"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_case_body_indent"
     }
   ],
   "inline": [
