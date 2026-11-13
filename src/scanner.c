@@ -74,7 +74,8 @@ enum TokenType {
   DEF_SEMICOLON,
   WILDCARD_BOUND_START,
   WORD_OPERATOR_EOL,
-  NAME_GATE
+  NAME_GATE,
+  CASE_BODY_INDENT
 };
 
 // Mirrors enum TokenType above.
@@ -135,7 +136,8 @@ const char* token_name[] = {
   "DEF_SEMICOLON",
   "WILDCARD_BOUND_START",
   "WORD_OPERATOR_EOL",
-  "NAME_GATE"
+  "NAME_GATE",
+  "CASE_BODY_INDENT"
 };
 
 typedef struct {
@@ -272,8 +274,14 @@ static bool advance_past_blanks(TSLexer *lexer) {
 // that is not another `case` clause. The flag is packed into the int16 width.
 #define CASE_INDENT_FLAG ((int16_t)0x4000)
 
+// Marks the region of a `case` clause's body (CASE_BODY_INDENT). Like a case
+// region, it keeps a leading infix operator only when the operator is deeper
+// than the enclosing region, so `|| b` after a `case` body at the width of the
+// `match` line continues the `match`.
+#define CASE_BODY_FLAG ((int16_t)0x2000)
+
 static inline int16_t indent_width(int16_t entry) {
-  return entry == -1 ? -1 : (int16_t)(entry & 0x3FFF);
+  return entry == -1 ? -1 : (int16_t)(entry & 0x1FFF);
 }
 
 // From anywhere on a line, the column of the next line that isn't blank, or
@@ -691,6 +699,36 @@ static CommentAtLayout check_comment_at_layout(TSLexer *lexer,
   return COMMENT_NONE;
 }
 
+// With the lexer just past the `/` that opens a comment (COMMENT_ABORT), skips
+// that comment and any comments and blank space after it. Returns the column
+// of the code that follows, or -1 at the end of the input.
+static int16_t code_column_past_comments(TSLexer *lexer) {
+  for (;;) {
+    if (lexer->lookahead == '*') {
+      advance(lexer);
+      consume_block_comment_body(lexer);
+    } else {
+      while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
+        advance(lexer);
+      }
+    }
+    while (!lexer->eof(lexer) && is_space(lexer->lookahead)) {
+      advance(lexer);
+    }
+    if (lexer->eof(lexer)) {
+      return -1;
+    }
+    int16_t column = (int16_t)lexer->get_column(lexer);
+    if (lexer->lookahead != '/') {
+      return column;
+    }
+    advance(lexer);
+    if (lexer->lookahead != '/' && lexer->lookahead != '*') {
+      return column;  // a lone '/' is code
+    }
+  }
+}
+
 // Skips a delimited body (a string or a back-ticked identifier) whose opening
 // delimiter the caller has consumed. Stops after the closing `close` or at
 // EOL/EOF. With escapes, a backslash escapes the next character.
@@ -992,7 +1030,8 @@ static bool region_keeps_operator(Scanner *scanner, uint32_t index,
   int16_t entry = scanner->indents.contents[index];
   int16_t outer =
       index >= 1 ? indent_width(scanner->indents.contents[index - 1]) : -1;
-  return !(alone || (entry & CASE_INDENT_FLAG)) || width > outer;
+  return !(alone || (entry & (CASE_INDENT_FLAG | CASE_BODY_FLAG))) ||
+         width > outer;
 }
 
 // Walks the rest of the line, tracking bracket depth and skipping strings,
@@ -1247,6 +1286,13 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   Scanner *scanner = (Scanner *)payload;
   int16_t prev = scanner->indents.size > 0 ? *array_back(&scanner->indents) : -1;
   int16_t prev_width = indent_width(prev);
+  // scalac measures a case clause's body against the case region, which the
+  // stack holds for indented cases only: braces push no region, so in braces
+  // the body opens no region either.
+  bool case_body_start = valid_symbols[CASE_BODY_INDENT] &&
+                         !valid_symbols[ERROR_SENTINEL] && prev != -1 &&
+                         (prev & CASE_INDENT_FLAG);
+  bool indent_valid = valid_symbols[INDENT] || case_body_start;
   int16_t newline_count = 0;
   int16_t indentation_size = 0;
 
@@ -1376,7 +1422,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       indentation_size > prev_width ||
       (scanner->after_colon_eol && indentation_size == prev_width);
   if (
-      valid_symbols[INDENT] &&
+      indent_valid &&
       newline_count > 0 &&
       // An indented block cannot start with a closing delimiter, e.g. the
       // `}` after an empty-bodied lambda: `foo { x =>` + newline + `}`.
@@ -1450,9 +1496,16 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         // as at `end match`. The arrow rules out an enum `case Foo`, which
         // has none and must not open a case region.
         if (len == 4 &&
-            strcmp(word, "case") == 0 && !is_case_definition_word(lexer) &&
-            scan_rest_of_line(lexer).has_case_arrow) {
-          entry |= CASE_INDENT_FLAG;
+            strcmp(word, "case") == 0 && !is_case_definition_word(lexer)) {
+          // A case body cannot start with a case clause: after `case 0 =>`
+          // the line is the next clause, even one whose pattern runs onto
+          // later lines, as `case '[` + `type t` + `] =>`.
+          if (case_body_start) {
+            return false;
+          }
+          if (scan_rest_of_line(lexer).has_case_arrow) {
+            entry |= CASE_INDENT_FLAG;
+          }
         }
         break;
       }
@@ -1468,9 +1521,12 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       default:
         break;
     }
+    if (case_body_start) {
+      entry |= CASE_BODY_FLAG;
+    }
     array_push(&scanner->indents, entry);
     scanner->statement_indent = indentation_size;
-    lexer->result_symbol = INDENT;
+    lexer->result_symbol = case_body_start ? CASE_BODY_INDENT : INDENT;
     LOG("    INDENT\n");
     return true;
   }
@@ -1492,9 +1548,27 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       )
   ) {
     lexer->mark_end(lexer);
+    bool past_comments = false;
     switch (check_comment_at_layout(lexer, valid_symbols)) {
       case COMMENT_LEXED: return true;
-      case COMMENT_ABORT: return false;
+      case COMMENT_ABORT: {
+        // A comment is lexed before the region closes, so it lands inside
+        // the region. For a case body, close the region before the comment
+        // when the code after it is outside the body too, so a comment at
+        // the `case` column sits between the clauses.
+        if (prev == -1 || !(prev & CASE_BODY_FLAG)) {
+          return false;
+        }
+        int16_t column = code_column_past_comments(lexer);
+        if (column != -1 && column >= prev_width) {
+          return false;
+        }
+        past_comments = true;
+        if (column != -1) {
+          indentation_size = column;
+        }
+        break;
+      }
       case COMMENT_SAME_LINE_CODE: {
         // The line's content starts after the comment; its column is the
         // effective indentation (` /** doc */ override def f...` inside a
@@ -1534,6 +1608,14 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     if (infix && region_keeps_operator(scanner, top, indentation_size, alone)) {
       return false;
     }
+    // scalac closes a case body's region here, but the operator then
+    // continues the body's expression when the case region keeps it, so the
+    // body takes the operator, as `case _ =>` + `  b` + `|| c` reads `b || c`.
+    if (infix && (scanner->indents.contents[top] & CASE_BODY_FLAG) &&
+        top >= 1 &&
+        region_keeps_operator(scanner, top - 1, indentation_size, alone)) {
+      return false;
+    }
     // A same-width `case` line continues the case region instead.
     if (case_region_close && is_case_clause_intro(lexer)) {
       return false;
@@ -1542,6 +1624,11 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     if (infix && top >= 1 &&
         indentation_size < indent_width(scanner->indents.contents[top - 1]) &&
         region_keeps_operator(scanner, top - 1, indentation_size, alone)) {
+      scanner->last_indentation_size = -1;
+    }
+    // The comment comes next, so the line's saved position is not the
+    // current one: its other regions close after the comment.
+    if (past_comments) {
       scanner->last_indentation_size = -1;
     }
     if (scanner->indents.size > 0) {
