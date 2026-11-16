@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: scala/scala3
-          ref: 3.8.4
+          ref: 3.10.1
           path: dotty
 
       - name: checkout lichess-org/lila
