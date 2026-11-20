@@ -1509,6 +1509,15 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         }
         break;
       }
+      case '(':
+        // scalac reads a deeper line that starts with `(` as a continuation.
+        // Where a definition can follow but an expression cannot, this is the
+        // next clause of an extension, as `extension (x: A)` + `(using B)`.
+        if (valid_symbols[INFIX_MODIFIER] &&
+            !valid_symbols[SIMPLE_STRING_START]) {
+          return false;
+        }
+        break;
       case '|':
       case '&':
         // Nor with a leading `|`/`&` infix operator, which continues the
