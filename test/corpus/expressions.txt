@@ -5920,6 +5920,57 @@ object O {
           (identifier))))))
 
 ================================================================================
+Polymorphic function with an expression body
+================================================================================
+
+object O {
+  val a = f(
+    xs,
+    [T] =>
+      _ match {
+        case _ => 1
+      }
+  )
+  val b: [T] => T => T = [T] => x => x
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)
+            (lambda_expression
+              (type_parameters
+                (identifier))
+              (match_expression
+                (wildcard)
+                (case_block
+                  (case_clause
+                    (wildcard)
+                    (integer_literal))))))))
+      (val_definition
+        (identifier)
+        (function_type
+          (type_parameters
+            (identifier))
+          (function_type
+            (parameter_types
+              (type_identifier))
+            (type_identifier)))
+        (lambda_expression
+          (type_parameters
+            (identifier))
+          (identifier)
+          (identifier))))))
+
+================================================================================
 Implicit lambda parameters (Scala 2)
 ================================================================================
 

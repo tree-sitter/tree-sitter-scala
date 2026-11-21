@@ -589,7 +589,9 @@ module.exports = grammar({
     [$._constructor_annotation_arguments, $.arguments],
     [$._constructor_annotation, $.applied_constructor_type],
     // type_parameters  '=>'  '{'  '}'  •  '['  …
-    [$.block, $.capture_set],
+    [$.block, $.capture_set, $.case_block],
+    // type_parameters  '=>'  identifier  '=>'  expression  •  'match'  …
+    [$.lambda_expression],
     // '{'  identifier  •  ':' starts the braced typed lambda, the block
     // lambda param, and a statement alike.
     [$._simple_expression, $._braced_typed_lambda],
@@ -2230,12 +2232,16 @@ module.exports = grammar({
               anyArrow(),
               $._indentable_expression,
             ),
-            // Neither of these can open a binding list, so the branch above
-            // stays reachable without lookahead.
-            seq(
-              field("type_parameters", $.type_parameters),
-              fatArrow(),
-              choice($.parenthesized_expression, $.block),
+            // Any expression, as in the reference. An indented block would
+            // split `[T] =>` + newline + `(x: T) => x` off the branch above.
+            // Weights nest by magnitude, so -1 would not beat the outer 1.
+            prec.dynamic(
+              -2,
+              seq(
+                field("type_parameters", $.type_parameters),
+                fatArrow(),
+                $.expression,
+              ),
             ),
           ),
         ),
