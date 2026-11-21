@@ -7985,48 +7985,43 @@
               ]
             },
             {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "FIELD",
-                  "name": "type_parameters",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "type_parameters"
-                  }
-                },
-                {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "STRING",
-                      "value": "=>"
-                    },
-                    {
-                      "type": "ALIAS",
-                      "content": {
+              "type": "PREC_DYNAMIC",
+              "value": -2,
+              "content": {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "FIELD",
+                    "name": "type_parameters",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "type_parameters"
+                    }
+                  },
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
                         "type": "STRING",
-                        "value": "⇒"
+                        "value": "=>"
                       },
-                      "named": false,
-                      "value": "=>"
-                    }
-                  ]
-                },
-                {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "parenthesized_expression"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "block"
-                    }
-                  ]
-                }
-              ]
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "STRING",
+                          "value": "⇒"
+                        },
+                        "named": false,
+                        "value": "=>"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "expression"
+                  }
+                ]
+              }
             }
           ]
         }
@@ -14759,7 +14754,11 @@
     ],
     [
       "block",
-      "capture_set"
+      "capture_set",
+      "case_block"
+    ],
+    [
+      "lambda_expression"
     ],
     [
       "_simple_expression",
