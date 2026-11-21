@@ -486,7 +486,7 @@ module.exports = grammar({
     // `enum` opens a definition or reads as a type name until the next token.
     [$.enum_definition, $._type_identifier],
     [$._if_rest],
-    [$.repeat_pattern, $._simple_expression],
+    [$.infix_pattern, $.repeat_pattern, $._simple_expression],
     [$.tuple_pattern, $._simple_expression],
     [$.tuple_pattern, $._simple_expression, $.binding],
     // 'for'  '('  pattern  '='  _xml_open_tag  '/>'  •  ':'  … — the element
@@ -2081,12 +2081,22 @@ module.exports = grammar({
     // Operands are _definition_pattern: a full _pattern would re-admit the
     // excluded items through the left recursion.
     infix_pattern: $ =>
-      prec.left(
-        PREC.infix,
+      choice(
+        prec.left(
+          PREC.infix,
+          seq(
+            field("left", $._definition_pattern),
+            field("operator", wordOrOpName($)),
+            field("right", $._definition_pattern),
+          ),
+        ),
+        // A repeat pattern makes the shared `*` token valid here (see
+        // infix_type). The left operand has no precedence, or the generator
+        // would drop the expression reading of `for (x = a * b`.
         seq(
           field("left", $._definition_pattern),
-          field("operator", wordOrOpName($)),
-          field("right", $._definition_pattern),
+          field("operator", alias($._asterisk, $.operator_identifier)),
+          prec.left(PREC.infix, field("right", $._definition_pattern)),
         ),
       ),
 
