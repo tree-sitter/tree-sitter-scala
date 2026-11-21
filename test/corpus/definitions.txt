@@ -3340,6 +3340,34 @@ end Wide
     (end_marker)))
 
 ================================================================================
+End marker after an empty colon body (Scala 3 syntax)
+================================================================================
+
+class D:
+end D
+
+val foo =
+  new Foo:
+    // comment
+  end new
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body)
+    (end_marker))
+  (val_definition
+    (identifier)
+    (indented_block
+      (instance_expression
+        (type_identifier)
+        (template_body)
+        (comment)
+        (end_marker)))))
+
+================================================================================
 A dedented comma closes an indented template argument (Scala 3 syntax)
 ================================================================================
 

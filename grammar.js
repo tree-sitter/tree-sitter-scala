@@ -1039,23 +1039,28 @@ module.exports = grammar({
       choice($._indented_template_body, $._braced_template_body),
 
     _indented_template_body: $ =>
-      prec.left(
-        PREC.control,
-        seq(
-          colonEol($),
-          $._indent,
-          choice(
-            seq(optional($.self_type), $._block),
-            // A self type with an empty body: `trait A:` + `self: B =>`
-            // followed by the next definition (or EOF). Mirrors the braced
-            // variant in _braced_template_body1.
-            $.self_type,
+      choice(
+        prec.left(
+          PREC.control,
+          seq(
+            colonEol($),
+            $._indent,
+            choice(
+              seq(optional($.self_type), $._block),
+              // A self type with an empty body: `trait A:` + `self: B =>`
+              // followed by the next definition (or EOF). Mirrors the braced
+              // variant in _braced_template_body1.
+              $.self_type,
+            ),
+            // The comma close lets a dedented `,` end a `new:` template used
+            // as an argument (`f(adapter = new: ...` + `    ,`) instead of
+            // leaving that reading to a losing GLR fork.
+            choice($._outdent, $._comma_outdent),
           ),
-          // The comma close lets a dedented `,` end a `new:` template used
-          // as an argument (`f(adapter = new: ...` + `    ,`) instead of
-          // leaving that reading to a losing GLR fork.
-          choice($._outdent, $._comma_outdent),
         ),
+        // An empty body, as in `class C:` + `end C`. The scanner gives no
+        // indent before an end marker there.
+        alias($._colon_eol, ":"),
       ),
 
     _braced_template_body: $ =>
