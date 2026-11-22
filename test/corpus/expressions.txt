@@ -140,6 +140,75 @@ object A {
         (identifier)))))
 
 ================================================================================
+Argument clause on the next line (Scala 3 syntax)
+================================================================================
+
+def f =
+  if xs.exists
+      (p) then 1
+  else 2
+
+def g =
+  val x = f(1)
+    (2)
+  x
+
+def h(x: Int) = {
+  val fs = x & 1
+  (fs & 2) != 0
+}
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (if_expression
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier)))
+        (integer_literal)
+        (integer_literal))))
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (identifier)
+        (call_expression
+          (call_expression
+            (identifier)
+            (arguments
+              (integer_literal)))
+          (arguments
+            (integer_literal))))
+      (identifier)))
+  (function_definition
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (block
+      (val_definition
+        (identifier)
+        (infix_expression
+          (identifier)
+          (operator_identifier)
+          (integer_literal)))
+      (infix_expression
+        (parenthesized_expression
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (integer_literal)))
+        (operator_identifier)
+        (integer_literal)))))
+
+================================================================================
 Call expressions (Scala 3 syntax)
 ================================================================================
 
