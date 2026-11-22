@@ -1486,6 +1486,14 @@ static bool scan_impl(void *payload, TSLexer *lexer,
           }
           return false;
         }
+        // scalac's trivial end. After a colon at the end of a line, a line
+        // that starts with an end marker closes an empty body.
+        if (scanner->after_colon_eol && valid_symbols[AUTOMATIC_SEMICOLON] &&
+            len == 3 && strcmp(word, "end") == 0 && name_follows_word(lexer)) {
+          scanner->statement_indent = indentation_size;
+          lexer->result_symbol = AUTOMATIC_SEMICOLON;
+          return true;
+        }
         // The same-width `case` close at the bottom of scan() compares the
         // line with the enclosing region, but the `match` may not sit at that
         // region's width: at top level the stack is empty, and braces push no
