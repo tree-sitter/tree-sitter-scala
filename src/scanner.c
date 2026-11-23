@@ -154,6 +154,9 @@ typedef struct {
   // last line break that ended a statement or opened a region. -1 when
   // unknown.
   int16_t statement_indent;
+  // The column where the body of a same-line colon lambda starts, -1 when
+  // none is pending. CASE_INDENT_FLAG is added when the body is a case clause.
+  int16_t lambda_column;
 } Scanner;
 
 void *tree_sitter_scala_external_scanner_create() {
@@ -162,6 +165,7 @@ void *tree_sitter_scala_external_scanner_create() {
   scanner->last_indentation_size = -1;
   scanner->last_column = -1;
   scanner->statement_indent = -1;
+  scanner->lambda_column = -1;
   return scanner;
 }
 
@@ -174,7 +178,7 @@ void tree_sitter_scala_external_scanner_destroy(void *payload) {
 unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *scanner = (Scanner*)payload;
 
-  if ((scanner->indents.size + 6) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+  if ((scanner->indents.size + 7) * sizeof(int16_t) > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
 
@@ -190,6 +194,8 @@ unsigned tree_sitter_scala_external_scanner_serialize(void *payload, char *buffe
   memcpy(buffer + size, &scanner->after_colon_eol, sizeof(int16_t));
   size += sizeof(int16_t);
   memcpy(buffer + size, &scanner->statement_indent, sizeof(int16_t));
+  size += sizeof(int16_t);
+  memcpy(buffer + size, &scanner->lambda_column, sizeof(int16_t));
   size += sizeof(int16_t);
 
   for (unsigned i = 0; i < scanner->indents.size; i++) {
@@ -210,6 +216,7 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   scanner->last_newline_count = 0;
   scanner->after_colon_eol = 0;
   scanner->statement_indent = -1;
+  scanner->lambda_column = -1;
 
   if (length == 0) {
     return;
@@ -228,6 +235,8 @@ void tree_sitter_scala_external_scanner_deserialize(void *payload, const char *b
   scanner->after_colon_eol = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
   scanner->statement_indent = *(int16_t *)&buffer[size];
+  size += sizeof(int16_t);
+  scanner->lambda_column = *(int16_t *)&buffer[size];
   size += sizeof(int16_t);
 
   unsigned count = (length - (unsigned)size) / sizeof(int16_t);
@@ -280,8 +289,12 @@ static bool advance_past_blanks(TSLexer *lexer) {
 // `match` line continues the `match`.
 #define CASE_BODY_FLAG ((int16_t)0x2000)
 
+// Marks the region of a lambda body that starts on the line of its colon.
+// scalac ends it at the line end (its SingleLineLambda region and ENDlambda).
+#define LAMBDA_LINE_FLAG ((int16_t)0x1000)
+
 static inline int16_t indent_width(int16_t entry) {
-  return entry == -1 ? -1 : (int16_t)(entry & 0x1FFF);
+  return entry == -1 ? -1 : (int16_t)(entry & 0x0FFF);
 }
 
 // From anywhere on a line, the column of the next line that isn't blank, or
@@ -802,9 +815,22 @@ static bool rest_of_line_is_blank_or_comments(TSLexer *lexer) {
 }
 
 // scalac's followingIsLambdaAfterColon. A type parameter clause is left out,
-// since colon_argument does not take one.
-static bool colon_lambda_follows(TSLexer *lexer, int16_t region_width) {
-  if (lexer->lookahead == '(') {
+// since colon_argument does not take one. When the body starts on this line,
+// *body_column is set to its column. scalac takes such a lambda only after
+// an expression outside parentheses, and the caller tells with `same_line`.
+// A case clause it takes anywhere.
+static bool colon_lambda_follows(TSLexer *lexer, int16_t region_width,
+                                 bool same_line, int16_t *body_column) {
+  *body_column = -1;
+  if (lexer->lookahead == 'c') {
+    int16_t column = (int16_t)lexer->get_column(lexer);
+    char word[sizeof "case"];
+    if (read_word(lexer, word, (int)sizeof word, NULL) == 4 &&
+        strcmp(word, "case") == 0) {
+      *body_column = (int16_t)(column | CASE_INDENT_FLAG);
+      return true;
+    }
+  } else if (lexer->lookahead == '(') {
     int depth = 0;
     do {
       if (lexer->lookahead == '(') {
@@ -837,9 +863,15 @@ static bool colon_lambda_follows(TSLexer *lexer, int16_t region_width) {
     }
     advance(lexer);
   }
-  if (is_op_char(lexer->lookahead) ||
-      !rest_of_line_is_blank_or_comments(lexer)) {
+  if (is_op_char(lexer->lookahead)) {
     return false;
+  }
+  if (!rest_of_line_is_blank_or_comments(lexer)) {
+    if (!same_line) {
+      return false;
+    }
+    *body_column = (int16_t)lexer->get_column(lexer);
+    return true;
   }
   for (;;) {
     if (lexer->eof(lexer)) {
@@ -1216,6 +1248,7 @@ bool tree_sitter_scala_external_scanner_scan(void *payload, TSLexer *lexer,
       scanner->after_colon_eol = 1;
     } else if (lexer->result_symbol != BLOCK_COMMENT) {
       scanner->after_colon_eol = 0;
+      scanner->lambda_column = -1;
     }
   }
   return res;
@@ -1308,6 +1341,22 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       indentation_size++;
     }
     skip(lexer);
+  }
+
+  // The body of a same-line colon lambda opens a region here. It closes at
+  // the line end below. Its width is the enclosing one, which a case body
+  // on the next line has to pass.
+  if (scanner->lambda_column >= 0 && valid_symbols[INDENT] &&
+      !valid_symbols[ERROR_SENTINEL] && newline_count == 0 &&
+      lexer->get_column(lexer) ==
+          (uint32_t)indent_width(scanner->lambda_column)) {
+    int16_t entry = (int16_t)((prev_width < 0 ? 0 : prev_width) |
+                              LAMBDA_LINE_FLAG |
+                              (scanner->lambda_column & CASE_INDENT_FLAG));
+    array_push(&scanner->indents, entry);
+    lexer->result_symbol = INDENT;
+    LOG("    INDENT (same-line lambda)\n");
+    return true;
   }
 
   // COMMA_OUTDENT is a distinct token so tree-sitter only makes it valid
@@ -1405,6 +1454,14 @@ static bool scan_impl(void *payload, TSLexer *lexer,
           scanner->last_indentation_size != -1 &&
           prev != -1 &&
           scanner->last_indentation_size < prev_width
+        ) ||
+        // A same-line lambda under the regions closed at this line end.
+        (
+          scanner->last_indentation_size != -1 &&
+          prev != -1 && (prev & LAMBDA_LINE_FLAG) && newline_count == 0 &&
+          (lexer->eof(lexer)
+               ? scanner->last_column == -1
+               : (int16_t)lexer->get_column(lexer) == scanner->last_column)
         )
       )
   ) {
@@ -1557,6 +1614,8 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   // that line does not start another `case` clause.
   bool case_region_close =
       newline_count > 0 && at_case_region_width(prev, indentation_size);
+  bool lambda_close =
+      newline_count > 0 && prev != -1 && (prev & LAMBDA_LINE_FLAG);
   if (valid_symbols[OUTDENT] &&
       (lexer->lookahead == 0 ||
       (
@@ -1564,7 +1623,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         prev != -1 &&
         indentation_size < prev_width
       ) ||
-      case_region_close
+      case_region_close || lambda_close
       )
   ) {
     lexer->mark_end(lexer);
@@ -1625,7 +1684,8 @@ static bool scan_impl(void *payload, TSLexer *lexer,
                  is_leading_infix_continuation(lexer, &alone) &&
                  !scan_rest_of_line(lexer).ends_conditional;
     uint32_t top = scanner->indents.size - 1;
-    if (infix && region_keeps_operator(scanner, top, indentation_size, alone)) {
+    if (infix && !lambda_close &&
+        region_keeps_operator(scanner, top, indentation_size, alone)) {
       return false;
     }
     // scalac closes a case body's region here, but the operator then
@@ -1637,7 +1697,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       return false;
     }
     // A same-width `case` line continues the case region instead.
-    if (case_region_close && is_case_clause_intro(lexer)) {
+    if (case_region_close && !lambda_close && is_case_clause_intro(lexer)) {
       return false;
     }
     // The cascade of outdents stops at the region that keeps the operator.
@@ -2152,9 +2212,14 @@ static bool scan_impl(void *payload, TSLexer *lexer,
       // COLONeol), as is one before a lambda head that ends its line.
       // Deciding it at the token level kills the cross-newline
       // ascription fork that GLR would otherwise keep alive across the region.
+      int16_t body_column = -1;
       if (valid_symbols[COLON_EOL] &&
           (rest_of_line_is_blank_or_comments(lexer) ||
-           colon_lambda_follows(lexer, prev_width))) {
+           colon_lambda_follows(lexer, prev_width,
+                                valid_symbols[AUTOMATIC_SEMICOLON] &&
+                                    valid_symbols[POSTFIX_OP],
+                                &body_column))) {
+        scanner->lambda_column = body_column;
         lexer->result_symbol = COLON_EOL;
         return true;
       }
