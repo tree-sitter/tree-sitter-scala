@@ -1036,16 +1036,18 @@ static bool region_keeps_operator(Scanner *scanner, uint32_t index,
 
 // Walks the rest of the line, tracking bracket depth and skipping strings,
 // characters, back-ticks and comments. Reports whether the line ends in a
-// depth-0 `then`/`do` and whether it carries a depth-0 `=>` (Scala 2 `⇒`).
+// depth-0 `then`/`do`, whether one appears at all, and whether it carries a
+// depth-0 `=>` (Scala 2 `⇒`).
 typedef struct {
   bool ends_conditional;
+  bool has_conditional_end;
   bool has_case_arrow;
   bool closes_bracket;
 } LineScan;
 
 static LineScan scan_rest_of_line(TSLexer *lexer) {
   int depth = 0;
-  LineScan r = {false, false, false};
+  LineScan r = {false, false, false, false};
   while (!lexer->eof(lexer) && lexer->lookahead != '\n' &&
          lexer->lookahead != '\r') {
     int32_t c = lexer->lookahead;
@@ -1114,6 +1116,7 @@ static LineScan scan_rest_of_line(TSLexer *lexer) {
       int len = read_word(lexer, word, (int)sizeof word, NULL);
       r.ends_conditional = depth == 0 && len > 0 &&
                            (strcmp(word, "then") == 0 || strcmp(word, "do") == 0);
+      r.has_conditional_end |= r.ends_conditional;
     } else {
       r.ends_conditional = false;
       advance(lexer);
@@ -1657,6 +1660,10 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     return true;
   }
 
+  // This scan did not measure the line's indentation when the count below
+  // is recovered, so that case takes the saved column.
+  int16_t line_indent = indentation_size;
+
   // Recover newline_count from the outdent reset. Skipped when this scan
   // crossed a newline itself, because the saved count belongs to an
   // earlier line at the same column.
@@ -1671,6 +1678,9 @@ static bool scan_impl(void *payload, TSLexer *lexer,
          lexer->get_column(lexer) == (uint32_t)scanner->last_column)
     ) {
       newline_count += scanner->last_newline_count;
+      if (!is_eof) {
+        line_indent = scanner->last_column;
+      }
     }
   }
   scanner->last_newline_count = 0;
@@ -1709,7 +1719,7 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // The next statement starts on this line. Kept only if the semicolon
     // is: tree-sitter restores the state when the scan returns false.
     int16_t statement_indent = scanner->statement_indent;
-    scanner->statement_indent = indentation_size;
+    scanner->statement_indent = line_indent;
 
     // A `{` on the next line, deeper than the statement, continues it as
     // a block argument, as in `f(a)` + `  { b => c }`. scalac reads it so
@@ -1717,10 +1727,27 @@ static bool scan_impl(void *payload, TSLexer *lexer,
     // the region, and in Scala 2, which accepts a `{` after one line break
     // wherever it can continue the expression. POSTFIX_OP is offered only
     // where an operand just ended, which an import or a declaration isn't.
-    if (lexer->lookahead == '{' && newline_count == 1 &&
-        indentation_size > statement_indent && valid_symbols[POSTFIX_OP] &&
-        !valid_symbols[ERROR_SENTINEL]) {
+    bool deeper_operand_line =
+        newline_count == 1 && line_indent > statement_indent &&
+        valid_symbols[POSTFIX_OP] && !valid_symbols[ERROR_SENTINEL];
+    if (lexer->lookahead == '{' && deeper_operand_line) {
       return false;
+    }
+
+    // Scala 3 continues a `(` or `[` line the same way (isContinuing). Braces
+    // push no region, so statement_indent can be stale there, and it is
+    // trusted only at the width of an indented block. In a condition the
+    // line has to reach its end, as in `if xs.exists` + `  (p) then`. The
+    // line scan moves the lexer, but such a line keeps the semicolon below
+    // anyway.
+    if ((lexer->lookahead == '(' || lexer->lookahead == '[') &&
+        deeper_operand_line) {
+      if (valid_symbols[OUTDENT] && statement_indent == prev_width) {
+        return false;
+      }
+      if (valid_symbols[CONTROL_TAIL_GATE]) {
+        return !scan_rest_of_line(lexer).has_conditional_end;
+      }
     }
 
     // Probably, a multi-line field expression, e.g.
