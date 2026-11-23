@@ -504,6 +504,67 @@ def f =
         (identifier)))))
 
 ================================================================================
+Colon argument with type parameters (Scala 3 syntax)
+================================================================================
+
+def f =
+  val x = r.sub: [R2 >: R] =>
+    r2 => r2.foo
+  xs.map: [T] => (x: T) => List(x)
+  (g: [T] => T => T)
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (function_definition
+    (identifier)
+    (indented_block
+      (val_definition
+        (identifier)
+        (call_expression
+          (field_expression
+            (identifier)
+            (identifier))
+          (colon_argument
+            (type_parameters
+              (identifier)
+              (lower_bound
+                (type_identifier)))
+            (indented_block
+              (lambda_expression
+                (identifier)
+                (field_expression
+                  (identifier)
+                  (identifier)))))))
+      (call_expression
+        (field_expression
+          (identifier)
+          (identifier))
+        (colon_argument
+          (type_parameters
+            (identifier))
+          (indented_block
+            (lambda_expression
+              (bindings
+                (binding
+                  (identifier)
+                  (type_identifier)))
+              (call_expression
+                (identifier)
+                (arguments
+                  (identifier)))))))
+      (parenthesized_expression
+        (ascription_expression
+          (identifier)
+          (function_type
+            (type_parameters
+              (identifier))
+            (function_type
+              (parameter_types
+                (type_identifier))
+              (type_identifier))))))))
+
+================================================================================
 Case clause as an expression (Scala 3 syntax)
 ================================================================================
 
