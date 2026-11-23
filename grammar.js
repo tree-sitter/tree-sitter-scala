@@ -408,7 +408,8 @@ module.exports = grammar({
     $._word_operator_eol,
     // Never emitted. Valid only where a definition name follows a keyword
     // that Scala 2 reads as an identifier (`enum`), so the scanner lexes the
-    // name rather than an infix operator.
+    // name rather than an infix operator, and where a lone case clause can
+    // be an argument.
     $._name_gate,
     // An INDENT that opens the body of a case clause. Only the body takes
     // it, so the scanner knows the region is a case body.
@@ -2852,7 +2853,13 @@ module.exports = grammar({
     arguments: $ =>
       seq(
         "(",
-        choice(optional($._argument_list), seq("using", $._exprs_in_parens)),
+        choice(
+          optional($._argument_list),
+          seq("using", $._exprs_in_parens),
+          // A lone case clause (SIP-75). The scanner opens its region, and the
+          // gate tells it that an indent here can only open the clause.
+          seq(optional($._name_gate), $.indented_cases),
+        ),
         ")",
       ),
 
