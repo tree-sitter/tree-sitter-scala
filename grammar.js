@@ -2595,6 +2595,8 @@ module.exports = grammar({
     /**
      *   ColonArgument     ::=  colon [LambdaStart]
      *                          (CaseClauses | Block)
+     *   LambdaStart       ::=  FunParams ('=>' | '?=>')
+     *                       |  TypTypeParamClause '=>'
      */
     colon_argument: $ =>
       prec.left(
@@ -2603,15 +2605,18 @@ module.exports = grammar({
           optional(
             field(
               "lambda_start",
-              seq(
-                choice(
-                  alias($._colon_bindings, $.bindings),
-                  $._identifier,
-                  $.wildcard,
+              choice(
+                seq(
+                  choice(
+                    alias($._colon_bindings, $.bindings),
+                    $._identifier,
+                    $.wildcard,
+                  ),
+                  // anyArrow so a context-function lambda `x ?=>` also starts
+                  // a colon argument, not only the plain `=>` form.
+                  anyArrow(),
                 ),
-                // anyArrow so a context-function lambda `x ?=>` also starts a
-                // colon argument, not only the plain `=>` form.
-                anyArrow(),
+                seq($.type_parameters, fatArrow()),
               ),
             ),
           ),

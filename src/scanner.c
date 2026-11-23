@@ -817,8 +817,7 @@ static bool rest_of_line_is_blank_or_comments(TSLexer *lexer) {
   }
 }
 
-// scalac's followingIsLambdaAfterColon. A type parameter clause is left out,
-// since colon_argument does not take one. When the body starts on this line,
+// scalac's followingIsLambdaAfterColon. When the body starts on this line,
 // *body_column is set to its column. scalac takes such a lambda only after
 // an expression outside parentheses, and the caller tells with `same_line`.
 // A case clause it takes anywhere.
@@ -833,12 +832,14 @@ static bool colon_lambda_follows(TSLexer *lexer, int16_t region_width,
       *body_column = (int16_t)(column | CASE_INDENT_FLAG);
       return true;
     }
-  } else if (lexer->lookahead == '(') {
+  } else if (lexer->lookahead == '(' || lexer->lookahead == '[') {
+    int32_t open = lexer->lookahead;
+    int32_t close = open == '(' ? ')' : ']';
     int depth = 0;
     do {
-      if (lexer->lookahead == '(') {
+      if (lexer->lookahead == open) {
         depth++;
-      } else if (lexer->lookahead == ')') {
+      } else if (lexer->lookahead == close) {
         depth--;
       }
       advance(lexer);
