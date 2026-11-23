@@ -504,6 +504,83 @@ def f =
         (identifier)))))
 
 ================================================================================
+Case clause as an expression (Scala 3 syntax)
+================================================================================
+
+val f: PartialFunction[Int, Int] = case x if x > 0 => x
+val g = identity(case Foo(a) => a)
+val h = xs.collect(
+  case (a, b) =>
+    println(b)
+    a
+)
+val i = try a catch case e => b
+val j = for case x <- xs yield x
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (val_definition
+    (identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)
+        (type_identifier)))
+    (indented_cases
+      (case_clause
+        (identifier)
+        (guard
+          (infix_expression
+            (identifier)
+            (operator_identifier)
+            (integer_literal)))
+        (identifier))))
+  (val_definition
+    (identifier)
+    (call_expression
+      (identifier)
+      (arguments
+        (indented_cases
+          (case_clause
+            (case_class_pattern
+              (type_identifier)
+              (identifier))
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (call_expression
+      (field_expression
+        (identifier)
+        (identifier))
+      (arguments
+        (indented_cases
+          (case_clause
+            (tuple_pattern
+              (identifier)
+              (identifier))
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier)))
+            (identifier))))))
+  (val_definition
+    (identifier)
+    (try_expression
+      (identifier)
+      (catch_clause
+        (identifier)
+        (identifier))))
+  (val_definition
+    (identifier)
+    (for_expression
+      (enumerators
+        (enumerator
+          (identifier)
+          (identifier)))
+      (identifier))))
+
+================================================================================
 Trailing comma after for comprehension in lambda parameter of a function
 ================================================================================
 
