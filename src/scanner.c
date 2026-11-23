@@ -1689,8 +1689,19 @@ static bool scan_impl(void *payload, TSLexer *lexer,
   // in front of a marker. Emit it when the tag word confirms the marker
   // shape.
   if (valid_symbols[END_KEYWORD] && !valid_symbols[ERROR_SENTINEL] &&
-      lexer->lookahead == 'e') {
-    if (scan_word(lexer, "end") && name_follows_word(lexer)) {
+      (lexer->lookahead == 'e' || lexer->lookahead == ';')) {
+    // scalac takes a marker after any run of separators (statSepOrEnd), so
+    // lines of semicolons before one are skipped like blanks.
+    bool line_start = true;
+    while (lexer->lookahead == ';' || is_space(lexer->lookahead)) {
+      if (lexer->lookahead == ';') {
+        line_start = false;
+      } else if (lexer->lookahead == '\n') {
+        line_start = true;
+      }
+      skip(lexer);
+    }
+    if (line_start && scan_word(lexer, "end") && name_follows_word(lexer)) {
       lexer->mark_end(lexer);
       lexer->result_symbol = END_KEYWORD;
       return true;

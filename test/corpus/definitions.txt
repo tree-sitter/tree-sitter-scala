@@ -3368,6 +3368,42 @@ val foo =
         (end_marker)))))
 
 ================================================================================
+End marker after lines of semicolons (Scala 3 syntax)
+================================================================================
+
+class A:
+  def a = {
+    1
+  }
+  ;  ;
+  end a
+;
+end A
+
+class B {
+}
+;
+;
+end B
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (class_definition
+    (identifier)
+    (template_body
+      (function_definition
+        (identifier)
+        (block
+          (integer_literal))
+        (end_marker)))
+    (end_marker))
+  (class_definition
+    (identifier)
+    (template_body)
+    (end_marker)))
+
+================================================================================
 A dedented comma closes an indented template argument (Scala 3 syntax)
 ================================================================================
 
