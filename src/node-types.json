@@ -535,6 +535,10 @@
           "named": true
         },
         {
+          "type": "indented_cases",
+          "named": true
+        },
+        {
           "type": "vararg",
           "named": true
         }
@@ -2046,6 +2050,10 @@
           },
           {
             "type": "operator_identifier",
+            "named": true
+          },
+          {
+            "type": "type_parameters",
             "named": true
           },
           {
