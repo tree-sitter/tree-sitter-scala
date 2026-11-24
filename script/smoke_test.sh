@@ -102,11 +102,16 @@ run_tree_sitter "$SCALA_SCALA_DIR/src/compiler/" $SCALA_SCALA_COMPILER_EXPECTED 
 run_tree_sitter "$DOTTY_DIR/compiler/"           $DOTTY_COMPILER_EXPECTED        dotty-compiler \
   -not -path '*/test-resources/repl/*'
 
-# Exclude test sources scalac is never asked to accept
+# Exclude test sources scalac is never asked to accept. The semanticdb
+# printer puts comments inside backquoted names, which breaks four of its
+# expect files, and tests/new/test.scala is a broken scratch file.
 run_tree_sitter "$DOTTY_DIR/tests/"              $DOTTY_TESTS_EXPECTED           dotty-tests \
   -not -path '*/neg*/*' -not -name 'neg*' \
   -not -path '*/fuzzy/*' -not -path '*/pending/*' \
-  -not -path '*/disabled/*' -not -path '*/invalid/*'
+  -not -path '*/disabled/*' -not -path '*/invalid/*' \
+  -not -name 'Enums.expect.scala' -not -name 'InventedNames.expect.scala' \
+  -not -name 'Methods.expect.scala' -not -name 'local-file.expect.scala' \
+  -not -path '*/tests/new/test.scala'
 
 run_tree_sitter "$LILA_DIR/modules/"             $LILA_MODULES_EXPECTED          lila-modules
 
