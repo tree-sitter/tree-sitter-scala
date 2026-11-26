@@ -608,6 +608,37 @@ static bool modifier_name_follows(TSLexer *lexer) {
   return name_follows_word(lexer) && modifier_word_allowed(lexer);
 }
 
+// Where a statement can start, a soft modifier is a name unless another
+// modifier or a definition keyword follows it, so `opaque max 42` stays an
+// infix expression. Soft modifiers in between are skipped, as in
+// inModifierPosition in the reference parser.
+static bool definition_follows_modifier(TSLexer *lexer) {
+  static const char *const followers[] = {
+      "def",      "val",       "var",       "type",     "given",
+      "class",    "object",    "trait",     "enum",     "case",
+      "abstract", "final",     "sealed",    "implicit", "lazy",
+      "override", "private",   "protected", "inline"};
+  static const char *const soft_words[] = {
+      "erased", "open", "opaque", "infix", "tracked",
+      "transparent", "into", "update", "consume"};
+  for (;;) {
+    if (!name_follows_word(lexer)) {
+      return false;
+    }
+    char word[sizeof "transparent"];
+    int len = read_word(lexer, word, (int)sizeof word, NULL);
+    if (len <= 0) {
+      return false;
+    }
+    if (word_in(word, followers, sizeof(followers) / sizeof(followers[0]))) {
+      return true;
+    }
+    if (!word_in(word, soft_words, sizeof(soft_words) / sizeof(soft_words[0]))) {
+      return false;
+    }
+  }
+}
+
 // `inline` also prefixes the scrutinee of `inline 1 match`, and it can end a
 // modifier line whose definition is on the next one.
 static bool inline_modifier_follows(TSLexer *lexer) {
@@ -2098,9 +2129,15 @@ static bool scan_impl(void *payload, TSLexer *lexer,
         lexer->mark_end(lexer);
         // A name follows a modifier, so `def open(p)` and `a.infix` keep
         // reading as plain identifiers.
+        // A statement can start where an XML literal can and `open` can (a
+        // parameter list admits neither, and a lambda binding takes `erased`
+        // alone).
+        bool statement_start =
+            valid_symbols[XML_TAG_START] && valid_symbols[OPEN_MODIFIER];
         bool follows = modifier == INLINE_MODIFIER
                            ? inline_modifier_follows(lexer)
-                           : modifier_name_follows(lexer);
+                       : statement_start ? definition_follows_modifier(lexer)
+                                         : modifier_name_follows(lexer);
         if (follows) {
           lexer->result_symbol = modifier;
           return true;
