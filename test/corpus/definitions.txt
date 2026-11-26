@@ -2676,6 +2676,69 @@ class F(tracked val x: C):
         (type_identifier)))))
 
 ================================================================================
+Soft modifier as a name at the start of a statement (Scala 3)
+================================================================================
+
+object A:
+  val y =
+    opaque max 42
+  open max 1
+  def f = { transparent max 1 }
+  val g = (x: Int) => infix max x
+  erased max 1
+  opaque type T = Int
+  open infix class C
+
+--------------------------------------------------------------------------------
+
+(compilation_unit
+  (object_definition
+    (identifier)
+    (template_body
+      (val_definition
+        (identifier)
+        (indented_block
+          (infix_expression
+            (identifier)
+            (identifier)
+            (integer_literal))))
+      (infix_expression
+        (identifier)
+        (identifier)
+        (integer_literal))
+      (function_definition
+        (identifier)
+        (block
+          (infix_expression
+            (identifier)
+            (identifier)
+            (integer_literal))))
+      (val_definition
+        (identifier)
+        (lambda_expression
+          (bindings
+            (binding
+              (identifier)
+              (type_identifier)))
+          (infix_expression
+            (identifier)
+            (identifier)
+            (identifier))))
+      (infix_expression
+        (identifier)
+        (identifier)
+        (integer_literal))
+      (type_definition
+        (opaque_modifier)
+        (type_identifier)
+        (type_identifier))
+      (class_definition
+        (modifiers
+          (open_modifier)
+          (infix_modifier))
+        (identifier)))))
+
+================================================================================
 Braced body member indented shallower than its siblings
 ================================================================================
 
